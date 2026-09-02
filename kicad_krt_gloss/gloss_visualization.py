@@ -9,7 +9,7 @@ import math
 
 LAYER_NAME = "TrackGloss Changes"
 STAGE_LAYERS = {"G3": 1, "G3.1": 2, "G3.2": 3,
-                "G3.3": 4, "G3.4": 5, "G3.5": 6}
+                "G3.3": 4, "G3.4": 5, "G3.5": 6, "G4": 1}
 
 
 def _line_parts(start, end, dash=0.30, gap=0.20):

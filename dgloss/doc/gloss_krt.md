@@ -67,5 +67,9 @@ celui-ci. La branche peut être perpendiculaire au rail : cet angle de 90° est
 autorisé et peut être la solution minimale. Il ne doit pas être confondu avec
 un coude parasite à 90° à l'autre extrémité de la branche.
 
-Sans couple colinéaire, le nœud reste fixe. Pads et vias fixes ont priorité sur
-la mobilité d'un raccord.
+Une variante peut autoriser un T sans couple colinéaire : chacun des trois
+segments est successivement considéré comme branche et les deux autres comme
+rails possibles. Après déplacement, tout coude parasite à 90° laissé à
+l'ancien nœud est simplifié selon les règles générales du gloss. Lorsque cette
+variante est désactivée, le nœud sans couple colinéaire reste fixe. Pads et vias
+fixes ont priorité sur la mobilité d'un raccord.

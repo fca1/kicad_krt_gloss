@@ -12,6 +12,8 @@ class GlossConfig:
     enable_g3_3: bool = True
     enable_g3_4: bool = True
     budget_seconds: float = 20.0
+    enable_noncollinear_t_rails: bool = True
+    enable_multipasses: bool = True
 
     @classmethod
     def from_value(cls, value=None):

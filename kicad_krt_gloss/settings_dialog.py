@@ -8,6 +8,8 @@ DEFAULTS = {
     "enable_g3_2": True,
     "enable_g3_3": True,
     "enable_g3_4": True,
+    "enable_noncollinear_t_rails": True,
+    "enable_multipasses": True,
     "grid_step": 0.1,
 }
 
@@ -28,7 +30,10 @@ class GlossSettingsDialog(wx.Dialog):
             "enable_g3_1": "G3.1 — mobile vias",
             "enable_g3_2": "G3.2 — pad terminals",
             "enable_g3_3": "G3.3 — sliding T nodes",
+            "enable_noncollinear_t_rails": (
+                "G3.3 — allow non-collinear rails"),
             "enable_g3_4": "G3.4 — complete via chains",
+            "enable_multipasses": "G4 — multi-net convergence passes",
         }
         for key, label in labels.items():
             control = wx.CheckBox(panel, label=label)

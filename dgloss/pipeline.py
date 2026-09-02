@@ -14,6 +14,7 @@ from .changes import GlossChanges
 from .config import GlossConfig
 from .context import build_gloss_context
 from .pad_terminals import optimize_pad_terminals
+from .passes import run_multinet_passes
 from .sliding_nodes import slide_t_nodes
 from .stats import GlossStats
 from .via_mobile import move_mobile_vias, refine_mobile_vias
@@ -64,6 +65,34 @@ def _empty_via_stats():
     return {"vias_moved": 0, "saved_mm": 0.0, "net_ids_changed": set(),
             "algorithm_ms": 0.0, "segment_strips": [],
             "added_segments": []}
+
+
+def _final_visual_changes(baseline_segments, baseline_vias, pcb_data,
+                          history):
+    """Describe only the post-smooth to final G4 delta, without intermediates."""
+    final_segment_ids = {id(segment) for segment in pcb_data.segments}
+    baseline_segment_ids = {id(segment) for segment in baseline_segments}
+    segments = [
+        {"old": segment, "stage": "G4"}
+        for segment in baseline_segments if id(segment) not in final_segment_ids]
+    segments.extend(
+        {"new": segment, "stage": "G4"}
+        for segment in pcb_data.segments
+        if id(segment) not in baseline_segment_ids)
+
+    roots = {}
+    for entry in history.vias:
+        old, new = entry.get("old"), entry.get("new")
+        if old is None or new is None:
+            continue
+        root = roots.pop(id(old), old)
+        roots[id(new)] = root
+    final_via_ids = {id(via) for via in pcb_data.vias}
+    vias = [{"old": old, "new": via, "stage": "G4"}
+            for via in pcb_data.vias
+            if id(via) in roots and id(via) in final_via_ids
+            for old in [roots[id(via)]]]
+    return GlossChanges(segments=segments, vias=vias)
 
 
 def _validate_final(context, before_grades, before_length, changes):
@@ -130,7 +159,7 @@ def run_final_gloss(results, pcb_data, config, gloss_config=None, *,
 
 def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
                           net_ids=None, krt_strips=None, krt_stats=None,
-                          krt_ms=0.0):
+                          krt_ms=0.0, _emit_log=True):
     """G0 API for a caller that already owns the final KRT smooth result."""
     baseline_segments = list(pcb_data.segments)
     baseline_vias = list(pcb_data.vias)
@@ -141,7 +170,8 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
     selected = GlossConfig.from_value(
         gloss_config if gloss_config is not None
         else getattr(config, "gloss_config", None))
-    gloss_stats = GlossStats(budget_seconds=selected.budget_seconds)
+    gloss_stats = GlossStats(budget_seconds=selected.budget_seconds,
+                             emit=_emit_log)
     started = perf_counter()
     deadline = started + max(0.0, selected.budget_seconds)
 
@@ -196,7 +226,9 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
 
         run, expired = available(selected.enable_g3_3)
         node_strips, node_added, node_changes, node = \
-            slide_t_nodes(context, results, deadline=deadline) \
+            slide_t_nodes(
+                context, results, deadline=deadline,
+                allow_noncollinear=selected.enable_noncollinear_t_rails) \
             if run else ([], [], GlossChanges(), {
                 "t_branches_slid": 0, "saved_mm": 0.0,
                 "noncollinear_t_slid": 0, "right_angles_cleaned": 0,
@@ -209,8 +241,8 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
                            saved_mm=node["saved_mm"],
                            elapsed_ms=node["algorithm_ms"],
                            label="branches en T déplacées")
-        if node["noncollinear_t_slid"]:
-            print("Track Gloss G3.3 experimental: "
+        if _emit_log and node["noncollinear_t_slid"]:
+            print("Track Gloss G3.3 non-collinear variant: "
                   f"{node['noncollinear_t_slid']} T sans rail colinéaire, "
                   f"{node['right_angles_cleaned']} coudes à 90° nettoyés")
 
@@ -229,12 +261,32 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
                            elapsed_ms=refine["algorithm_ms"],
                            label="vias affinés")
 
+        run, expired = available(selected.enable_multipasses)
+        g4 = run_multinet_passes(
+            pcb_data, config, selected, list(context.net_ids), results,
+            deadline, run_post_smooth_gloss) if run else {
+                "segment_strips": [], "via_strips": [],
+                "changes": GlossChanges(), "passes": [],
+                "passes_completed": 0, "transformations": 0,
+                "net_ids_changed": set(), "saved_mm": 0.0,
+                "algorithm_ms": 0.0,
+                "stop_reason": "budget" if expired else "disabled",
+            }
+        changes.segments.extend(g4["changes"].segments)
+        changes.vias.extend(g4["changes"].vias)
+        gloss_stats.record(
+            "G4", enabled=selected.enable_multipasses,
+            skipped_budget=expired and selected.enable_multipasses,
+            changes=g4["transformations"], saved_mm=g4["saved_mm"],
+            elapsed_ms=g4["algorithm_ms"], label="transformations multinet")
+
         after_length = _validate_final(
             context, before_grades, before_length, changes)
         changed_net_ids = {row["net_id"] for row in g3.get("per_net", [])
                            if row.get("saved_mm", 0.0) > 0.0}
         for row in (via, pad, node, refine):
             changed_net_ids.update(row["net_ids_changed"])
+        changed_net_ids.update(g4["net_ids_changed"])
         elapsed_ms = (perf_counter() - started) * 1000.0
         gloss_stats.budget_expired = (gloss_stats.budget_expired or
                                       perf_counter() >= deadline)
@@ -264,12 +316,30 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
             "vias_refined": refine["vias_moved"],
             "refine_via_algorithm_ms": refine["algorithm_ms"],
             "refine_via_saved_mm": refine["saved_mm"],
+            "g4_passes": g4["passes"],
+            "g4_passes_completed": g4["passes_completed"],
+            "g4_transformations": g4["transformations"],
+            "g4_saved_mm": g4["saved_mm"],
+            "g4_algorithm_ms": g4["algorithm_ms"],
+            "g4_stop_reason": g4["stop_reason"],
             "connectivity_regressions": 0,
         })
-        print(f"Track Gloss G3.5: {len(context.net_ids)} nets parcourus, "
-              f"{len(changed_net_ids)} améliorés, -{total_saved:.4f} mm, "
-              f"{elapsed_ms:.1f} ms")
-        if changes:
+        if _emit_log:
+            print(f"Track Gloss G3.5: {len(context.net_ids)} nets parcourus, "
+                  f"{len(changed_net_ids)} améliorés, -{total_saved:.4f} mm, "
+                  f"{elapsed_ms:.1f} ms")
+        if selected.enable_multipasses:
+            final_visual = _final_visual_changes(
+                baseline_segments, baseline_vias, pcb_data, changes)
+            for result in results[baseline_count:]:
+                result.pop("track_gloss_changes", None)
+            if final_visual:
+                results.append({
+                    "new_segments": [], "new_vias": [],
+                    "cleanup": "track_gloss_g4_visualization",
+                    "track_gloss_changes": final_visual.as_dict(),
+                })
+        elif changes:
             # G3.5 owns no duplicate copper. This empty write-list entry gives
             # the plugin a User.6 aggregate of the already-certified changes.
             aggregate = {
@@ -284,13 +354,16 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
         return GlossOutcome(
             input_strip_segments=(krt_strips + strips +
                                   via["segment_strips"] + pad_strips +
-                                  node_strips + refine["segment_strips"]),
-            input_strip_vias=via_strips + refine_strips,
+                                  node_strips + refine["segment_strips"] +
+                                  g4["segment_strips"]),
+            input_strip_vias=(via_strips + refine_strips +
+                              g4["via_strips"]),
             changes=changes.as_dict(), stats=stats)
     except Exception as exc:
         _restore(results, baseline_count, baseline_results, pcb_data,
                  baseline_segments, baseline_vias)
-        print(f"Track Gloss skipped; KRT result preserved: {exc}")
+        if _emit_log:
+            print(f"Track Gloss skipped; KRT result preserved: {exc}")
         return GlossOutcome(
             input_strip_segments=krt_strips,
             stats={"nets_changed": 0, "saved_mm": 0.0,

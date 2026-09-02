@@ -98,3 +98,11 @@ def test_dialog_has_a_top_level_sizer_for_panel_and_buttons():
     assert "panel.SetSizer(content)" in source
     assert "outer.Add(panel, 1, wx.EXPAND)" in source
     assert "self.SetSizerAndFit(outer)" in source
+
+
+def test_dialog_exposes_the_integrated_gloss_options_by_public_name():
+    source = (ROOT / "kicad_krt_gloss" / "settings_dialog.py").read_text(
+        encoding="utf-8")
+    assert '\"enable_noncollinear_t_rails\": True' in source
+    assert '\"enable_multipasses\": True' in source
+    assert "enable_g4" not in source

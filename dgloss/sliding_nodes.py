@@ -1,4 +1,4 @@
-"""G3.3 plus a temporary experiment using each noncollinear T arm as rail."""
+"""G3.3 sliding nodes, including the optional noncollinear-T variant."""
 
 import math
 from collections import defaultdict
@@ -297,7 +297,8 @@ def _best_slide(context, node, chain, anchor, rail_groups, current, net_vias,
     return None if best is None else best[1:]
 
 
-def slide_t_nodes(context, results, deadline=None):
+def slide_t_nodes(context, results, deadline=None, *,
+                  allow_noncollinear=True):
     """Run one deterministic net-by-net G3.3 pass without moving any rail."""
     started = perf_counter()
     changes = GlossChanges()
@@ -351,14 +352,14 @@ def slide_t_nodes(context, results, deadline=None):
                 rail_groups = [pair for pair in combinations(others, 2)
                                if _opposite_collinear(
                                    node, pair[0], pair[1])]
-                experimental = False
-                if not rail_groups and len(initial_incident) == 3 and \
+                noncollinear_variant = False
+                if allow_noncollinear and not rail_groups and \
+                        len(initial_incident) == 3 and \
                         len(others) == 2:
-                    # Temporary comparison requested after G3.5: unlike the
-                    # reference rule, try each remaining arm as a one-sided
-                    # rail. The stable behaviour is preserved in Git history.
+                    # Optional variant: try each remaining arm as a one-sided
+                    # rail when the three-way node has no collinear pair.
                     rail_groups = [(segment,) for segment in others]
-                    experimental = True
+                    noncollinear_variant = True
                 if not rail_groups:
                     continue
                 current = [segment for segment in context.pcb_data.segments
@@ -403,7 +404,7 @@ def slide_t_nodes(context, results, deadline=None):
                     calculate_route_length(candidate)
                 changed_net_ids.add(net_id)
                 branches_slid += 1
-                noncollinear_slid += int(experimental)
+                noncollinear_slid += int(noncollinear_variant)
                 right_angles_cleaned += int(cleaned)
                 net_changed = True
 

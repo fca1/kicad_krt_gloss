@@ -115,6 +115,8 @@ def test_g3_5_config_defaults_enable_every_optional_stage():
     assert config.enable_g3_2
     assert config.enable_g3_3
     assert config.enable_g3_4
+    assert config.enable_noncollinear_t_rails
+    assert config.enable_multipasses
     assert config.budget_seconds == 20.0
 
 
@@ -203,7 +205,8 @@ def test_g3_slides_ordinary_diagonal_when_canonical_bends_are_blocked():
     pcb, config, original = _blocked_canonical_board()
     before = calculate_route_length(original)
     results = []
-    outcome = run_final_gloss(results, pcb, config)
+    outcome = run_final_gloss(
+        results, pcb, config, GlossConfig(enable_multipasses=False))
     result = [s for s in pcb.segments if s.net_id == 1]
     after = calculate_route_length(result)
     diagonals = [s for s in result
@@ -225,6 +228,21 @@ def test_g3_slides_ordinary_diagonal_when_canonical_bends_are_blocked():
     assert aggregate[0]["new_segments"] == []
     assert all(change.get("stage") == "G3.5" for kind in ("segments", "vias")
                for change in aggregate[0]["track_gloss_changes"][kind])
+
+
+def test_g4_exposes_only_the_final_user1_delta():
+    pcb, config, _original = _blocked_canonical_board()
+    results = []
+
+    run_final_gloss(results, pcb, config)
+
+    visible = [result for result in results
+               if result.get("track_gloss_changes")]
+    assert len(visible) == 1
+    assert visible[0]["cleanup"] == "track_gloss_g4_visualization"
+    assert all(change.get("stage") == "G4"
+               for kind in ("segments", "vias")
+               for change in visible[0]["track_gloss_changes"][kind])
 
 
 def test_g3_sliding_candidates_never_join_axes_at_90_degrees():
@@ -458,6 +476,29 @@ def test_g3_3_experiment_slides_noncollinear_t_and_cleans_old_right_angle():
         vectors[0][0] * vectors[1][0] +
         vectors[0][1] * vectors[1][1], 0.0, abs_tol=1e-9)
         for vectors in incidence.values())
+
+
+def test_g3_3_noncollinear_t_variant_can_be_disabled():
+    rail = Segment(3.0, 3.0, 7.0, 3.0, 0.2, "F.Cu", 1)
+    residual = Segment(3.0, 3.0, 3.0, 7.0, 0.2, "F.Cu", 1)
+    branch = Segment(3.0, 3.0, 4.0, 2.0, 0.2, "F.Cu", 1)
+    tail = Segment(4.0, 2.0, 6.0, 2.0, 0.2, "F.Cu", 1)
+    pads = {1: [_pad("R", 7.0, 3.0, 1),
+                _pad("U", 3.0, 7.0, 1),
+                _pad("B", 6.0, 2.0, 1)]}
+    original = [rail, residual, branch, tail]
+    pcb = PCBData(
+        BoardInfo({}, ["F.Cu", "B.Cu"], (0.0, 0.0, 9.0, 9.0)),
+        {1: Net(1, "N1")}, {}, [], list(original), pads)
+    config = GridRouteConfig(
+        track_width=0.2, clearance=0.1, grid_step=0.1,
+        layers=["F.Cu", "B.Cu"], board_edge_clearance=0.0)
+
+    _strips, _added, _changes, stats = slide_t_nodes(
+        build_gloss_context(pcb, config), [], allow_noncollinear=False)
+
+    assert stats["noncollinear_t_slid"] == 0
+    assert pcb.segments == original
 
 
 def test_g3_4_optimizes_both_complete_portions_around_mobile_via():

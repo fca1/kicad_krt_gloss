@@ -57,6 +57,12 @@ La sélection porte sur les nets complets. Les objets éventuellement
 sélectionnés dans une interface servent uniquement à construire `net_ids` ; ils
 ne limitent pas la portée géométrique à une sous-connexion.
 
+`GlossConfig.enable_multipasses`, actif par défaut, demande à G4 de rappeler la
+chaîne G3.5 complète pour chaque net selon un ordre alterné. Chaque rappel
+interne force cette option à `False`, de sorte que seul l'orchestrateur G4 crée
+les passes. `enable_noncollinear_t_rails`, également actif par défaut, contrôle
+la variante correspondante de G3.3.
+
 ## Grille
 
 Lors d'un appel direct par KRT, `config.grid_step` est obligatoire et représente

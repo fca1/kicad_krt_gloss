@@ -86,7 +86,9 @@ la grille autour du pad n'est ajouté.
 
 Identifier un rail colinéaire, conserver ce rail et rechercher le meilleur
 raccord de branche sur ses positions de grille. Le raccord peut être à 90° sur
-le rail. Un nœud sans rail colinéaire reste fixe.
+le rail. L'option `enable_noncollinear_t_rails`, active par défaut, essaie aussi
+chacun des trois segments d'un T sans rail colinéaire comme branche mobile et
+nettoie atomiquement le coude parasite éventuellement laissé à l'ancien nœud.
 
 ### G3.4 — vias et chaînes complètes
 
@@ -104,10 +106,21 @@ exactement le résultat KRT.
 G3.5 agrège une instance `GlossStats`, conserve le gain du smooth KRT séparé du
 gain dgloss et produit une vue cumulée de debug sans dupliquer le cuivre.
 
-### G4 et G5 — suite prévue
+### G4 — passes de convergence
 
-G4 introduira des passes déterministes multinet pour rechercher des gains
-supplémentaires. À partir de G4, seule User.1 présentera le résultat final.
+Lorsque `enable_multipasses` est actif, G4 rappelle la chaîne G3.5 complète
+pour chaque net. Une liste vide signifie tous les nets. L'ordre déterministe
+alterne entre croissant et décroissant à chaque passe ; le résultat accepté
+d'un net est immédiatement utilisé pour construire le contexte du suivant.
+Les passes s'arrêtent à la première passe complète sans transformation ou à
+l'expiration du budget global. G4 ne possède aucun algorithme géométrique
+propre : il orchestre exclusivement G3.5 et ses options.
+
+À partir de G4, seule User.1 présente l'écart entre l'entrée du gloss et son
+résultat final.
+
+### G5 — suite prévue
+
 G5 restera l'objectif de conformité complète à `gloss_krt.md`, après validation
 des étapes intermédiaires.
 
@@ -124,6 +137,7 @@ des étapes intermédiaires.
 | `sliding_nodes.py` | G3.3 |
 | `config.py` | Options appartenant à dgloss |
 | `stats.py` | Statistiques structurées et lignes de log |
+| `passes.py` | G4, répétition multinet déterministe de G3.5 |
 | `kicad_routing_plugin/gloss_visualization.py` | Adaptateur `pcbnew`, couches User et rendu avant/après |
 
 ## Validation et traçabilité

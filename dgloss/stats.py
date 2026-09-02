@@ -18,6 +18,7 @@ class GlossStats:
     stages: dict = field(default_factory=dict)
     budget_seconds: float = 20.0
     budget_expired: bool = False
+    emit: bool = True
 
     def record(self, stage, *, enabled=True, changes=0, saved_mm=0.0,
                elapsed_ms=0.0, label="transformations", skipped_budget=False):
@@ -26,13 +27,14 @@ class GlossStats:
                          elapsed_ms=round(float(elapsed_ms), 3), label=label,
                          skipped_budget=skipped_budget)
         self.stages[stage] = row
-        if not enabled:
-            print(f"Track Gloss {stage}: désactivé")
-        elif skipped_budget:
-            print(f"Track Gloss {stage}: budget expiré")
-        else:
-            print(f"Track Gloss {stage}: {row.changes} {row.label}, "
-                  f"-{row.saved_mm:.4f} mm, {row.elapsed_ms:.1f} ms")
+        if self.emit:
+            if not enabled:
+                print(f"Track Gloss {stage}: désactivé")
+            elif skipped_budget:
+                print(f"Track Gloss {stage}: budget expiré")
+            else:
+                print(f"Track Gloss {stage}: {row.changes} {row.label}, "
+                      f"-{row.saved_mm:.4f} mm, {row.elapsed_ms:.1f} ms")
         return row
 
     def as_dict(self):

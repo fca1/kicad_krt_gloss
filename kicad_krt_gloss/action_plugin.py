@@ -62,6 +62,9 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                 enable_g3_2=values["enable_g3_2"],
                 enable_g3_3=values["enable_g3_3"],
                 enable_g3_4=values["enable_g3_4"],
+                enable_noncollinear_t_rails=values[
+                    "enable_noncollinear_t_rails"],
+                enable_multipasses=values["enable_multipasses"],
             )
             results = []
             outcome = run_final_gloss(
