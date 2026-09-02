@@ -5,6 +5,7 @@ import math
 import os
 import sys
 import types
+from collections import defaultdict
 from unittest.mock import patch
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -28,6 +29,7 @@ from kicad_krt_gloss.gloss_visualization import (
 from kicad_parser import BoardInfo, Net, Pad, PCBData, Segment, Via
 from net_queries import calculate_route_length
 from routing_config import GridRouteConfig
+from routing_utils import pos_key
 
 
 def _pad(ref, x, y, net_id, layer="F.Cu"):
@@ -415,6 +417,47 @@ def test_g3_3_pad_or_via_at_node_has_priority_over_sliding():
 
     assert stats["t_branches_slid"] == 0
     assert pcb.segments == rails + [branch]
+
+
+def test_g3_3_experiment_slides_noncollinear_t_and_cleans_old_right_angle():
+    rail = Segment(3.0, 3.0, 7.0, 3.0, 0.2, "F.Cu", 1)
+    residual = Segment(3.0, 3.0, 3.0, 7.0, 0.2, "F.Cu", 1)
+    branch = Segment(3.0, 3.0, 4.0, 2.0, 0.2, "F.Cu", 1)
+    tail = Segment(4.0, 2.0, 6.0, 2.0, 0.2, "F.Cu", 1)
+    pads = {1: [_pad("R", 7.0, 3.0, 1),
+                _pad("U", 3.0, 7.0, 1),
+                _pad("B", 6.0, 2.0, 1)]}
+    pcb = PCBData(
+        BoardInfo({}, ["F.Cu", "B.Cu"], (0.0, 0.0, 9.0, 9.0)),
+        {1: Net(1, "N1")}, {}, [], [rail, residual, branch, tail], pads)
+    config = GridRouteConfig(
+        track_width=0.2, clearance=0.1, grid_step=0.1,
+        layers=["F.Cu", "B.Cu"], board_edge_clearance=0.0)
+    context = build_gloss_context(pcb, config)
+    before = calculate_route_length(pcb.segments)
+
+    strips, added, _changes, stats = slide_t_nodes(context, [])
+
+    assert stats["noncollinear_t_slid"] == 1
+    assert stats["right_angles_cleaned"] == 1
+    assert calculate_route_length(pcb.segments) < before - config.grid_step
+    assert branch in strips and tail in strips
+    assert rail in strips and residual in strips
+    assert added
+
+    incidence = defaultdict(list)
+    for segment in pcb.segments:
+        for point in ((segment.start_x, segment.start_y),
+                      (segment.end_x, segment.end_y)):
+            other = ((segment.end_x, segment.end_y)
+                     if point == (segment.start_x, segment.start_y)
+                     else (segment.start_x, segment.start_y))
+            incidence[pos_key(*point)].append(
+                (other[0] - point[0], other[1] - point[1]))
+    assert not any(len(vectors) == 2 and math.isclose(
+        vectors[0][0] * vectors[1][0] +
+        vectors[0][1] * vectors[1][1], 0.0, abs_tol=1e-9)
+        for vectors in incidence.values())
 
 
 def test_g3_4_optimizes_both_complete_portions_around_mobile_via():

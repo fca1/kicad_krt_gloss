@@ -1,4 +1,4 @@
-"""G3.3: slide T branches along an unchanged collinear rail."""
+"""G3.3 plus a temporary experiment using each noncollinear T arm as rail."""
 
 import math
 from collections import defaultdict
@@ -7,7 +7,7 @@ from time import perf_counter
 
 from check_connected import check_net_connectivity
 from check_drc import point_to_pad_distance
-from geometry_utils import point_to_segment_distance
+from geometry_utils import point_to_segment_distance, segments_intersect
 from kicad_parser import Segment
 from net_queries import calculate_route_length
 from obstacle_cache import (add_net_obstacles_from_cache,
@@ -17,7 +17,7 @@ from routing_utils import pos_key
 
 from .algorithm import (_connectivity_worse, _remove_result_custody,
                         _candidate_clears, _candidate_segments,
-                        _sliding_candidate_families,
+                        _segments_for_points, _sliding_candidate_families,
                         _touches_other_same_net)
 from .changes import GlossChanges
 from .pad_terminals import _new_boundary_right_angle, _pad_on_layer
@@ -37,6 +37,13 @@ def _opposite_collinear(node, first, second):
     scale = max(1.0, math.hypot(*a) * math.hypot(*b))
     return (abs(a[0] * b[1] - a[1] * b[0]) <= 1e-8 * scale and
             a[0] * b[0] + a[1] * b[1] < -1e-9)
+
+
+def _perpendicular(node, first, second):
+    a = _vector_from(node, first)
+    b = _vector_from(node, second)
+    scale = max(1.0, math.hypot(*a) * math.hypot(*b))
+    return abs(a[0] * b[0] + a[1] * b[1]) <= 1e-8 * scale
 
 
 def _on_segment(point, segment):
@@ -148,55 +155,146 @@ def _candidate_meets_only_rail_end(candidate, point, rails):
     return True
 
 
-def _best_slide(context, node, chain, anchor, rail_pairs, current, net_vias,
-                foreign, deadline=None):
+def _connector_families(a, b, segment, grid_step):
+    yield "canonical", _candidate_segments(
+        a, b, segment.layer, segment.width, segment.net_id)
+    yield from (("sliding", family) for family in
+                _sliding_candidate_families(
+                    a, b, segment.layer, segment.width, segment.net_id,
+                    grid_step))
+
+
+def _right_angle_at(point, segments):
+    vectors = [_vector_from(point, segment) for segment in segments
+               if pos_key(segment.start_x, segment.start_y) == pos_key(*point)
+               or pos_key(segment.end_x, segment.end_y) == pos_key(*point)]
+    return len(vectors) == 2 and abs(
+        vectors[0][0] * vectors[1][0] +
+        vectors[0][1] * vectors[1][1]) <= 1e-9
+
+
+def _new_segments_join_cleanly(segments):
+    """Allow only endpoint joins, never crossings or overlapping departures."""
+    for first, second in combinations(segments, 2):
+        if not segments_intersect(
+                first.start_x, first.start_y, first.end_x, first.end_y,
+                second.start_x, second.start_y, second.end_x, second.end_y):
+            continue
+        first_ends = {pos_key(first.start_x, first.start_y),
+                      pos_key(first.end_x, first.end_y)}
+        second_ends = {pos_key(second.start_x, second.start_y),
+                       pos_key(second.end_x, second.end_y)}
+        shared = first_ends & second_ends
+        if not shared:
+            return False
+        point = next(iter(shared))
+        a = _vector_from(point, first)
+        b = _vector_from(point, second)
+        cross = a[0] * b[1] - a[1] * b[0]
+        dot = a[0] * b[0] + a[1] * b[1]
+        if abs(cross) <= 1e-9 and dot > 1e-9:
+            return False
+    return True
+
+
+def _best_slide(context, node, chain, anchor, rail_groups, current, net_vias,
+                foreign, incident, deadline=None):
     branch = chain[0]
-    old_length = calculate_route_length(chain)
-    chain_ids = {id(segment) for segment in chain}
     best = None
-    for rails in rail_pairs:
+    for rails in rail_groups:
         if deadline is not None and perf_counter() >= deadline:
             break
-        rail_ids = {id(segment) for segment in rails}
-        outside = [segment for segment in current
-                   if id(segment) not in chain_ids and id(segment) not in rail_ids]
+        rail = rails[0]
+        residual = None
+        if len(rails) == 1:
+            residual = next((segment for segment in incident
+                             if segment is not branch and segment is not rail),
+                            None)
         for point in _slide_positions(node, anchor, rails):
             if deadline is not None and perf_counter() >= deadline:
                 break
-            families = [("canonical", _candidate_segments(
-                anchor, point, branch.layer, branch.width, branch.net_id))]
-            families.extend(("sliding", family) for family in
-                            _sliding_candidate_families(
-                                anchor, point, branch.layer, branch.width,
-                                branch.net_id, context.coord.grid_step))
-            for source, family in families:
+            for source, family in _connector_families(
+                    anchor, point, branch, context.coord.grid_step):
                 if deadline is not None and perf_counter() >= deadline:
                     break
-                for candidate in family:
+                for branch_candidate in family:
                     if deadline is not None and perf_counter() >= deadline:
                         break
-                    new_length = calculate_route_length(candidate)
-                    if old_length - new_length <= context.coord.grid_step + 1e-12:
-                        continue
-                    if _new_boundary_right_angle(candidate, anchor, outside):
-                        continue
-                    if not _candidate_clears(context, foreign, candidate, source):
-                        continue
-                    if not _candidate_meets_only_rail_end(candidate, point, rails):
-                        continue
-                    if _touches_other_same_net(candidate, outside, net_vias,
-                                               (anchor, point)):
+                    if not _candidate_meets_only_rail_end(
+                            branch_candidate, point, rails):
                         continue
                     if any(pos_key(via.x, via.y) == pos_key(*point)
                            for via in net_vias):
                         continue
-                    score = (new_length, len(candidate), point[0], point[1])
-                    if best is None or score < best[0]:
-                        best = score, candidate
-    if best is not None and not context.clearance_adapter.connector_clears(
-            best[1]):
-        return None
-    return None if best is None else best[1]
+
+                    replacements = [(list(chain), branch_candidate, source,
+                                     False)]
+                    if residual is not None and _perpendicular(
+                            node, rail, residual):
+                        rail_end = _other_end(rail, pos_key(*node))
+                        residual_end = _other_end(residual, pos_key(*node))
+                        remainder = _segments_for_points(
+                            [rail_end, point], rail.layer, rail.width,
+                            rail.net_id)
+                        replacements = []
+                        for _clean_source, clean_family in _connector_families(
+                                point, residual_end, residual,
+                                context.coord.grid_step):
+                            if deadline is not None and \
+                                    perf_counter() >= deadline:
+                                break
+                            for cleaned in clean_family:
+                                if deadline is not None and \
+                                        perf_counter() >= deadline:
+                                    break
+                                replacements.append((
+                                    list(chain) + [rail, residual],
+                                    branch_candidate + remainder + cleaned,
+                                    source, True))
+
+                    for removed, added, provenance, cleaned in replacements:
+                        removed_ids = {id(segment) for segment in removed}
+                        kept_rail_ids = ({id(segment) for segment in rails}
+                                         if not cleaned else set())
+                        outside = [segment for segment in current
+                                   if id(segment) not in removed_ids and
+                                   id(segment) not in kept_rail_ids]
+                        old_length = calculate_route_length(removed)
+                        new_length = calculate_route_length(added)
+                        gain = old_length - new_length
+                        if gain <= context.coord.grid_step + 1e-12:
+                            continue
+                        if _new_boundary_right_angle(
+                                branch_candidate, anchor, outside):
+                            continue
+                        if not _candidate_clears(
+                                context, foreign, branch_candidate,
+                                provenance):
+                            continue
+                        if cleaned and not all(_candidate_clears(
+                                context, foreign, [segment], "canonical")
+                                for segment in added[len(branch_candidate):]):
+                            continue
+                        allowed = (anchor, point)
+                        if cleaned:
+                            allowed += (rail_end, residual_end)
+                        if _touches_other_same_net(
+                                added, outside, net_vias, allowed):
+                            continue
+                        if _right_angle_at(point, added + outside):
+                            continue
+                        if not _new_segments_join_cleanly(added):
+                            continue
+                        if cleaned and _new_boundary_right_angle(
+                                added, residual_end, outside):
+                            continue
+                        if not context.clearance_adapter.connector_clears(added):
+                            continue
+                        score = (-gain, new_length, len(added),
+                                 point[0], point[1])
+                        if best is None or score < best[0]:
+                            best = score, removed, added, cleaned
+    return None if best is None else best[1:]
 
 
 def slide_t_nodes(context, results, deadline=None):
@@ -208,6 +306,8 @@ def slide_t_nodes(context, results, deadline=None):
     saved_mm = 0.0
     changed_net_ids = set()
     branches_slid = 0
+    noncollinear_slid = 0
+    right_angles_cleaned = 0
     locked_nets = {segment.net_id for segment in context.pcb_data.segments
                    if getattr(segment, "locked", False)}
 
@@ -248,9 +348,18 @@ def slide_t_nodes(context, results, deadline=None):
                           if segment is not branch and any(
                               current is segment
                               for current in context.pcb_data.segments)]
-                rail_pairs = [pair for pair in combinations(others, 2)
-                              if _opposite_collinear(node, pair[0], pair[1])]
-                if not rail_pairs:
+                rail_groups = [pair for pair in combinations(others, 2)
+                               if _opposite_collinear(
+                                   node, pair[0], pair[1])]
+                experimental = False
+                if not rail_groups and len(initial_incident) == 3 and \
+                        len(others) == 2:
+                    # Temporary comparison requested after G3.5: unlike the
+                    # reference rule, try each remaining arm as a one-sided
+                    # rail. The stable behaviour is preserved in Git history.
+                    rail_groups = [(segment,) for segment in others]
+                    experimental = True
+                if not rail_groups:
                     continue
                 current = [segment for segment in context.pcb_data.segments
                            if segment.net_id == net_id]
@@ -258,12 +367,13 @@ def slide_t_nodes(context, results, deadline=None):
                             if via.net_id == net_id]
                 chain, anchor = _walk_branch_chain(
                     context.pcb_data, net_id, node, branch)
-                candidate = _best_slide(
-                    context, node, chain, anchor, rail_pairs, current, net_vias,
-                    foreign, deadline=deadline)
-                if candidate is None:
+                replacement = _best_slide(
+                    context, node, chain, anchor, rail_groups, current,
+                    net_vias, foreign, initial_incident, deadline=deadline)
+                if replacement is None:
                     continue
-                removed_ids = {id(segment) for segment in chain}
+                removed, candidate, cleaned = replacement
+                removed_ids = {id(segment) for segment in removed}
                 before_grade = check_net_connectivity(
                     net_id, current, net_vias,
                     context.pcb_data.pads_by_net.get(net_id, []), [],
@@ -277,7 +387,7 @@ def slide_t_nodes(context, results, deadline=None):
                 if _connectivity_worse(before_grade, after_grade):
                     continue
 
-                strips.extend(_remove_result_custody(results, chain))
+                strips.extend(_remove_result_custody(results, removed))
                 context.pcb_data.segments = [
                     segment for segment in context.pcb_data.segments
                     if id(segment) not in removed_ids] + candidate
@@ -285,14 +395,16 @@ def slide_t_nodes(context, results, deadline=None):
                     context.pcb_data._foreign_seg_arr_cache = None
                 processed.update(removed_ids)
                 changes.segments.extend({"old": segment, "stage": "G3.3"}
-                                        for segment in chain)
+                                        for segment in removed)
                 changes.segments.extend({"new": segment, "stage": "G3.3"}
                                         for segment in candidate)
                 added_all.extend(candidate)
-                saved_mm += calculate_route_length(chain) - \
+                saved_mm += calculate_route_length(removed) - \
                     calculate_route_length(candidate)
                 changed_net_ids.add(net_id)
                 branches_slid += 1
+                noncollinear_slid += int(experimental)
+                right_angles_cleaned += int(cleaned)
                 net_changed = True
 
         if net_changed:
@@ -305,6 +417,8 @@ def slide_t_nodes(context, results, deadline=None):
             add_net_obstacles_from_cache(context.working_obstacles, new_cache)
 
     stats = {"t_branches_slid": branches_slid,
+             "noncollinear_t_slid": noncollinear_slid,
+             "right_angles_cleaned": right_angles_cleaned,
              "net_ids_changed": changed_net_ids,
              "saved_mm": round(saved_mm, 4),
              "algorithm_ms": round((perf_counter() - started) * 1000.0, 3)}

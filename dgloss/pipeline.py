@@ -199,6 +199,7 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
             slide_t_nodes(context, results, deadline=deadline) \
             if run else ([], [], GlossChanges(), {
                 "t_branches_slid": 0, "saved_mm": 0.0,
+                "noncollinear_t_slid": 0, "right_angles_cleaned": 0,
                 "net_ids_changed": set(), "algorithm_ms": 0.0})
         _append_result(results, "track_gloss_g3_3", node_added, [], node_changes)
         changes.segments.extend(node_changes.segments)
@@ -208,6 +209,10 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
                            saved_mm=node["saved_mm"],
                            elapsed_ms=node["algorithm_ms"],
                            label="branches en T déplacées")
+        if node["noncollinear_t_slid"]:
+            print("Track Gloss G3.3 experimental: "
+                  f"{node['noncollinear_t_slid']} T sans rail colinéaire, "
+                  f"{node['right_angles_cleaned']} coudes à 90° nettoyés")
 
         run, expired = available(selected.enable_g3_4)
         refine_strips, refine_vias, refine_changes, refine = \
@@ -252,6 +257,8 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
             "pad_algorithm_ms": pad["algorithm_ms"],
             "pad_saved_mm": pad["saved_mm"],
             "t_branches_slid": node["t_branches_slid"],
+            "noncollinear_t_slid": node["noncollinear_t_slid"],
+            "right_angles_cleaned": node["right_angles_cleaned"],
             "node_algorithm_ms": node["algorithm_ms"],
             "node_saved_mm": node["saved_mm"],
             "vias_refined": refine["vias_moved"],
