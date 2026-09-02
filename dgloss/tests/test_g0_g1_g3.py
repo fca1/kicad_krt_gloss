@@ -17,10 +17,12 @@ for path in (REPO, KRT, os.path.join(KRT, "py_router"),
 
 from dgloss.context import build_gloss_context
 from dgloss.config import GlossConfig
+from dgloss.changes import GlossChanges
 from dgloss.comparison import compare_smoothers, format_comparison_table
 from dgloss.algorithm import (_Chain, _best_chain_replacement,
                               _sliding_candidate_families)
-from dgloss.pipeline import run_final_gloss, run_post_smooth_gloss
+from dgloss.pipeline import (_grade, _validate_final, run_final_gloss,
+                             run_post_smooth_gloss)
 from dgloss.pad_terminals import optimize_pad_terminals
 from dgloss.sliding_nodes import slide_t_nodes
 from dgloss.via_mobile import move_mobile_vias, refine_mobile_vias
@@ -243,6 +245,136 @@ def test_g4_exposes_only_the_final_user1_delta():
     assert all(change.get("stage") == "G4"
                for kind in ("segments", "vias")
                for change in visible[0]["track_gloss_changes"][kind])
+
+
+def test_g3_5_uses_krt_to_merge_equal_length_collinear_segments():
+    segments = [
+        Segment(1.0, 1.0, 2.0, 1.0, 0.2, "F.Cu", 1),
+        Segment(2.0, 1.0, 3.0, 1.0, 0.2, "F.Cu", 1),
+        Segment(3.0, 1.0, 5.0, 1.0, 0.2, "F.Cu", 1),
+    ]
+    pcb = PCBData(
+        BoardInfo({}, ["F.Cu"], (0.0, 0.0, 6.0, 3.0)),
+        {1: Net(1, "N1")}, {}, [], list(segments),
+        {1: [_pad("A", 1.0, 1.0, 1), _pad("B", 5.0, 1.0, 1)]})
+    config = GridRouteConfig(
+        track_width=0.2, clearance=0.1, grid_step=0.1,
+        layers=["F.Cu"], board_edge_clearance=0.0)
+    before = calculate_route_length(pcb.segments)
+    results = []
+
+    outcome = run_post_smooth_gloss(
+        results, pcb, config, GlossConfig(enable_multipasses=False))
+
+    assert len(pcb.segments) == 1
+    assert math.isclose(calculate_route_length(pcb.segments), before,
+                        abs_tol=1e-12)
+    assert outcome.stats["segments_merged"] == 2
+    assert outcome.stats["merge_joints"] == 2
+    assert outcome.stats["merge_nets_changed"] == 1
+    assert len(outcome.input_strip_segments) == 3
+    additions = [segment for result in results
+                 for segment in result.get("new_segments", [])]
+    assert additions == pcb.segments
+    assert not {id(segment) for segment in additions}.intersection(
+        id(segment) for segment in outcome.input_strip_segments)
+    assert outcome.stats["connectivity_regressions"] == 0
+
+
+def test_g3_5_reduces_noncollinear_chain_at_equal_length():
+    segments = [
+        Segment(1.0, 1.0, 2.0, 1.0, 0.2, "F.Cu", 1),
+        Segment(2.0, 1.0, 3.0, 2.0, 0.2, "F.Cu", 1),
+        Segment(3.0, 2.0, 4.0, 2.0, 0.2, "F.Cu", 1),
+    ]
+    pcb = PCBData(
+        BoardInfo({}, ["F.Cu"], (0.0, 0.0, 6.0, 4.0)),
+        {1: Net(1, "N1")}, {}, [], list(segments),
+        {1: [_pad("A", 1.0, 1.0, 1), _pad("B", 4.0, 2.0, 1)]})
+    config = GridRouteConfig(
+        track_width=0.2, clearance=0.1, grid_step=0.1,
+        layers=["F.Cu"], board_edge_clearance=0.0)
+    before = calculate_route_length(pcb.segments)
+
+    outcome = run_post_smooth_gloss(
+        [], pcb, config, GlossConfig(enable_multipasses=False))
+
+    assert len(pcb.segments) == 2
+    assert math.isclose(calculate_route_length(pcb.segments), before,
+                        abs_tol=1e-9)
+    assert outcome.stats["equal_length_segment_reduction"] == 1
+    assert outcome.stats["segments_merged"] == 0
+    assert outcome.stats["connectivity_regressions"] == 0
+
+
+def test_g3_5_delegates_segment_reduction_to_krt():
+    pcb, config, _first, _second = _parallel_board()
+    with patch("dgloss.pipeline.merge_collinear_segments",
+               return_value=(0, 0, [], [], {
+                   "joints": 0, "segs_removed": 0, "segs_added": 0,
+                   "nets_skipped_large": 0})) as merge:
+        run_post_smooth_gloss(
+            [], pcb, config, GlossConfig(enable_multipasses=False))
+
+    assert merge.call_count == 1
+    assert merge.call_args.args[2] == {1, 2}
+
+
+def test_g3_5_segment_reduction_respects_selected_complete_net_scope():
+    segments = [
+        Segment(1.0, 1.0, 2.0, 1.0, 0.2, "F.Cu", 1),
+        Segment(2.0, 1.0, 4.0, 1.0, 0.2, "F.Cu", 1),
+        Segment(1.0, 3.0, 2.0, 3.0, 0.2, "F.Cu", 2),
+        Segment(2.0, 3.0, 4.0, 3.0, 0.2, "F.Cu", 2),
+    ]
+    pads = {
+        1: [_pad("A", 1.0, 1.0, 1), _pad("B", 4.0, 1.0, 1)],
+        2: [_pad("C", 1.0, 3.0, 2), _pad("D", 4.0, 3.0, 2)],
+    }
+    pcb = PCBData(
+        BoardInfo({}, ["F.Cu"], (0.0, 0.0, 5.0, 4.0)),
+        {1: Net(1, "N1"), 2: Net(2, "N2")}, {}, [], segments, pads)
+    config = GridRouteConfig(
+        track_width=0.2, clearance=0.1, grid_step=0.1,
+        layers=["F.Cu"], board_edge_clearance=0.0)
+
+    outcome = run_post_smooth_gloss(
+        [], pcb, config, GlossConfig(enable_multipasses=False), net_ids=[1])
+
+    assert len([segment for segment in pcb.segments
+                if segment.net_id == 1]) == 1
+    assert len([segment for segment in pcb.segments
+                if segment.net_id == 2]) == 2
+    assert {segment.net_id for segment in
+            outcome.input_strip_segments} == {1}
+
+
+def test_g3_5_certifies_only_segments_present_in_the_final_board():
+    pcb, config, first, _second = _parallel_board()
+    removed_intermediate = Segment(
+        2.0, 5.0, 2.01, 5.0, 0.2, "F.Cu", 1)
+    changes = GlossChanges(segments=[
+        {"old": first, "stage": "G3"},
+        {"new": removed_intermediate, "stage": "G3"},
+    ])
+    context = build_gloss_context(pcb, config)
+    grades = {net_id: _grade(pcb, net_id) for net_id in context.net_ids}
+
+    assert math.isclose(
+        _validate_final(context, grades,
+                        calculate_route_length(pcb.segments), changes),
+        calculate_route_length(pcb.segments), abs_tol=1e-12)
+
+    preserved_micro = Segment(
+        2.0, 5.0, 2.01, 5.0, 0.2, "F.Cu", 1)
+    pcb.segments.append(preserved_micro)
+    changes.segments.append({
+        "new": preserved_micro, "stage": "G3.5",
+        "geometry_preserving": True})
+    assert math.isclose(
+        _validate_final(context, grades,
+                        calculate_route_length(pcb.segments), changes),
+        calculate_route_length(pcb.segments), abs_tol=1e-12)
 
 
 def test_g3_sliding_candidates_never_join_axes_at_90_degrees():

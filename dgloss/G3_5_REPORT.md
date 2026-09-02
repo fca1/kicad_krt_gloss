@@ -1,44 +1,64 @@
-# G3.5 — intégration complète et configuration
+# G3.5 — conformité et réduction finale des segments
 
-G3.5 coordonne et certifie les étapes cumulées du gloss final sans modifier
-les algorithmes KRT ni le code Rust.
+G3.5 coordonne G3 à G3.4 puis termine l'objectif lexicographique de la
+spécification : après la réduction de longueur, réduire le nombre de segments
+à longueur égale. Cette validation est menée avec `enable_multipasses=False` ;
+elle ne constitue pas encore une nouvelle validation de G4.
 
-## Intégration
+## Implémentation minimale
 
-- `run_final_gloss()` reste l'adaptateur très mince du plugin : dernier smooth
-  KRT, puis gloss final.
-- `run_post_smooth_gloss()` est le point d'entrée séparé prévu pour un futur
-  CLI. Il reçoit le résultat final KRT et ne relance jamais le smooth.
-- La grille, les obstacles et les contrôles de clearance sont reconstruits par
-  `build_gloss_context()` avec les primitives KRT existantes.
+Deux cas sont distingués :
 
-## Configuration
+1. Une chaîne octolinéaire non colinéaire est remplacée uniquement si un
+   raccord canonique fourni par KRT a la même longueur et moins de segments.
+   Le moteur, la garde de connectivité, les obstacles et les clearances de G3
+   sont réemployés ; aucun générateur géométrique supplémentaire n'est créé.
+2. Les alignements stricts sont confiés directement à
+   `merge_collinear_segments()` de KRT. Cette primitive ne déplace aucun cuivre
+   et conserve les gardes de pads, vias, T, couches, largeurs et verrouillages.
 
-`GlossConfig` appartient à `dgloss`. Les quatre options G3.1 à G3.4 sont
-indépendantes, activées par défaut et persistées par le plugin. G3 demeure le
-socle obligatoire. Le budget global du gloss vaut 20 secondes par défaut.
+La certification finale ignore les anciens objets intermédiaires qui ne sont
+plus présents. Une chaîne réémise par la fusion KRT est marquée comme
+géométriquement conservatrice : elle reste tracée et comptée, sans être prise
+à tort pour du cuivre déplacé.
 
-## Certification et visibilité
+## Matrice de conformité
 
-- Une instance `GlossStats` réunit l'état, les transformations, le gain et le
-  temps de chaque étape, puis le bilan G3.5 structuré.
-- Le log reste succinct : une ligne par étape et une ligne globale.
-- La validation finale refuse une augmentation de longueur, une régression de
-  connectivité, du cuivre non octolinéaire ou un segment plus court que le pas
-  réel de la grille KRT.
-- Toute erreur restaure exactement le résultat du smooth KRT.
-- User.1 à User.5 conservent les évolutions G3 à G3.4 ; User.6 montre le résultat
-  cumulé certifié G3.5 sans dupliquer le cuivre produit.
+| Règle de `gloss_krt.md` | Couverture G3.5 | Preuve principale |
+|---|---|---|
+| Règles et données d'entrée prioritaires | Contexte et contrôles KRT | `build_gloss_context`, `KrtClearanceAdapter` |
+| Réduction de longueur | Couverte | G3 à G3.4, validation longueur non croissante |
+| Moins de segments à longueur égale | Couverte | passage canonique égalitaire puis fusion KRT |
+| Sortie octolinéaire | Couverte | générateurs KRT et certification finale |
+| Aucun micro-segment créé | Couverte | seuil du pas réel et certification du cuivre final déplacé |
+| Mono-net, multi-nets et liste vide | Couverte | portée `net_ids`, liste vide = tous les nets |
+| Connexion complète et vias traversants | Couverte | graphes KRT, G3.1/G3.4 et grade final de connectivité |
+| Autres nets comme obstacles | Couverte | retrait du seul cache du net courant |
+| Changement de largeur non terminal | Couverte | chaînes séparées mais incidence globale conservée |
+| Pads fixes | Couverte | point natif et garde de custody KRT |
+| Conditions de mobilité des vias | Couverte | G3.1/G3.4 et attributs du via conservés |
+| T colinéaires et variante non colinéaire | Couverte | G3.3 et option dédiée |
+| Repli sans perte | Couverte | instantané et restauration atomique G3.5 |
 
-## Validation ciblée, toutes options actives
+## Comparatif avant/après le correctif
 
-| Carte | Gain smooth KRT | Gain dgloss G3.5 | Nets améliorés | Temps dgloss |
-|---|---:|---:|---:|---:|
-| dispenser | 13,0505 mm | 3,1792 mm | 7 | 5,084 s |
-| picofx_pump | 56,4882 mm | 31,4930 mm | 15 | 7,419 s |
-| ember_he | 16,0068 mm | 18,7151 mm | 10 | 18,433 s |
+Budget : 20 secondes par carte. Grille : 0,1 mm. Multipasses désactivées.
 
-Les trois cartes terminent sans régression de connectivité et sous le budget
-post-smooth de 20 secondes. Les tests ciblés couvrent aussi la désactivation
-indépendante de chaque option, le budget nul, l'absence de second smooth dans
-le point d'entrée post-smooth et la couche cumulée G3.5.
+| Carte | Segments G3.5 avant | Segments corrigés | Raccords égaux | Fusions KRT | Gain de longueur | Temps corrigé | Régression |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| `dispenser` | 404 | 358 | 14 | 32 | 7,1655 mm | 2,696 s | 0 |
+| `picofx_pump` | 272 | 261 | 8 | 3 | 34,6524 mm | 3,043 s | 0 |
+| `ember_he` | 959 | 923 | 14 | 22 | 22,7558 mm | 8,760 s | 0 |
+
+Le gain de longueur est inchangé : les nouvelles opérations appliquent le
+troisième objectif uniquement après le second. Leur surcoût algorithmique
+mesuré est de 192,3 ms, 246,4 ms et 1 101,7 ms respectivement.
+
+## Tests
+
+- 40 tests dgloss et d'architecture réussissent.
+- La suite KRT `test_811_merge_collinear.py` réussit intégralement : chaîne
+  complète, kink conservé, retour arrière refusé, T, via, largeur, couche,
+  verrouillage, custody des pads, write-list et portée des nets.
+- Les trois cartes réelles terminent sous le budget normal sans régression de
+  connectivité.

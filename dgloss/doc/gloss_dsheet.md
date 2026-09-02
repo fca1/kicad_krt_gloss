@@ -94,6 +94,14 @@ longueurs avant/après, les changements de segments et de vias, le gain dgloss,
 le gain KRT séparé, le temps, l'état du budget et le nombre de régressions de
 connectivité.
 
+La réduction finale de segments expose aussi :
+
+- `equal_length_segment_reduction`, pour les raccords canoniques de même
+  longueur comportant moins de segments ;
+- `segments_merged` et `merge_joints`, pour les alignements fusionnés par KRT ;
+- `equal_length_algorithm_ms` et `merge_algorithm_ms`, pour leurs temps
+  respectifs.
+
 Le log affiche une ligne courte par étape, puis une ligne globale de la forme :
 
 ```text

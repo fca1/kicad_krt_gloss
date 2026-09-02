@@ -22,8 +22,11 @@ class GlossStats:
 
     def record(self, stage, *, enabled=True, changes=0, saved_mm=0.0,
                elapsed_ms=0.0, label="transformations", skipped_budget=False):
+        rounded_saved = round(float(saved_mm), 4)
+        if rounded_saved == 0.0:
+            rounded_saved = 0.0
         row = StageStats(enabled=enabled, changes=int(changes),
-                         saved_mm=round(float(saved_mm), 4),
+                         saved_mm=rounded_saved,
                          elapsed_ms=round(float(elapsed_ms), 3), label=label,
                          skipped_budget=skipped_budget)
         self.stages[stage] = row
@@ -33,8 +36,10 @@ class GlossStats:
             elif skipped_budget:
                 print(f"Track Gloss {stage}: budget expiré")
             else:
+                gain = (f"-{row.saved_mm:.4f}"
+                        if row.saved_mm > 0.0 else "0.0000")
                 print(f"Track Gloss {stage}: {row.changes} {row.label}, "
-                      f"-{row.saved_mm:.4f} mm, {row.elapsed_ms:.1f} ms")
+                      f"{gain} mm, {row.elapsed_ms:.1f} ms")
         return row
 
     def as_dict(self):

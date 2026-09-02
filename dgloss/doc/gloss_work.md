@@ -98,10 +98,17 @@ articulées par le via mobile.
 ### G3.5 — coordination complète
 
 Exécuter G3 puis les étapes G3.1 à G3.4 autorisées par la configuration sous un
-budget global. Une certification finale commune vérifie : longueur
-non croissante, connectivité de tous les nets, géométrie octolinéaire et aucun
-segment produit plus court que le pas réel de la grille. À l'échec, restaurer
-exactement le résultat KRT.
+budget global. G3.5 termine ensuite l'objectif lexicographique sur le nombre de
+segments : le moteur G3 est rappelé en mode « longueur égale, moins de
+segments », avec les seuls raccords canoniques KRT, puis
+`merge_collinear_segments()` de KRT fusionne les alignements stricts sans
+déplacer le cuivre.
+
+Une certification finale commune vérifie : longueur non croissante,
+connectivité de tous les nets, géométrie octolinéaire et aucun segment créé par
+une transformation géométrique plus court que le pas réel de la grille. Une
+réémission géométriquement conservatrice de KRT n'est pas assimilée à une
+création de cuivre. À l'échec, restaurer exactement le résultat KRT.
 
 G3.5 agrège une instance `GlossStats`, conserve le gain du smooth KRT séparé du
 gain dgloss et produit une vue cumulée de debug sans dupliquer le cuivre.

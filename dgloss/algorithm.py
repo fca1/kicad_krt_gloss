@@ -251,7 +251,8 @@ def _right_angle(first, second):
 
 
 def _best_chain_replacement(context, chain, net_id, foreign_obstacles,
-                            net_segments, net_vias, deadline=None):
+                            net_segments, net_vias, deadline=None,
+                            objective="shorter"):
     """Shortest valid path through a chain's ordered vertices (DAG dynamic program)."""
     n = len(chain.segments)
     span_ids = {id(seg) for seg in chain.segments}
@@ -274,10 +275,12 @@ def _best_chain_replacement(context, chain, net_id, foreign_obstacles,
             families = [("canonical", _candidate_segments(
                 chain.points[i], chain.points[j], chain.layer, chain.width,
                 net_id))]
-            families.extend(("sliding", family) for family in
-                            _sliding_candidate_families(
-                                chain.points[i], chain.points[j], chain.layer,
-                                chain.width, net_id, context.coord.grid_step))
+            if objective == "shorter":
+                families.extend(("sliding", family) for family in
+                                _sliding_candidate_families(
+                                    chain.points[i], chain.points[j],
+                                    chain.layer, chain.width, net_id,
+                                    context.coord.grid_step))
             for source, family in families:
                 if deadline is not None and perf_counter() >= deadline:
                     break
@@ -285,9 +288,17 @@ def _best_chain_replacement(context, chain, net_id, foreign_obstacles,
                     if deadline is not None and perf_counter() >= deadline:
                         break
                     new_length = calculate_route_length(candidate)
+                    gain = old_length - new_length
+                    if objective == "fewer_segments":
+                        # A one-segment equal replacement is an exact
+                        # collinear merge; leave it to KRT's purpose-built
+                        # merge_collinear_segments() final pass.
+                        if (len(candidate) == 1 or abs(gain) > 1e-9 or
+                                len(candidate) >= j - i):
+                            continue
                     # Families are shortest-first. Once one member clears, a
                     # shorter member of that same geometry cannot follow.
-                    if new_length >= old_length - 1e-12:
+                    elif gain <= 1e-12:
                         break
                     if not _candidate_clears(context, foreign_obstacles,
                                              candidate, source):
@@ -304,7 +315,7 @@ def _best_chain_replacement(context, chain, net_id, foreign_obstacles,
     # legal fallback; G3 only forbids creating a new one.
     best = [dict() for _ in range(n + 1)]
     previous = {}
-    best[0][(None, False)] = 0.0
+    best[0][(None, False)] = (0.0, 0)
     for i in range(n):
         for state, cost in list(best[i].items()):
             prior_direction, prior_changed = state
@@ -317,8 +328,13 @@ def _best_chain_replacement(context, chain, net_id, foreign_obstacles,
                         (prior_changed or changed)):
                     continue
                 next_state = (last_direction, changed)
-                score = cost + length
-                if score < best[j].get(next_state, float("inf")) - 1e-12:
+                score = (cost[0] + length, cost[1] + len(candidate))
+                current_score = best[j].get(next_state)
+                better = (current_score is None or
+                          score[0] < current_score[0] - 1e-12 or
+                          (abs(score[0] - current_score[0]) <= 1e-12 and
+                           score[1] < current_score[1]))
+                if better:
                     best[j][next_state] = score
                     previous[(j, next_state)] = (
                         i, state, candidate, changed)
@@ -327,7 +343,8 @@ def _best_chain_replacement(context, chain, net_id, foreign_obstacles,
         return None
     selected = []
     cursor = n
-    state = min(best[n], key=best[n].get)
+    state = min(best[n], key=lambda item: (
+        round(best[n][item][0], 12), best[n][item][1]))
     while cursor:
         i, prior_state, candidate, changed = previous[(cursor, state)]
         selected.append((i, cursor, candidate, changed))
@@ -345,7 +362,11 @@ def _best_chain_replacement(context, chain, net_id, foreign_obstacles,
         return None
     old_length = calculate_route_length(removed)
     new_length = calculate_route_length(added)
-    if old_length - new_length <= min_gain:
+    gain = old_length - new_length
+    if objective == "fewer_segments":
+        if abs(gain) > 1e-9 or len(added) >= len(removed):
+            return None
+    elif gain <= min_gain:
         return None
     # G3's fast grid search is never the final safety authority: every emitted
     # connector is rechecked with the exact KRT smooth semantics.
@@ -367,7 +388,8 @@ def _remove_result_custody(results, removed):
     return [seg for seg in removed if id(seg) not in owned]
 
 
-def shorten_routes(context, results, deadline=None):
+def shorten_routes(context, results, deadline=None, *, objective="shorter",
+                   stage="G3"):
     """Run one deterministic dgloss pass, net by net, with fixed vias."""
     changes = GlossChanges()
     strips = []
@@ -403,7 +425,7 @@ def shorten_routes(context, results, deadline=None):
             current = [s for s in context.pcb_data.segments if s.net_id == net_id]
             replacement = _best_chain_replacement(
                 context, chain, net_id, foreign, current, net_vias,
-                deadline=deadline)
+                deadline=deadline, objective=objective)
             if replacement is None:
                 continue
             removed, added = replacement
@@ -419,9 +441,14 @@ def shorten_routes(context, results, deadline=None):
                 pcb_data=context.pcb_data)
             if _connectivity_worse(before_grade, after_grade):
                 continue
-            if calculate_route_length(current, net_vias, context.pcb_data) - \
-                    calculate_route_length(trial, net_vias, context.pcb_data) <= \
-                    context.coord.grid_step:
+            gain = (calculate_route_length(
+                        current, net_vias, context.pcb_data) -
+                    calculate_route_length(
+                        trial, net_vias, context.pcb_data))
+            if objective == "fewer_segments":
+                if abs(gain) > 1e-9 or len(trial) >= len(current):
+                    continue
+            elif gain <= context.coord.grid_step:
                 continue
             context.pcb_data.segments = [
                 seg for seg in context.pcb_data.segments
@@ -445,9 +472,9 @@ def shorten_routes(context, results, deadline=None):
             continue
 
         strips.extend(_remove_result_custody(results, removed_net))
-        changes.segments.extend({"old": seg, "stage": "G3"}
+        changes.segments.extend({"old": seg, "stage": stage}
                                 for seg in removed_net)
-        changes.segments.extend({"new": seg, "stage": "G3"}
+        changes.segments.extend({"new": seg, "stage": stage}
                                 for seg in added_net)
         added_all.extend(added_net)
         totals["nets_changed"] += 1

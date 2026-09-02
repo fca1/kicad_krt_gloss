@@ -7,7 +7,7 @@ from time import perf_counter
 from check_connected import check_net_connectivity
 from cleanup_pipeline import _smooth_skip_net_ids
 from net_queries import calculate_route_length
-from pcb_modification import smooth_octolinear_chains
+from pcb_modification import merge_collinear_segments, smooth_octolinear_chains
 
 from .algorithm import _connectivity_worse, shorten_routes
 from .changes import GlossChanges
@@ -103,9 +103,13 @@ def _validate_final(context, before_grades, before_length, changes):
     for net_id, before in before_grades.items():
         if _connectivity_worse(before, _grade(context.pcb_data, net_id)):
             raise RuntimeError(f"G3.5 connectivity regression on net {net_id}")
+    final_segment_ids = {id(segment)
+                         for segment in context.pcb_data.segments}
     for entry in changes.segments:
         segment = entry.get("new")
-        if segment is None:
+        if segment is None or id(segment) not in final_segment_ids:
+            continue
+        if entry.get("geometry_preserving"):
             continue
         dx = abs(segment.end_x - segment.start_x)
         dy = abs(segment.end_y - segment.start_y)
@@ -261,6 +265,55 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
                            elapsed_ms=refine["algorithm_ms"],
                            label="vias affinés")
 
+        run, expired = available(True)
+        equal_strips, equal_added, equal_changes, equal = \
+            shorten_routes(
+                context, results, deadline=deadline,
+                objective="fewer_segments", stage="G3.5") \
+            if run else ([], [], GlossChanges(), {
+                "nets_changed": 0, "segments_removed": 0,
+                "segments_added": 0, "saved_mm": 0.0,
+                "algorithm_ms": 0.0, "per_net": []})
+        _append_result(results, "track_gloss_g3_5_equal_length",
+                       equal_added, [], equal_changes)
+        changes.segments.extend(equal_changes.segments)
+        gloss_stats.record(
+            "G3.5 equal length", skipped_budget=expired,
+            changes=(equal["segments_removed"] -
+                     equal["segments_added"]),
+            saved_mm=0.0,
+            elapsed_ms=equal["algorithm_ms"],
+            label="segments supprimés à longueur égale")
+
+        run, expired = available(True)
+        merge_before = list(pcb_data.segments)
+        merge_started = perf_counter()
+        if run:
+            merged_count, merged_nets, merge_strips, merge_added, merge = \
+                merge_collinear_segments(
+                    results, pcb_data, set(context.net_ids))
+        else:
+            merged_count, merged_nets = 0, 0
+            merge_strips, merge_added = [], []
+            merge = {"joints": 0, "segs_removed": 0, "segs_added": 0,
+                     "nets_skipped_large": 0}
+        merge_ms = (perf_counter() - merge_started) * 1000.0
+        final_segment_ids = {id(segment) for segment in pcb_data.segments}
+        merge_removed = [segment for segment in merge_before
+                         if id(segment) not in final_segment_ids]
+        merge_changes = GlossChanges(
+            segments=([{"old": segment, "stage": "G3.5"}
+                       for segment in merge_removed] +
+                      [{"new": segment, "stage": "G3.5",
+                        "geometry_preserving": True}
+                       for segment in merge_added]))
+        changes.segments.extend(merge_changes.segments)
+        gloss_stats.record(
+            "G3.5 segments", skipped_budget=expired,
+            changes=merge.get("joints", 0), saved_mm=0.0,
+            elapsed_ms=merge_ms,
+            label="jonctions colinéaires supprimées")
+
         run, expired = available(selected.enable_multipasses)
         g4 = run_multinet_passes(
             pcb_data, config, selected, list(context.net_ids), results,
@@ -286,6 +339,10 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
                            if row.get("saved_mm", 0.0) > 0.0}
         for row in (via, pad, node, refine):
             changed_net_ids.update(row["net_ids_changed"])
+        changed_net_ids.update(
+            entry["old"].net_id for entry in equal_changes.segments
+            if "old" in entry)
+        changed_net_ids.update(segment.net_id for segment in merge_removed)
         changed_net_ids.update(g4["net_ids_changed"])
         elapsed_ms = (perf_counter() - started) * 1000.0
         gloss_stats.budget_expired = (gloss_stats.budget_expired or
@@ -316,6 +373,20 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
             "vias_refined": refine["vias_moved"],
             "refine_via_algorithm_ms": refine["algorithm_ms"],
             "refine_via_saved_mm": refine["saved_mm"],
+            "equal_length_nets_changed": equal["nets_changed"],
+            "equal_length_segments_removed": equal["segments_removed"],
+            "equal_length_segments_added": equal["segments_added"],
+            "equal_length_segment_reduction": (
+                equal["segments_removed"] - equal["segments_added"]),
+            "equal_length_algorithm_ms": equal["algorithm_ms"],
+            "segments_merged": merged_count,
+            "merge_nets_changed": merged_nets,
+            "merge_joints": merge.get("joints", 0),
+            "merge_segments_removed": merge.get("segs_removed", 0),
+            "merge_segments_added": merge.get("segs_added", 0),
+            "merge_nets_skipped_large": merge.get(
+                "nets_skipped_large", 0),
+            "merge_algorithm_ms": round(merge_ms, 3),
             "g4_passes": g4["passes"],
             "g4_passes_completed": g4["passes_completed"],
             "g4_transformations": g4["transformations"],
@@ -355,6 +426,8 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
             input_strip_segments=(krt_strips + strips +
                                   via["segment_strips"] + pad_strips +
                                   node_strips + refine["segment_strips"] +
+                                  equal_strips +
+                                  merge_strips +
                                   g4["segment_strips"]),
             input_strip_vias=(via_strips + refine_strips +
                               g4["via_strips"]),
