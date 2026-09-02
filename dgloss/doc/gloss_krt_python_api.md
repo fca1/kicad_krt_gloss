@@ -93,6 +93,10 @@ KRT existants.
 Une erreur dgloss restaure l'état reçu à l'entrée de l'appel. Aucune fonction
 de cette API ne crée de couche User et aucune ne dépend de `pcbnew`.
 
+Le résultat `stats` contient la certification finale G5 : validité, nombres de
+segments et vias contrôlés, réémissions géométriquement conservées et temps de
+certification. G5 ne modifie pas le routage reçu de G4.
+
 ## Compatibilité à préserver
 
 - Conserver `run_post_smooth_gloss` dans `dgloss.__all__`.

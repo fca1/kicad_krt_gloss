@@ -126,16 +126,24 @@ propre : il orchestre exclusivement G3.5 et ses options.
 À partir de G4, seule User.1 présente l'écart entre l'entrée du gloss et son
 résultat final.
 
-### G5 — suite prévue
+### G5 — certification de conformité
 
-G5 restera l'objectif de conformité complète à `gloss_krt.md`, après validation
-des étapes intermédiaires.
+G5 ne génère aucune géométrie. Après G4, il réutilise le graphe de connectivité
+KRT pour vérifier que la partition des pads et des zones de chaque net est
+strictement inchangée. Il revalide ensuite, avec l'adaptateur de règles KRT,
+chaque segment final effectivement déplacé et chaque via final mobile.
+
+Les dimensions, couches, net, verrouillage et attributs de fabrication d'un via
+mobile sont comparés avant/après. Les segments seulement réémis par la fusion
+colinéaire KRT sont identifiés comme géométriquement conservés et ne sont pas
+confondus avec du cuivre déplacé. Toute non-conformité déclenche le repli
+atomique déjà possédé par G0.
 
 ## Modules et responsabilités
 
 | Module | Responsabilité |
 |---|---|
-| `pipeline.py` | Entrées G0, orchestration, budget, certification et repli |
+| `pipeline.py` | Entrées G0, orchestration, certification G5 et repli |
 | `context.py` | Reconstruction du contexte de grille KRT |
 | `krt_clearance.py` | Adaptation mince aux contrôles KRT |
 | `algorithm.py` | G3, chaînes ordinaires |

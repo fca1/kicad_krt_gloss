@@ -6,6 +6,7 @@ from time import perf_counter
 
 from check_connected import check_net_connectivity
 from cleanup_pipeline import _smooth_skip_net_ids
+from geometry_utils import UnionFind
 from net_queries import calculate_route_length
 from pcb_modification import merge_collinear_segments, smooth_octolinear_chains
 
@@ -52,6 +53,44 @@ def _grade(pcb_data, net_id):
         pcb_data.pads_by_net.get(net_id, []), [], pcb_data=pcb_data)
 
 
+def _g5_grade(pcb_data, net_id):
+    zones = [zone for zone in (getattr(pcb_data, "zones", None) or [])
+             if zone.net_id == net_id]
+    return check_net_connectivity(
+        net_id,
+        [segment for segment in pcb_data.segments if segment.net_id == net_id],
+        [via for via in pcb_data.vias if via.net_id == net_id],
+        pcb_data.pads_by_net.get(net_id, []), zones, pcb_data=pcb_data,
+        return_graph=True)
+
+
+def _terminal_partition(grade):
+    """Normalize KRT terminal components so graph ids can be compared."""
+    graph = grade.get("graph") or {}
+    if graph:
+        union = UnionFind()
+        for first, second in graph.get("edges", ()):
+            union.union(first, second)
+        groups = {}
+        terminals = [
+            (("pad", index), point)
+            for index, point in (graph.get("pad_index_repr") or {}).items()
+        ] + [
+            (("zone", index), point)
+            for index, point in (graph.get("zone_index_repr") or {}).items()
+        ]
+        for terminal, point in terminals:
+            groups.setdefault(union.find(point), set()).add(terminal)
+        return frozenset(frozenset(group) for group in groups.values())
+
+    # Small synthetic callers may provide only check_net_connectivity's
+    # public pad_components summary.
+    groups = {}
+    for pad, component in (grade.get("pad_components") or {}).items():
+        groups.setdefault(component, set()).add(pad)
+    return frozenset(frozenset(group) for group in groups.values())
+
+
 def _append_result(results, cleanup, added_segments, added_vias, changes):
     if changes:
         results.append({
@@ -96,12 +135,13 @@ def _final_visual_changes(baseline_segments, baseline_vias, pcb_data,
 
 
 def _validate_final(context, before_grades, before_length, changes):
-    """One G3.5 certification over the complete post-stage board."""
+    """G3.5 safety gate retained by each internal G4 net call."""
     after_length = calculate_route_length(context.pcb_data.segments)
     if after_length > before_length + 1e-9:
         raise RuntimeError("G3.5 final length increased")
     for net_id, before in before_grades.items():
-        if _connectivity_worse(before, _grade(context.pcb_data, net_id)):
+        after = _grade(context.pcb_data, net_id)
+        if _connectivity_worse(before, after):
             raise RuntimeError(f"G3.5 connectivity regression on net {net_id}")
     final_segment_ids = {id(segment)
                          for segment in context.pcb_data.segments}
@@ -123,6 +163,55 @@ def _validate_final(context, before_grades, before_length, changes):
         if length < context.coord.grid_step - 1e-9:
             raise RuntimeError("G3.5 produced a micro-segment")
     return after_length
+
+
+def _certify_g5_copper(context, before_grades, changes):
+    """Recheck final changed copper with KRT; no geometry is generated here."""
+    for net_id, before in before_grades.items():
+        after = _g5_grade(context.pcb_data, net_id)
+        if _terminal_partition(before) != _terminal_partition(after):
+            raise RuntimeError(f"G5 topology changed on net {net_id}")
+
+    final_segment_ids = {id(segment) for segment in context.pcb_data.segments}
+    final_via_ids = {id(via) for via in context.pcb_data.vias}
+    segment_ids = set()
+    via_ids = set()
+    preserved_segments = 0
+
+    for entry in changes.segments:
+        segment = entry.get("new")
+        if (segment is None or id(segment) not in final_segment_ids or
+                id(segment) in segment_ids):
+            continue
+        segment_ids.add(id(segment))
+        if entry.get("geometry_preserving"):
+            preserved_segments += 1
+            continue
+        if not context.clearance_adapter.segment_clears(segment):
+            raise RuntimeError(
+                f"G5 final copper clearance regression on net {segment.net_id}")
+
+    via_attributes = ("size", "drill", "layers", "net_id", "free", "locked",
+                      "tenting_attrs")
+    for entry in changes.vias:
+        old, via = entry.get("old"), entry.get("new")
+        if (old is None or via is None or id(via) not in final_via_ids or
+                id(via) in via_ids):
+            continue
+        via_ids.add(id(via))
+        if any(getattr(old, name, None) != getattr(via, name, None)
+               for name in via_attributes):
+            raise RuntimeError(
+                f"G5 moved-via attributes changed on net {via.net_id}")
+        if not context.clearance_adapter.via_clears(via, ignored_via=via):
+            raise RuntimeError(
+                f"G5 final via clearance regression on net {via.net_id}")
+
+    return {
+        "segments_certified": len(segment_ids) - preserved_segments,
+        "segments_geometry_preserved": preserved_segments,
+        "vias_certified": len(via_ids),
+    }
 
 
 def run_final_gloss(results, pcb_data, config, gloss_config=None, *,
@@ -163,7 +252,7 @@ def run_final_gloss(results, pcb_data, config, gloss_config=None, *,
 
 def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
                           net_ids=None, krt_strips=None, krt_stats=None,
-                          krt_ms=0.0, _emit_log=True):
+                          krt_ms=0.0, _emit_log=True, _run_g5=True):
     """G0 API for a caller that already owns the final KRT smooth result."""
     baseline_segments = list(pcb_data.segments)
     baseline_vias = list(pcb_data.vias)
@@ -185,6 +274,9 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
         before_length = calculate_route_length(pcb_data.segments)
         before_grades = {net_id: _grade(pcb_data, net_id)
                          for net_id in context.net_ids}
+        g5_before_grades = ({net_id: _g5_grade(pcb_data, net_id)
+                             for net_id in context.net_ids}
+                            if _run_g5 else {})
         changes = GlossChanges()
 
         strips, added, g3_changes, g3 = shorten_routes(
@@ -321,6 +413,7 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
                 "segment_strips": [], "via_strips": [],
                 "changes": GlossChanges(), "passes": [],
                 "passes_completed": 0, "transformations": 0,
+                "segment_reduction": 0,
                 "net_ids_changed": set(), "saved_mm": 0.0,
                 "algorithm_ms": 0.0,
                 "stop_reason": "budget" if expired else "disabled",
@@ -335,6 +428,21 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
 
         after_length = _validate_final(
             context, before_grades, before_length, changes)
+        if _run_g5:
+            g5_started = perf_counter()
+            g5 = _certify_g5_copper(
+                context, g5_before_grades, changes)
+            g5_ms = (perf_counter() - g5_started) * 1000.0
+            gloss_stats.record(
+                "G5", changes=(g5["segments_certified"] +
+                               g5["vias_certified"]),
+                saved_mm=0.0, elapsed_ms=g5_ms,
+                label="objets finaux certifiés")
+        else:
+            g5 = {"segments_certified": 0,
+                  "segments_geometry_preserved": 0,
+                  "vias_certified": 0}
+            g5_ms = 0.0
         changed_net_ids = {row["net_id"] for row in g3.get("per_net", [])
                            if row.get("saved_mm", 0.0) > 0.0}
         for row in (via, pad, node, refine):
@@ -390,9 +498,16 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
             "g4_passes": g4["passes"],
             "g4_passes_completed": g4["passes_completed"],
             "g4_transformations": g4["transformations"],
+            "g4_segment_reduction": g4["segment_reduction"],
             "g4_saved_mm": g4["saved_mm"],
             "g4_algorithm_ms": g4["algorithm_ms"],
             "g4_stop_reason": g4["stop_reason"],
+            "g5_segments_certified": g5["segments_certified"],
+            "g5_segments_geometry_preserved": (
+                g5["segments_geometry_preserved"]),
+            "g5_vias_certified": g5["vias_certified"],
+            "g5_algorithm_ms": round(g5_ms, 3),
+            "g5_valid": True,
             "connectivity_regressions": 0,
         })
         if _emit_log:

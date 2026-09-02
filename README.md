@@ -8,8 +8,8 @@ repository.
 git clone --recurse-submodules <repository-url>
 ```
 
-The repository intentionally keeps one branch, `main`. G4 and future G5 work
-continue on that branch through explicit commits and tags.
+The repository intentionally keeps one branch, `main`. Milestones continue on
+that branch through explicit commits and tags.
 
 ## Scope
 

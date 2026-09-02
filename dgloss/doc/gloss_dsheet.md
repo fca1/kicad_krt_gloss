@@ -8,7 +8,7 @@ défini dans [`gloss_krt.md`](gloss_krt.md) et sa réalisation dans
 
 - Branche de développement : `main`
 - Version du plugin : `0.1.0`
-- Étape intégrée : G4
+- Étape intégrée : G5
 - Portée : nets complets sélectionnés ; sans sélection, tous les nets routés
 - Déclenchement : une fois, après le dernier smooth KRT
 - Budget plugin par défaut : 20 secondes
@@ -27,6 +27,7 @@ suivantes sont visibles dans sa boîte de dialogue et activées par défaut :
 | `Track Gloss G3.3 — allow non-collinear rails` | Autorise la variante des T sans rail colinéaire |
 | `Track Gloss G3.4 — complete via chains` | Autorise l'optimisation complète autour des vias |
 | `G4 — multi-net convergence passes` | Répète G3.5 par net jusqu'à convergence |
+| `G5 — final compliance certification` | Certifie le résultat sans modifier sa géométrie |
 
 G3, réduction des chaînes ordinaires, constitue le socle et reste actif. Une
 option décochée ne lance pas son étape et ne crée pas sa visualisation.
@@ -101,6 +102,11 @@ La réduction finale de segments expose aussi :
 - `segments_merged` et `merge_joints`, pour les alignements fusionnés par KRT ;
 - `equal_length_algorithm_ms` et `merge_algorithm_ms`, pour leurs temps
   respectifs.
+
+La certification G5 expose `g5_valid`, `g5_segments_certified`,
+`g5_segments_geometry_preserved`, `g5_vias_certified` et `g5_algorithm_ms`.
+Elle compare également, par le graphe KRT, la partition des pads et zones avant
+et après le gloss.
 
 Le log affiche une ligne courte par étape, puis une ligne globale de la forme :
 

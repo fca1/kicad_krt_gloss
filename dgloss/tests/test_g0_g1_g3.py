@@ -21,7 +21,8 @@ from dgloss.changes import GlossChanges
 from dgloss.comparison import compare_smoothers, format_comparison_table
 from dgloss.algorithm import (_Chain, _best_chain_replacement,
                               _sliding_candidate_families)
-from dgloss.pipeline import (_grade, _validate_final, run_final_gloss,
+from dgloss.pipeline import (_certify_g5_copper, _g5_grade, _grade,
+                             _validate_final, run_final_gloss,
                              run_post_smooth_gloss)
 from dgloss.pad_terminals import optimize_pad_terminals
 from dgloss.sliding_nodes import slide_t_nodes
@@ -375,6 +376,85 @@ def test_g3_5_certifies_only_segments_present_in_the_final_board():
         _validate_final(context, grades,
                         calculate_route_length(pcb.segments), changes),
         calculate_route_length(pcb.segments), abs_tol=1e-12)
+
+
+def test_g5_rejects_a_changed_pad_partition_even_if_connectivity_improves():
+    pcb, config, _first, _second = _parallel_board()
+    context = build_gloss_context(pcb, config, net_ids=[1])
+    before = {
+        "connected": False, "num_components": 2,
+        "disconnected_pads": [(8.0, 5.0)],
+        "pad_components": {("A",): 10, ("B",): 20},
+    }
+    after = {
+        "connected": True, "num_components": 1,
+        "disconnected_pads": [],
+        "pad_components": {("A",): 30, ("B",): 30},
+    }
+    try:
+        with patch("dgloss.pipeline._g5_grade", return_value=after):
+            _certify_g5_copper(context, {1: before}, GlossChanges())
+    except RuntimeError as exc:
+        assert "topology changed" in str(exc)
+    else:
+        raise AssertionError("G5 accepted a changed pad partition")
+
+
+def test_g5_rechecks_only_final_non_preserving_copper_with_krt():
+    pcb, config, first, _second = _parallel_board()
+    context = build_gloss_context(pcb, config, net_ids=[1])
+    removed = Segment(2.0, 4.0, 8.0, 4.0, 0.2, "F.Cu", 1)
+    preserving = Segment(2.0, 5.0, 8.0, 5.0, 0.2, "F.Cu", 1)
+    pcb.segments.append(preserving)
+    changes = GlossChanges(segments=[
+        {"new": removed, "stage": "G3"},
+        {"new": first, "stage": "G3"},
+        {"new": preserving, "stage": "G3.5",
+         "geometry_preserving": True},
+    ])
+    checked = []
+    context.clearance_adapter.segment_clears = (
+        lambda segment: checked.append(segment) or True)
+
+    certified = _certify_g5_copper(
+        context, {1: _g5_grade(pcb, 1)}, changes)
+
+    assert checked == [first]
+    assert certified == {
+        "segments_certified": 1,
+        "segments_geometry_preserved": 1,
+        "vias_certified": 0,
+    }
+
+
+def test_g5_rejects_final_changed_copper_that_fails_krt_clearance():
+    pcb, config, first, _second = _parallel_board()
+    context = build_gloss_context(pcb, config, net_ids=[1])
+    context.clearance_adapter.segment_clears = lambda _segment: False
+    changes = GlossChanges(segments=[{"new": first, "stage": "G3"}])
+    try:
+        _certify_g5_copper(
+            context, {1: _g5_grade(pcb, 1)}, changes)
+    except RuntimeError as exc:
+        assert "clearance regression" in str(exc)
+    else:
+        raise AssertionError("G5 accepted copper rejected by KRT")
+
+
+def test_g5_rejects_changed_mobile_via_attributes():
+    pcb, config, _first, _second = _parallel_board()
+    old = Via(4.0, 5.0, 0.5, 0.2, ["F.Cu", "B.Cu"], 1)
+    moved = Via(4.1, 5.0, 0.6, 0.2, ["F.Cu", "B.Cu"], 1)
+    pcb.vias.append(moved)
+    context = build_gloss_context(pcb, config, net_ids=[1])
+    changes = GlossChanges(vias=[{"old": old, "new": moved, "stage": "G3.1"}])
+    try:
+        _certify_g5_copper(
+            context, {1: _g5_grade(pcb, 1)}, changes)
+    except RuntimeError as exc:
+        assert "attributes changed" in str(exc)
+    else:
+        raise AssertionError("G5 accepted changed via attributes")
 
 
 def test_g3_sliding_candidates_never_join_axes_at_90_degrees():

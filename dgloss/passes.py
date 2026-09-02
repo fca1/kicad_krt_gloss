@@ -27,6 +27,7 @@ def run_multinet_passes(pcb_data, config, gloss_config, net_ids, results,
     changed_net_ids = set()
     passes = []
     total_changes = 0
+    total_segment_reduction = 0
     started = perf_counter()
     pass_index = 0
     stop_reason = "converged"
@@ -40,6 +41,7 @@ def run_multinet_passes(pcb_data, config, gloss_config, net_ids, results,
         before = calculate_route_length(pcb_data.segments)
         pass_started = perf_counter()
         pass_changes = 0
+        pass_segment_reduction = 0
         completed = True
 
         for net_id in order:
@@ -53,17 +55,20 @@ def run_multinet_passes(pcb_data, config, gloss_config, net_ids, results,
                 enable_multipasses=False)
             outcome = run_g3_5(
                 results, pcb_data, config, one_pass, net_ids=[net_id],
-                _emit_log=False)
+                _emit_log=False, _run_g5=False)
             _collect(changes, outcome.changes)
             segment_strips.extend(outcome.input_strip_segments)
             via_strips.extend(outcome.input_strip_vias)
             stage_rows = outcome.stats.get("gloss", {}).get("stages", {})
             net_changes = sum(
                 row.get("changes", 0) for stage, row in stage_rows.items()
-                if stage != "G4")
+                if stage not in ("G4", "G5"))
             if not stage_rows:
                 net_changes = (outcome.stats.get("segment_changes", 0) +
                                outcome.stats.get("via_changes", 0))
+            pass_segment_reduction += (
+                outcome.stats.get("equal_length_segment_reduction", 0) +
+                outcome.stats.get("segments_merged", 0))
 
             pass_changes += net_changes
             if outcome.stats.get("nets_changed", 0):
@@ -77,15 +82,18 @@ def run_multinet_passes(pcb_data, config, gloss_config, net_ids, results,
             "direction": "forward" if pass_index % 2 == 0 else "reverse",
             "net_ids": order,
             "changes": pass_changes,
+            "segment_reduction": pass_segment_reduction,
             "saved_mm": round(gain, 4),
             "elapsed_ms": round(elapsed_ms, 3),
             "completed": completed,
         })
         print(f"Track Gloss G4 pass {pass_index + 1} "
               f"({'forward' if pass_index % 2 == 0 else 'reverse'}): "
-              f"{pass_changes} transformations, -{gain:.4f} mm, "
+              f"{pass_changes} transformations, "
+              f"-{pass_segment_reduction} segments, -{gain:.4f} mm, "
               f"{elapsed_ms:.1f} ms")
         total_changes += pass_changes
+        total_segment_reduction += pass_segment_reduction
         if not completed:
             break
         if pass_changes == 0:
@@ -100,6 +108,7 @@ def run_multinet_passes(pcb_data, config, gloss_config, net_ids, results,
         "passes": passes,
         "passes_completed": sum(row["completed"] for row in passes),
         "transformations": total_changes,
+        "segment_reduction": total_segment_reduction,
         "net_ids_changed": changed_net_ids,
         "saved_mm": round(sum(row["saved_mm"] for row in passes), 4),
         "algorithm_ms": round((perf_counter() - started) * 1000.0, 3),
