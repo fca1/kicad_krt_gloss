@@ -2,14 +2,20 @@
   "$schema": "https://go.kicad.org/pcm/schemas/v2",
   "name": "KiCad KRT Gloss",
   "description": "Apply the KRT-based final track gloss to selected or all routed nets.",
-  "description_full": "Standalone final-gloss plugin using KiCad Routing Tools as a pinned library dependency. Selected PCB objects identify complete nets; an empty selection processes every routed net. The dgloss engine has no pcbnew dependency. User layers show cumulative before/after changes.",
+  "description_full": "Standalone final-gloss plugin using KiCad Routing Tools as a pinned library dependency. Selected PCB objects identify complete nets; an empty selection processes every routed net. The dgloss engine has no pcbnew dependency. User layers show cumulative before/after changes. The standalone adaptation was created with ChatGPT/Codex (OpenAI), preserves DrAndyHaas's primary code provenance and is maintained by Frantz.",
   "identifier": "com.github.fca1.kicadkrtgloss",
   "type": "plugin",
   "author": {
-    "name": "Frantz"
+    "name": "ChatGPT/Codex (OpenAI)",
+    "contact": {
+      "github": "https://github.com/fca1/kicad_krt_gloss"
+    }
   },
   "maintainer": {
-    "name": "Frantz"
+    "name": "Frantz",
+    "contact": {
+      "github": "https://github.com/fca1/kicad_krt_gloss"
+    }
   },
   "license": "MIT",
   "resources": {

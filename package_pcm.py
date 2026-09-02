@@ -58,7 +58,7 @@ def build(output_dir):
                      "settings_dialog.py", "version.py", "icon_24.png",
                      "icon_24_dark.png"):
             shutil.copy2(PLUGIN / name, plugins / name)
-        for name in ("LICENSE", "NOTICE", "README.md"):
+        for name in ("AUTHORS.md", "LICENSE", "NOTICE", "README.md"):
             shutil.copy2(ROOT / name, plugins / name)
         _copytree(ROOT / "dgloss", plugins / "dgloss")
 

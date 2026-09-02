@@ -23,3 +23,13 @@ continues on that branch through explicit commits and tags.
 
 See `dgloss/doc/` for the specification, implementation notes, datasheet and
 the separate KRT Python API contract.
+
+## Authors, provenance and license
+
+The standalone adaptation was created with ChatGPT/Codex (OpenAI). Frantz is
+co-author and maintainer. The project consumes and reuses KiCad Routing Tools
+under its retained MIT notices and preserves the copyright and primary code
+provenance of DrAndyHaas. No algorithm from the earlier `kicad_gloss` (`kg`)
+experiment is included.
+
+See [AUTHORS.md](AUTHORS.md), [NOTICE](NOTICE) and [LICENSE](LICENSE).

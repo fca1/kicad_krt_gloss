@@ -1,7 +1,11 @@
 KiCad KRT Gloss contains the dgloss work initially developed against KiCad
 Routing Tools and consumes KiCad Routing Tools as a Git submodule and packaged
-runtime dependency. KiCad Routing Tools is Copyright (c) 2026 drandyhaas and is
+runtime dependency. It preserves the copyright and primary code provenance of
+DrAndyHaas. KiCad Routing Tools is Copyright (c) 2026 drandyhaas and is
 distributed under the MIT License found in KRT/LICENSE.
+
+The standalone adaptation was created with ChatGPT/Codex (OpenAI). Frantz is
+co-author and maintainer of the standalone adaptation.
 
 The Track Gloss icon was recovered from the earlier kicad_gloss experimental
 plugin solely as a user-interface asset. No algorithm from that project is
