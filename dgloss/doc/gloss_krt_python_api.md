@@ -59,9 +59,11 @@ ne limitent pas la portée géométrique à une sous-connexion.
 
 `GlossConfig.enable_multipasses`, actif par défaut, demande à G4 de rappeler la
 chaîne G3.5 complète pour chaque net selon un ordre alterné. Chaque rappel
-interne force cette option à `False`, de sorte que seul l'orchestrateur G4 crée
-les passes. `enable_noncollinear_t_rails`, également actif par défaut, contrôle
-la variante correspondante de G3.3.
+interne utilise directement le noyau privé G3.5 et force cette option à
+`False`, de sorte que seul l'orchestrateur G4 crée les passes. L'entrée publique
+`run_post_smooth_gloss()` n'est appelée qu'une fois. L'option
+`enable_noncollinear_t_rails`, également active par défaut, contrôle la variante
+correspondante de G3.3.
 
 ## Grille
 

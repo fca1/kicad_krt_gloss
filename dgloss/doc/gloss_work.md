@@ -123,6 +123,11 @@ Les passes s'arrêtent à la première passe complète sans transformation ou à
 l'expiration du budget global. G4 ne possède aucun algorithme géométrique
 propre : il orchestre exclusivement G3.5 et ses options.
 
+G4 appelle directement le noyau interne `_run_g3_5_pass()` avec `[net_id]`.
+Il ne rappelle jamais l'entrée publique G0. Le noyau reconstruit néanmoins le
+contexte KRT depuis le cuivre courant pour chaque net. Une erreur remonte sans
+être convertie en résultat vide ; G0 restaure alors atomiquement tout le gloss.
+
 À partir de G4, seule User.1 présente l'écart entre l'entrée du gloss et son
 résultat final.
 
@@ -143,7 +148,7 @@ atomique déjà possédé par G0.
 
 | Module | Responsabilité |
 |---|---|
-| `pipeline.py` | Entrées G0, orchestration, certification G5 et repli |
+| `pipeline.py` | Entrée G0, noyau G3.5, certification G5 et repli |
 | `context.py` | Reconstruction du contexte de grille KRT |
 | `krt_clearance.py` | Adaptation mince aux contrôles KRT |
 | `algorithm.py` | G3, chaînes ordinaires |

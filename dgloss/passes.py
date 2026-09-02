@@ -54,24 +54,22 @@ def run_multinet_passes(pcb_data, config, gloss_config, net_ids, results,
                 gloss_config, budget_seconds=remaining,
                 enable_multipasses=False)
             outcome = run_g3_5(
-                results, pcb_data, config, one_pass, net_ids=[net_id],
-                _emit_log=False, _run_g5=False)
-            _collect(changes, outcome.changes)
-            segment_strips.extend(outcome.input_strip_segments)
-            via_strips.extend(outcome.input_strip_vias)
-            stage_rows = outcome.stats.get("gloss", {}).get("stages", {})
+                results, pcb_data, config, one_pass, [net_id], deadline,
+                emit_log=False)
+            _collect(changes, outcome["changes"].as_dict())
+            segment_strips.extend(outcome["segment_strips"])
+            via_strips.extend(outcome["via_strips"])
+            stage_rows = outcome["stage_stats"].as_dict()["stages"]
             net_changes = sum(
                 row.get("changes", 0) for stage, row in stage_rows.items()
                 if stage not in ("G4", "G5"))
-            if not stage_rows:
-                net_changes = (outcome.stats.get("segment_changes", 0) +
-                               outcome.stats.get("via_changes", 0))
             pass_segment_reduction += (
-                outcome.stats.get("equal_length_segment_reduction", 0) +
-                outcome.stats.get("segments_merged", 0))
+                outcome["equal"]["segments_removed"] -
+                outcome["equal"]["segments_added"] +
+                outcome["merged_count"])
 
             pass_changes += net_changes
-            if outcome.stats.get("nets_changed", 0):
+            if outcome["changed_net_ids"]:
                 changed_net_ids.add(net_id)
 
         after = calculate_route_length(pcb_data.segments)

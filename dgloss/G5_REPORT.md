@@ -40,6 +40,24 @@ exact. Cette évolution n'est pas intégrée à G5 et G4 reste inchangé.
 
 ## Tests
 
-- 44 tests dgloss et d'architecture réussis ;
+- 45 tests dgloss et d'architecture réussis ;
 - aucune régression de connectivité ou de topologie sur les trois cartes ;
 - aucune modification de KRT ou de Rust.
+
+## Découplage G0/G4
+
+Après la validation G5, G4 a été découplé de l'entrée publique G0. Il appelle
+désormais directement le noyau interne G3.5 pour chaque identifiant de la liste
+KRT. La grille et les obstacles restent reconstruits depuis l'état courant à
+chaque net. Les trois cartes conservent exactement leurs gains et nombres de
+segments ci-dessus. Le temps total reste dominé par les algorithmes et cette
+reconstruction nécessaire ; aucun gain temporel significatif n'est revendiqué.
+
+La comparaison avec le commit G5 antérieur porte sur tous les segments et vias,
+coordonnées et attributs compris. Les empreintes SHA-256 sont identiques :
+
+| Carte | Empreinte avant/après découplage |
+|---|---|
+| `dispenser` | `cd112a264b6f771f1d0db1adf1a78d1e15cdeb6d558125b4c9eeeb3b97fec585` |
+| `picofx_pump` | `1ff7ea43406a3cc98e8074946f8a18e675675553db0530770ab5a31dda26d5f4` |
+| `ember_he` | `84593614a602c7d80c7847d80bbc4d3bff2af7a6b84161e2cbb756391901d10f` |
