@@ -1,0 +1,134 @@
+# Track Gloss — synthèse de travail exécutable
+
+Ce document traduit la spécification fonctionnelle
+[`gloss_krt.md`](gloss_krt.md) en architecture, étapes et responsabilités
+techniques. `gloss_krt.md` reste l'autorité : en cas d'écart, ce document doit
+être corrigé et non la spécification assouplie.
+
+## Principes d'implémentation
+
+- Considérer KRT comme une bibliothèque et écrire le moins de code possible.
+- Le routage reçu, les règles KiCad et les contrôles KRT sont l'autorité de
+  l'adaptation actuelle de la spécification générique.
+- Ne modifier ni Rust, ni les algorithmes KRT, ni le remplissage amont de la
+  grille sans accord explicite.
+- Employer les types, la géométrie, le calcul de longueur, la connectivité, les
+  règles et les contrôles d'obstacles déjà validés par KRT.
+- Travailler à la résolution réelle de la grille KRT. Aucune recherche
+  arbitraire au micron et aucune résolution indépendante ne sont introduites.
+- Accepter uniquement un gain strictement supérieur au pas de grille utile.
+
+## Liaison post-smooth
+
+Deux entrées sont séparées :
+
+1. `run_final_gloss()` est l'adaptateur du plugin. Il demande le dernier
+   `smooth_octolinear_chains()` à KRT, puis transmet ce résultat au gloss.
+2. `run_post_smooth_gloss()` reçoit un résultat déjà smoothé. Cette entrée ne
+   relance jamais le smooth. Elle reste une API Python publique compatible KRT,
+   afin que KRT puisse appeler dgloss à la fin de son dernier smooth ou
+   l'intégrer ultérieurement plus étroitement à son processus d'autoroutage.
+
+Le contrat détaillé de cette seconde entrée est défini dans
+[`gloss_krt_python_api.md`](gloss_krt_python_api.md). Son maintien ne dépend pas
+de la création d'un CLI.
+
+Le gloss n'est appelé qu'une fois, après tous les smooth intermédiaires et la
+réconciliation finale. `build_gloss_context()` reconstruit alors, depuis le
+cuivre final, les couches, caches, obstacles et grilles nécessaires avec les
+constructeurs KRT. `KrtClearanceAdapter` reste une couche d'adaptation mince
+vers les contrôles KRT ; il ne recrée pas un moteur de clearance parallèle.
+
+## Décomposition des étapes
+
+### G0 — intégration transparente
+
+Brancher le gloss après le dernier smooth, reconstruire son contexte depuis le
+résultat final et rendre une sortie identique lorsque le gloss ne transforme
+rien. Aucun traitement spécifique à l'absence de sélection de nets n'est
+introduit.
+
+### G1 — visualisation
+
+Afficher uniquement les changements : ancien cuivre en pointillés, nouveau
+cuivre en trait continu, anciennes et nouvelles positions des vias mobiles.
+La visualisation est aval du calcul et ne peut ni permettre, ni interdire une
+transformation. Elle appartient exclusivement à l'adaptateur du plugin : le
+cœur `dgloss` ne connaît ni `pcbnew`, ni les couches User. `add_layer_user()`
+active et nomme une couche User libre sans écraser une couche occupée.
+
+### G2 — essai d'intégration supprimé
+
+L'élargissement provisoire des pistes a uniquement servi à vérifier les
+échanges de données, les obstacles et le retour vers KiCad. Son algorithme et
+toute reconstruction particulière de clearance ont été supprimés ; ils ne
+doivent pas servir de base au gloss.
+
+### G3 — réduction des chaînes ordinaires
+
+Réduire la longueur net par net, vias fixes, en parcourant les chaînes simples.
+Les raccordements d'une diagonale peuvent glisser sur les segments adjacents,
+au pas de la grille KRT. Chaque candidat est comparé à la chaîne existante,
+contrôlé par KRT puis soumis au contrôle de connectivité avant application.
+
+### G3.1 — vias mobiles locaux
+
+Autoriser les vias satisfaisant les quatre conditions de mobilité et optimiser
+leurs deux jambes incidentes sans modifier leurs attributs.
+
+### G3.2 — terminaisons de pads
+
+Optimiser la chaîne terminale jusqu'au point natif fixe du pad. Les contrôles
+KRT gèrent directement le statut du pad du même net ; aucun découpage manuel de
+la grille autour du pad n'est ajouté.
+
+### G3.3 — T glissants et nœuds
+
+Identifier un rail colinéaire, conserver ce rail et rechercher le meilleur
+raccord de branche sur ses positions de grille. Le raccord peut être à 90° sur
+le rail. Un nœud sans rail colinéaire reste fixe.
+
+### G3.4 — vias et chaînes complètes
+
+Réemployer le moteur G3.1, en étendant l'évaluation aux deux portions complètes
+articulées par le via mobile.
+
+### G3.5 — coordination complète
+
+Exécuter G3 puis les étapes G3.1 à G3.4 autorisées par la configuration sous un
+budget global. Une certification finale commune vérifie : longueur
+non croissante, connectivité de tous les nets, géométrie octolinéaire et aucun
+segment produit plus court que le pas réel de la grille. À l'échec, restaurer
+exactement le résultat KRT.
+
+G3.5 agrège une instance `GlossStats`, conserve le gain du smooth KRT séparé du
+gain dgloss et produit une vue cumulée de debug sans dupliquer le cuivre.
+
+### G4 et G5 — suite prévue
+
+G4 introduira des passes déterministes multinet pour rechercher des gains
+supplémentaires. À partir de G4, seule User.1 présentera le résultat final.
+G5 restera l'objectif de conformité complète à `gloss_krt.md`, après validation
+des étapes intermédiaires.
+
+## Modules et responsabilités
+
+| Module | Responsabilité |
+|---|---|
+| `pipeline.py` | Entrées G0, orchestration, budget, certification et repli |
+| `context.py` | Reconstruction du contexte de grille KRT |
+| `krt_clearance.py` | Adaptation mince aux contrôles KRT |
+| `algorithm.py` | G3, chaînes ordinaires |
+| `via_mobile.py` | G3.1 et G3.4 |
+| `pad_terminals.py` | G3.2 |
+| `sliding_nodes.py` | G3.3 |
+| `config.py` | Options appartenant à dgloss |
+| `stats.py` | Statistiques structurées et lignes de log |
+| `kicad_routing_plugin/gloss_visualization.py` | Adaptateur `pcbnew`, couches User et rendu avant/après |
+
+## Validation et traçabilité
+
+Chaque étape donne lieu à une sortie testable, puis à un commit et un tag du
+même nom. Les rapports historiques G3 à G3.5 restent dans `dgloss/`. Les tests
+ciblés vérifient les transformations, les invariants, la désactivation des
+options, le budget et l'absence de second smooth dans l'entrée post-smooth.

@@ -1,0 +1,31 @@
+{
+  "$schema": "https://go.kicad.org/pcm/schemas/v2",
+  "name": "KiCad KRT Gloss",
+  "description": "Apply the KRT-based final track gloss to selected or all routed nets.",
+  "description_full": "Standalone final-gloss plugin using KiCad Routing Tools as a pinned library dependency. Selected PCB objects identify complete nets; an empty selection processes every routed net. The dgloss engine has no pcbnew dependency. User layers show cumulative before/after changes.",
+  "identifier": "com.github.fca1.kicadkrtgloss",
+  "type": "plugin",
+  "author": {
+    "name": "Frantz"
+  },
+  "maintainer": {
+    "name": "Frantz"
+  },
+  "license": "MIT",
+  "resources": {
+    "homepage": "https://github.com/fca1/kicad_krt_gloss",
+    "repository": "https://github.com/fca1/kicad_krt_gloss",
+    "bugtracker": "https://github.com/fca1/kicad_krt_gloss/issues"
+  },
+  "tags": ["routing", "tracks", "cleanup", "gloss"],
+  "versions": [
+    {
+      "version": "0.1.0",
+      "status": "testing",
+      "kicad_version": "10.0",
+      "kicad_version_max": "10.99",
+      "runtime": "swig",
+      "platforms": ["linux", "macos", "windows"]
+    }
+  ]
+}

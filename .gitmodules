@@ -1,0 +1,3 @@
+[submodule "KRT"]
+	path = KRT
+	url = https://github.com/drandyhaas/KiCadRoutingTools.git
