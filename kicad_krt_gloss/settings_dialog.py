@@ -35,9 +35,24 @@ class GlossSettingsDialog(wx.Dialog):
             "enable_g3_4": "G3.4 — complete via chains",
             "enable_multipasses": "G4 — multi-net convergence passes",
         }
+        tooltips = {
+            "enable_g3_1": (
+                "Move eligible vias on the KRT grid to shorten their tracks."),
+            "enable_g3_2": (
+                "Shorten track approaches to pads while preserving connectivity."),
+            "enable_g3_3": (
+                "Slide T-junction branches along existing track rails."),
+            "enable_noncollinear_t_rails": (
+                "Also use each branch of a non-collinear T-junction as a rail."),
+            "enable_g3_4": (
+                "Optimize the complete track chains connected through movable vias."),
+            "enable_multipasses": (
+                "Repeat enabled optimizations across nets until convergence or timeout."),
+        }
         for key, label in labels.items():
             control = wx.CheckBox(panel, label=label)
             control.SetValue(bool(values[key]))
+            control.SetToolTip(tooltips[key])
             self.controls[key] = control
             content.Add(control, 0, wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
 
@@ -48,6 +63,8 @@ class GlossSettingsDialog(wx.Dialog):
             panel, min=0.01, max=2.0, initial=float(values["grid_step"]),
             inc=0.01)
         self.grid_step.SetDigits(3)
+        self.grid_step.SetToolTip(
+            "Grid resolution used by standalone gloss; KRT defaults to 0.1 mm.")
         row.Add(self.grid_step, 1)
         content.Add(row, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
         content.Add(wx.StaticText(

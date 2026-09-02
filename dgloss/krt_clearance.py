@@ -6,7 +6,8 @@ from check_drc import (board_edge_geometry, check_pad_drill_via_overlap,
                        check_pad_via_overlap, check_via_board_edge,
                        check_via_drill_overlap,
                        check_via_board_edge_poly, check_via_segment_overlap,
-                       check_via_via_overlap, _point_on_board,
+                       check_via_via_overlap, pad_copper_layers,
+                       pads_shared_layer_clearance, _point_on_board,
                        _segment_to_rings_distance)
 from obstacle_map import point_in_polygon, point_to_polygon_edge_distance
 from routing_defaults import HOLE_TO_HOLE_CLEARANCE, NPTH_TO_TRACK_CLEARANCE
@@ -162,8 +163,10 @@ class KrtClearanceAdapter:
             if other is ignored_via:
                 continue
             if other.net_id == via.net_id:
-                if math.hypot(via.x - other.x, via.y - other.y) < \
-                        (via.size + other.size) / 2.0 - 1e-6:
+                # KRT/KiCad permit same-net copper overlap, but drill spacing is
+                # a manufacturing rule independent of electrical net identity.
+                if check_via_drill_overlap(
+                        via, other, HOLE_TO_HOLE_CLEARANCE, 0.0)[0]:
                     return False
                 continue
             pair = max(own, (self.net_clearances or {}).get(other.net_id,
@@ -183,9 +186,14 @@ class KrtClearanceAdapter:
                     continue
                 pair = max(own, (self.net_clearances or {}).get(
                     pad_net, self.clearance))
-                pair = self.config.stack_clearance(pair)
+                copper = pad_copper_layers(
+                    pad, self.pcb.board_info.copper_layers)
+                pair = pads_shared_layer_clearance(
+                    pair, getattr(self.config, "layer_clearances", None),
+                    copper)
+                pair = max(pair, getattr(pad, "local_clearance", 0.0) or 0.0)
                 if check_pad_via_overlap(
-                        pad, via, pair, self.config.layers, 0.0)[0]:
+                    pad, via, pair, self.config.layers, 0.0)[0]:
                     return False
 
         edge = max(own, getattr(self.config, "board_edge_clearance", 0.0))

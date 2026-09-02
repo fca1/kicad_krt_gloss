@@ -10,7 +10,7 @@ def _mm(pcbnew, value):
     return float(pcbnew.ToMM(value))
 
 
-def build_krt_config(board, pcb_data, grid_step):
+def build_krt_config(board, pcb_data, grid_step, net_ids=None):
     """Build GridRouteConfig from live native rules plus the standalone grid."""
     import pcbnew
     from routing_config import GridRouteConfig
@@ -60,7 +60,16 @@ def build_krt_config(board, pcb_data, grid_step):
         except Exception:
             pass
         clearances[net_id] = value
-    config.set_net_clearances(clearances, clearances)
+    routed_net_ids = sorted(set(net_ids or clearances))
+    config.set_net_clearances(clearances, routed_net_ids)
+    # Reuse KRT's rule-file resolvers.  PCBData.source_path points at the live
+    # board's project, which remains the authority for .kicad_dru rules.
+    from kicad_dru import install_layer_clearances, install_track_clearances
+    source_path = getattr(pcb_data, "source_path", "") or \
+        (board.GetFileName() or "")
+    install_layer_clearances(config, None, source_path, pcb_data)
+    install_track_clearances(
+        config, None, source_path, pcb_data, routed_net_ids=routed_net_ids)
     return config
 
 
@@ -69,7 +78,8 @@ def _segment_key(segment):
          round(segment.start_y, POSITION_DECIMALS))
     b = (round(segment.end_x, POSITION_DECIMALS),
          round(segment.end_y, POSITION_DECIMALS))
-    return frozenset((a, b)), segment.layer, int(segment.net_id)
+    return (frozenset((a, b)), segment.layer, int(segment.net_id),
+            round(float(segment.width), POSITION_DECIMALS))
 
 
 def _native_segment_key(board, pcbnew, track):
@@ -78,7 +88,8 @@ def _native_segment_key(board, pcbnew, track):
     b = (round(_mm(pcbnew, track.GetEnd().x), POSITION_DECIMALS),
          round(_mm(pcbnew, track.GetEnd().y), POSITION_DECIMALS))
     return (frozenset((a, b)), board.GetLayerName(track.GetLayer()),
-            int(track.GetNetCode()))
+            int(track.GetNetCode()),
+            round(_mm(pcbnew, track.GetWidth()), POSITION_DECIMALS))
 
 
 def _layer_map(pcbnew):
@@ -90,10 +101,23 @@ def _layer_map(pcbnew):
     return result
 
 
-def _via_key(pcbnew, via):
+def _native_via_key(board, pcbnew, via):
+    layers = tuple(sorted((board.GetLayerName(via.TopLayer()),
+                           board.GetLayerName(via.BottomLayer()))))
     return (round(_mm(pcbnew, via.GetPosition().x), POSITION_DECIMALS),
             round(_mm(pcbnew, via.GetPosition().y), POSITION_DECIMALS),
-            int(via.GetNetCode()))
+            int(via.GetNetCode()),
+            round(_mm(pcbnew, via.GetWidth()), POSITION_DECIMALS),
+            round(_mm(pcbnew, via.GetDrillValue()), POSITION_DECIMALS),
+            layers)
+
+
+def _krt_via_key(via):
+    return (round(via.x, POSITION_DECIMALS),
+            round(via.y, POSITION_DECIMALS), int(via.net_id),
+            round(float(via.size), POSITION_DECIMALS),
+            round(float(via.drill), POSITION_DECIMALS),
+            tuple(sorted(via.layers)))
 
 
 def apply_gloss(board, results, outcome):
@@ -108,7 +132,7 @@ def apply_gloss(board, results, outcome):
         if item.Type() == pcbnew.PCB_TRACE_T:
             tracks[_native_segment_key(board, pcbnew, item)].append(item)
         elif item.Type() == pcbnew.PCB_VIA_T:
-            vias[_via_key(pcbnew, item)] = item
+            vias[_native_via_key(board, pcbnew, item)] = item
 
     remove = []
     seen_segments = set()
@@ -127,8 +151,7 @@ def apply_gloss(board, results, outcome):
         old, new = change.get("old"), change.get("new")
         if old is None or new is None:
             continue
-        key = (round(old.x, POSITION_DECIMALS),
-               round(old.y, POSITION_DECIMALS), int(old.net_id))
+        key = _krt_via_key(old)
         native = via_state.get(key)
         if native is None:
             raise RuntimeError("Via changed before Track Gloss apply")
@@ -138,8 +161,7 @@ def apply_gloss(board, results, outcome):
         else:
             resolved_moves[identity][2] = new
         via_state.pop(key, None)
-        via_state[(round(new.x, POSITION_DECIMALS),
-                   round(new.y, POSITION_DECIMALS), int(new.net_id))] = native
+        via_state[_krt_via_key(new)] = native
     via_moves = list(resolved_moves.values())
 
     layers = _layer_map(pcbnew)

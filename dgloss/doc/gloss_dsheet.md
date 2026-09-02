@@ -12,7 +12,26 @@ défini dans [`gloss_krt.md`](gloss_krt.md) et sa réalisation dans
 - Portée : nets complets sélectionnés ; sans sélection, tous les nets routés
 - Déclenchement : une fois, après le dernier smooth KRT
 - Budget plugin par défaut : 20 secondes
-- CLI dédié : non créé ; l'entrée post-smooth est préparée
+- CLI dédié : `gloss.py`
+
+## Emploi en ligne de commande
+
+Le CLI reprend les conventions KRT : noms et motifs de nets, `--nets`,
+`--component`, `--group`, `--group-by`, `--group-scope` et `--list-groups`.
+Sans sélection, tous les nets routés sont traités. Une sélection désigne
+toujours des nets complets.
+
+```text
+python gloss.py input.kicad_pcb output.kicad_pcb --nets "/Cpu/*"
+python gloss.py input.kicad_pcb --component U1 --preview
+python gloss.py input.kicad_pcb --json-out gloss-summary.json
+```
+
+Les paramètres omis sont résolus par les modules KRT depuis la classe Default
+du projet, les classes propres aux nets et les règles `.kicad_dru`. Le pas de
+grille autonome reste celui de KRT, `0,1 mm`, sauf `--grid-step` explicite.
+La sortie comprend un bilan lisible, `JSON_SUMMARY`, `JSON_SUMMARY_MIN` et,
+avec `--json-out`, le bilan JSON complet dans un fichier.
 
 ## Emploi depuis le plugin
 
@@ -57,14 +76,14 @@ Pour un appelant qui possède déjà le résultat du dernier smooth KRT :
 from dgloss import run_post_smooth_gloss
 
 outcome = run_post_smooth_gloss(
-    results, pcb_data, krt_config, gloss_config=options
+    results, pcb_data, krt_config, gloss_config=options, net_ids=selected_net_ids
 )
 ```
 
 Le second emploi est strictement post-smooth : il reconstruit le contexte mais
 ne relance pas `smooth_octolinear_chains()`. C'est aussi l'API publique prévue
-pour une intégration directe par KRT ; elle pourra être employée par un futur
-CLI sans être réservée à celui-ci.
+pour une intégration directe par KRT ; le CLI l'emploie sans la réserver à
+celui-ci.
 
 ## Configuration
 
@@ -88,7 +107,7 @@ ses options.
 
 - `input_strip_segments` et `input_strip_vias`, à supprimer de la sortie KRT ;
 - `changes`, description structurée des anciens et nouveaux objets ;
-- `stats`, bilan structuré destiné aux tests, rapports et futur CLI.
+- `stats`, bilan structuré destiné aux tests, rapports et au CLI.
 
 Le bilan global contient notamment les nets parcourus et améliorés, les
 longueurs avant/après, les changements de segments et de vias, le gain dgloss,
@@ -138,6 +157,10 @@ Gerbers sauf ajout volontaire à un travail de tracé par l'utilisateur.
 
 Avec G4, seule User.1 montre l'écart entre l'entrée du gloss et le résultat
 final ; les vues intermédiaires G3 à G3.5 ne sont pas produites.
+
+Le plugin nomme cette couche `TrackGloss Changes` lorsqu'elle est libre. Si
+elle est déjà occupée, seule la visualisation est omise : le traitement du
+cuivre et son résultat ne sont pas conditionnés par la couche User.
 
 ## Comportement en cas d'échec
 

@@ -158,7 +158,9 @@ atomique déjà possédé par G0.
 | `config.py` | Options appartenant à dgloss |
 | `stats.py` | Statistiques structurées et lignes de log |
 | `passes.py` | G4, répétition multinet déterministe de G3.5 |
-| `kicad_routing_plugin/gloss_visualization.py` | Adaptateur `pcbnew`, couches User et rendu avant/après |
+| `gloss.py` | CLI autonome, sélection et sortie compatibles KRT |
+| `kicad_krt_gloss/board_adapter.py` | Adaptateur `pcbnew` entre le PCB vivant et les types KRT |
+| `kicad_krt_gloss/gloss_visualization.py` | Couche User.1 et rendu final avant/après |
 
 ## Validation et traçabilité
 

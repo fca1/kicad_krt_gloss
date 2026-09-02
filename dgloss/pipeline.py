@@ -109,7 +109,10 @@ def _empty_via_stats():
 def _run_g3_5_pass(results, pcb_data, config, selected, net_ids, deadline, *,
                     emit_log):
     """Execute G3--G3.5 directly for the supplied complete KRT net list."""
-    context = build_gloss_context(pcb_data, config, net_ids=(net_ids or None))
+    # ``None`` is the public "all routed nets" sentinel.  At this internal
+    # boundary an empty list is already a resolved scope and must stay empty:
+    # turning it back into None would unexpectedly gloss every routed net.
+    context = build_gloss_context(pcb_data, config, net_ids=net_ids)
     before_length = calculate_route_length(pcb_data.segments)
     before_grades = {net_id: _grade(pcb_data, net_id)
                      for net_id in context.net_ids}
@@ -435,7 +438,10 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
         scope_net_ids = sorted(
             present_net_ids if not requested_net_ids else
             present_net_ids.intersection(requested_net_ids))
-        before_length = calculate_route_length(pcb_data.segments)
+        board_before_length = calculate_route_length(pcb_data.segments)
+        before_length = calculate_route_length([
+            segment for segment in pcb_data.segments
+            if segment.net_id in scope_net_ids])
         before_grades = {net_id: _grade(pcb_data, net_id)
                          for net_id in scope_net_ids}
         g5_before_grades = {net_id: _g5_grade(pcb_data, net_id)
@@ -478,8 +484,10 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
             changes=g4["transformations"], saved_mm=g4["saved_mm"],
             elapsed_ms=g4["algorithm_ms"], label="transformations multinet")
 
-        after_length = _validate_final(
-            context, before_grades, before_length, changes)
+        _validate_final(context, before_grades, board_before_length, changes)
+        after_length = calculate_route_length([
+            segment for segment in pcb_data.segments
+            if segment.net_id in scope_net_ids])
         g5_started = perf_counter()
         g5 = _certify_g5_copper(context, g5_before_grades, changes)
         g5_ms = (perf_counter() - g5_started) * 1000.0

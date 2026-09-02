@@ -56,7 +56,8 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
             from .board_adapter import apply_gloss, build_krt_config
 
             pcb_data = build_pcb_data_from_board(board)
-            config = build_krt_config(board, pcb_data, values["grid_step"])
+            config = build_krt_config(
+                board, pcb_data, values["grid_step"], net_ids=net_ids)
             gloss_config = GlossConfig(
                 enable_g3_1=values["enable_g3_1"],
                 enable_g3_2=values["enable_g3_2"],

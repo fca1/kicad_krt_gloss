@@ -4,12 +4,18 @@ from pathlib import Path
 import importlib.util
 import shutil
 import sys
+import types
+from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from kicad_krt_gloss.selection import selected_net_ids
+from kicad_krt_gloss.board_adapter import (
+    _krt_via_key, _native_segment_key, _native_via_key, _segment_key,
+    build_krt_config)
+from kicad_krt_gloss import runtime
 
 
 class Item:
@@ -106,3 +112,92 @@ def test_dialog_exposes_the_integrated_gloss_options_by_public_name():
     assert '\"enable_noncollinear_t_rails\": True' in source
     assert '\"enable_multipasses\": True' in source
     assert "enable_g4" not in source
+    assert source.count("SetToolTip(") >= 2
+    assert "Repeat enabled optimizations" in source
+    assert "KRT defaults to 0.1 mm" in source
+
+
+def test_plugin_config_delegates_dru_rules_to_krt():
+    class NetClass:
+        def GetTrackWidth(self): return 0.2
+        def GetClearance(self): return 0.1
+        def GetViaDiameter(self): return 0.4
+        def GetViaDrill(self): return 0.2
+
+    class NetSettings:
+        def GetDefaultNetclass(self): return NetClass()
+        def GetEffectiveNetClass(self, _name): return NetClass()
+
+    class Settings:
+        m_NetSettings = NetSettings()
+        m_CopperEdgeClearance = 0.15
+
+    class LiveBoard:
+        def GetDesignSettings(self): return Settings()
+        def GetFileName(self): return "example.kicad_pcb"
+
+    pcb = types.SimpleNamespace(
+        board_info=types.SimpleNamespace(copper_layers=["F.Cu", "B.Cu"]),
+        nets={1: types.SimpleNamespace(name="N1")},
+        source_path="example.kicad_pcb")
+    pcbnew = types.SimpleNamespace(ToMM=float)
+    with (patch.dict(sys.modules, {"pcbnew": pcbnew}),
+          patch("kicad_dru.install_layer_clearances") as install_layers,
+          patch("kicad_dru.install_track_clearances") as install_tracks):
+        config = build_krt_config(LiveBoard(), pcb, 0.1, net_ids=[1])
+    install_layers.assert_called_once_with(
+        config, None, "example.kicad_pcb", pcb)
+    install_tracks.assert_called_once_with(
+        config, None, "example.kicad_pcb", pcb, routed_net_ids=[1])
+
+
+def test_native_keys_distinguish_width_and_via_geometry():
+    pcbnew = types.SimpleNamespace(ToMM=float)
+    board = types.SimpleNamespace(GetLayerName=lambda layer: layer)
+
+    class Track:
+        def __init__(self, width): self.width = width
+        def GetStart(self): return types.SimpleNamespace(x=1.0, y=2.0)
+        def GetEnd(self): return types.SimpleNamespace(x=3.0, y=4.0)
+        def GetLayer(self): return "F.Cu"
+        def GetNetCode(self): return 7
+        def GetWidth(self): return self.width
+
+    first = types.SimpleNamespace(
+        start_x=1.0, start_y=2.0, end_x=3.0, end_y=4.0,
+        layer="F.Cu", net_id=7, width=0.2)
+    second = types.SimpleNamespace(**vars(first))
+    second.width = 0.3
+    assert _segment_key(first) != _segment_key(second)
+    assert (_native_segment_key(board, pcbnew, Track(0.2)) !=
+            _native_segment_key(board, pcbnew, Track(0.3)))
+
+    class NativeVia:
+        def GetPosition(self): return types.SimpleNamespace(x=5.0, y=6.0)
+        def GetNetCode(self): return 7
+        def GetWidth(self): return 0.4
+        def GetDrillValue(self): return 0.2
+        def TopLayer(self): return "F.Cu"
+        def BottomLayer(self): return "B.Cu"
+
+    via = types.SimpleNamespace(
+        x=5.0, y=6.0, net_id=7, size=0.4, drill=0.2,
+        layers=["F.Cu", "B.Cu"])
+    assert _native_via_key(board, pcbnew, NativeVia()) == _krt_via_key(via)
+
+
+def test_rust_binary_resolution_keeps_krt_submodule_immutable(
+        tmp_path, monkeypatch):
+    root = tmp_path / "KRT"
+    rust = root / "rust_router"
+    rust.mkdir(parents=True)
+    source = rust / "grid_router-windows-x86_64.pyd"
+    source.write_bytes(b"test-binary")
+    monkeypatch.setattr(runtime.sys, "platform", "win32")
+    monkeypatch.setattr(runtime.platform, "machine", lambda: "AMD64")
+
+    resolved = runtime._resolve_rust_binary(root)
+
+    assert resolved.read_bytes() == b"test-binary"
+    assert resolved.parent != rust
+    assert not (rust / "grid_router.pyd").exists()

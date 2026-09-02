@@ -16,6 +16,7 @@ for path in (REPO, KRT, os.path.join(KRT, "py_router"),
         sys.path.insert(0, path)
 
 from dgloss.context import build_gloss_context
+from dgloss.krt_clearance import KrtClearanceAdapter
 from dgloss.config import GlossConfig
 from dgloss.changes import GlossChanges
 from dgloss.comparison import compare_smoothers, format_comparison_table
@@ -144,6 +145,33 @@ def test_empty_net_list_means_all_and_nonempty_list_filters_complete_nets():
     selected = run_post_smooth_gloss(
         [], pcb, config, GlossConfig(False, False, False, False), net_ids=[2])
     assert selected.stats["nets_processed"] == 1
+    assert math.isclose(selected.stats["before_mm"], 6.0)
+    assert math.isclose(selected.stats["after_mm"], 6.0)
+
+
+def test_nonempty_selection_without_routed_copper_does_not_expand_to_all():
+    pcb, config, first, second = _parallel_board()
+    outcome = run_post_smooth_gloss(
+        [], pcb, config, GlossConfig(enable_multipasses=False), net_ids=[99])
+    assert outcome.stats["nets_processed"] == 0
+    assert pcb.segments == [first, second]
+    assert not outcome.changes["segments"]
+
+
+def test_via_clearance_enforces_same_net_hole_spacing():
+    pcb, config, _first, _second = _parallel_board()
+    existing = Via(5.0, 5.0, 0.3, 0.2, ["F.Cu", "B.Cu"], 1)
+    candidate = Via(5.35, 5.0, 0.3, 0.2, ["F.Cu", "B.Cu"], 1)
+    pcb.vias = [existing]
+    assert not KrtClearanceAdapter(pcb, config).via_clears(candidate)
+
+
+def test_via_clearance_honours_foreign_pad_local_clearance():
+    pcb, config, _first, _second = _parallel_board()
+    pad = pcb.pads_by_net[2][0]
+    pad.local_clearance = 0.5
+    candidate = Via(2.7, 6.0, 0.3, 0.2, ["F.Cu", "B.Cu"], 1)
+    assert not KrtClearanceAdapter(pcb, config).via_clears(candidate)
 
 
 def test_final_entry_passes_the_same_complete_net_scope_to_krt_and_dgloss():
