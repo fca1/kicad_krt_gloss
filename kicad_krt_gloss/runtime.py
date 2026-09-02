@@ -40,10 +40,11 @@ def _resolve_rust_binary(root):
 
 
 def configure_krt_runtime():
-    """Expose only KRT's library directories to the standalone gloss."""
+    """Expose the packaged dgloss and KRT libraries to the plugin runtime."""
+    package_dir = Path(__file__).resolve().parent
     root = krt_root()
     _resolve_rust_binary(root)
-    for path in (root, root / "py_router", root / "rust_router"):
+    for path in (package_dir, root, root / "py_router", root / "rust_router"):
         value = os.fspath(path)
         if value not in sys.path:
             sys.path.insert(0, value)

@@ -14,14 +14,14 @@ DEFAULTS = {
 
 class GlossSettingsDialog(wx.Dialog):
     def __init__(self, parent, values, selected_count):
-        super().__init__(parent, title="KiCad KRT Gloss", size=(430, 330))
+        super().__init__(parent, title="KiCad KRT Gloss")
         values = dict(DEFAULTS, **(values or {}))
         panel = wx.Panel(self)
-        outer = wx.BoxSizer(wx.VERTICAL)
+        content = wx.BoxSizer(wx.VERTICAL)
         scope = (f"{selected_count} selected net(s) will be glossed completely."
                  if selected_count else
                  "No net selected: all routed nets will be glossed.")
-        outer.Add(wx.StaticText(panel, label=scope), 0, wx.ALL, 10)
+        content.Add(wx.StaticText(panel, label=scope), 0, wx.ALL, 10)
 
         self.controls = {}
         labels = {
@@ -34,7 +34,7 @@ class GlossSettingsDialog(wx.Dialog):
             control = wx.CheckBox(panel, label=label)
             control.SetValue(bool(values[key]))
             self.controls[key] = control
-            outer.Add(control, 0, wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
+            content.Add(control, 0, wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
 
         row = wx.BoxSizer(wx.HORIZONTAL)
         row.Add(wx.StaticText(panel, label="KRT grid step (mm):"), 0,
@@ -44,16 +44,20 @@ class GlossSettingsDialog(wx.Dialog):
             inc=0.01)
         self.grid_step.SetDigits(3)
         row.Add(self.grid_step, 1)
-        outer.Add(row, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
-        outer.Add(wx.StaticText(
+        content.Add(row, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
+        content.Add(wx.StaticText(
             panel,
             label=("0.1 mm is KRT's default. For a direct KRT API call, "
                    "the actual KRT grid is used instead.")),
                   0, wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
+        panel.SetSizer(content)
 
+        outer = wx.BoxSizer(wx.VERTICAL)
+        outer.Add(panel, 1, wx.EXPAND)
         buttons = self.CreateButtonSizer(wx.OK | wx.CANCEL)
         outer.Add(buttons, 0, wx.EXPAND | wx.ALL, 10)
-        panel.SetSizer(outer)
+        self.SetSizerAndFit(outer)
+        self.SetMinSize(self.GetSize())
 
     def values(self):
         return {key: control.GetValue()
