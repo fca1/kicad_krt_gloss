@@ -21,6 +21,7 @@ from dgloss.config import GlossConfig
 from dgloss.changes import GlossChanges
 from dgloss.comparison import compare_smoothers, format_comparison_table
 from dgloss.algorithm import (_Chain, _best_chain_replacement,
+                              _candidate_clears,
                               _sliding_candidate_families)
 from dgloss.pipeline import (_certify_g5_copper, _g5_grade, _grade,
                              _validate_final, run_final_gloss,
@@ -261,6 +262,27 @@ def test_g3_slides_ordinary_diagonal_when_canonical_bends_are_blocked():
     assert visible[0]["new_segments"] == []
     assert all(change.get("stage") == "G4" for kind in ("segments", "vias")
                for change in visible[0]["track_gloss_changes"][kind])
+
+
+def test_a11_style_grid_rejection_uses_exact_krt_only_for_retained_copper():
+    source = Segment(2.0, 1.0, 2.0, 6.0, 0.4, "B.Cu", 1)
+    diagonal = Segment(0.0, 0.0, 2.0, 2.0, 0.4, "B.Cu", 1)
+    retained = Segment(2.0, 2.0, 2.0, 6.0, 0.4, "B.Cu", 1)
+    adapter = types.SimpleNamespace(connector_clears=lambda _segments: True)
+    context = types.SimpleNamespace(
+        coord=types.SimpleNamespace(grid_step=0.1),
+        clearance_adapter=adapter)
+
+    def grid_check(_context, _obstacles, segments):
+        return segments[0] is diagonal
+
+    with patch("dgloss.algorithm._clears_krt_grid", side_effect=grid_check):
+        assert _candidate_clears(
+            context, object(), [diagonal, retained], "sliding", [source])
+
+        new_rejected = Segment(3.0, 2.0, 3.0, 6.0, 0.4, "B.Cu", 1)
+        assert not _candidate_clears(
+            context, object(), [diagonal, new_rejected], "sliding", [source])
 
 
 def test_g4_exposes_only_the_final_user1_delta():

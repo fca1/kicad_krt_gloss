@@ -119,6 +119,11 @@ def test_about_tab_uses_project_versions_and_attribution():
     assert '"No net is selected: all routed nets will be glossed."' in source
 
 
+def test_pcm_package_includes_the_about_logo():
+    source = (ROOT / "package_pcm.py").read_text(encoding="utf-8")
+    assert '"icon_24.png", "icon_64.png"' in source
+
+
 def test_dialog_exposes_the_integrated_gloss_options_by_public_name():
     source = (ROOT / "kicad_krt_gloss" / "settings_dialog.py").read_text(
         encoding="utf-8")

@@ -178,20 +178,48 @@ def _clears_krt_grid(context, obstacles, segments):
     return True
 
 
-def _candidate_clears(context, obstacles, segments, source):
+def _reuses_source_segment(candidate, source_segments):
+    """True when candidate is wholly contained in unchanged source copper."""
+    return any(
+        candidate.layer == source.layer and
+        abs(candidate.width - source.width) <= 1e-6 and
+        point_to_segment_distance(
+            candidate.start_x, candidate.start_y,
+            source.start_x, source.start_y,
+            source.end_x, source.end_y) <= 1e-7 and
+        point_to_segment_distance(
+            candidate.end_x, candidate.end_y,
+            source.start_x, source.start_y,
+            source.end_x, source.end_y) <= 1e-7
+        for source in source_segments)
+
+
+def _candidate_clears(context, obstacles, segments, source,
+                      source_segments=()):
     """G3 speed policy, explicitly split by candidate provenance.
 
     KRT's own canonical connectors use KRT's exact smooth predicate through the
     thin adapter.  The much larger dgloss sliding family is searched on KRT's
-    Rust grid.  Whatever the search source, the selected replacement is checked
-    exactly once more before it can leave this module.
+    Rust grid.  A grid rejection is confirmed by KRT's exact predicate only
+    when every rejected segment is copper retained from the replaced source;
+    genuinely new copper must always pass the grid.  Whatever the search
+    source, the selected replacement is checked exactly once more before it can
+    leave this module.
     """
     if any(calculate_route_length([segment]) < context.coord.grid_step - 1e-9
            for segment in segments):
         return False
     if source == "canonical":
         return context.clearance_adapter.connector_clears(segments)
-    return _clears_krt_grid(context, obstacles, segments)
+    rejected = [segment for segment in segments
+                if not _clears_krt_grid(context, obstacles, [segment])]
+    if not rejected:
+        return True
+    if not source_segments or not all(
+            _reuses_source_segment(segment, source_segments)
+            for segment in rejected):
+        return False
+    return context.clearance_adapter.connector_clears(segments)
 
 
 def _touches_other_same_net(candidate, outside, vias, allowed_ends):
@@ -300,8 +328,9 @@ def _best_chain_replacement(context, chain, net_id, foreign_obstacles,
                     # shorter member of that same geometry cannot follow.
                     elif gain <= 1e-12:
                         break
-                    if not _candidate_clears(context, foreign_obstacles,
-                                             candidate, source):
+                    if not _candidate_clears(
+                            context, foreign_obstacles, candidate, source,
+                            chain.segments[i:j]):
                         continue
                     if _touches_other_same_net(
                             candidate, outside, net_vias,

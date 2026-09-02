@@ -80,7 +80,8 @@ class GlossSettingsDialog(wx.Dialog):
         about_content.AddSpacer(16)
         icon_path = os.path.join(os.path.dirname(__file__), "icon_64.png")
         if os.path.exists(icon_path):
-            bitmap = wx.StaticBitmap(about, bitmap=wx.Bitmap(icon_path))
+            image = wx.Image(icon_path, wx.BITMAP_TYPE_PNG)
+            bitmap = wx.StaticBitmap(about, bitmap=wx.Bitmap(image))
             about_content.Add(bitmap, 0, wx.ALIGN_CENTER | wx.ALL, 8)
 
         title = wx.StaticText(about, label="KiCad KRT Gloss")

@@ -149,7 +149,8 @@ def _best_pad_connector(context, pad, chain, points, outside, net_vias,
             new_length = calculate_route_length(candidate)
             if old_length - new_length <= context.coord.grid_step + 1e-12:
                 continue
-            if not _candidate_clears(context, foreign, candidate, source):
+            if not _candidate_clears(
+                    context, foreign, candidate, source, chain):
                 continue
             if _touches_other_same_net(candidate, outside, net_vias,
                                        (centre, anchor)):
