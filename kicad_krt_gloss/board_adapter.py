@@ -111,23 +111,36 @@ def apply_gloss(board, results, outcome):
             vias[_via_key(pcbnew, item)] = item
 
     remove = []
+    seen_segments = set()
     for segment in outcome.input_strip_segments:
+        if id(segment) in seen_segments:
+            continue
+        seen_segments.add(id(segment))
         bucket = tracks.get(_segment_key(segment), [])
         if not bucket:
             raise RuntimeError("Copper changed before Track Gloss apply")
         remove.append(bucket.pop())
 
-    via_moves = []
+    resolved_moves = {}
+    via_state = dict(vias)
     for change in outcome.changes.get("vias", []):
         old, new = change.get("old"), change.get("new")
         if old is None or new is None:
             continue
         key = (round(old.x, POSITION_DECIMALS),
                round(old.y, POSITION_DECIMALS), int(old.net_id))
-        native = vias.get(key)
+        native = via_state.get(key)
         if native is None:
             raise RuntimeError("Via changed before Track Gloss apply")
-        via_moves.append((native, native.GetPosition(), new))
+        identity = id(native)
+        if identity not in resolved_moves:
+            resolved_moves[identity] = [native, native.GetPosition(), new]
+        else:
+            resolved_moves[identity][2] = new
+        via_state.pop(key, None)
+        via_state[(round(new.x, POSITION_DECIMALS),
+                   round(new.y, POSITION_DECIMALS), int(new.net_id))] = native
+    via_moves = list(resolved_moves.values())
 
     layers = _layer_map(pcbnew)
     additions = [segment for result in results
