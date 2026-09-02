@@ -24,7 +24,9 @@ The dialog lets you enable or disable mobile-via optimization, pad-terminal
 optimization, sliding T-junctions, non-collinear T rails, complete via-chain
 optimization and multi-net convergence passes. It also sets the KRT grid step
 used by the standalone plugin. Every control has a short tooltip explaining
-its purpose.
+its purpose. Its **Log** tab retains the latest stage statistics and final
+result; **Clear Log** removes that history. The **Gloss** and **Close** buttons
+let an all-net run complete while the dialog remains available for review.
 
 When `User.1` is free, the plugin names it **TrackGloss Changes** and displays
 the final difference: old copper is dashed, new copper is solid, and moved vias

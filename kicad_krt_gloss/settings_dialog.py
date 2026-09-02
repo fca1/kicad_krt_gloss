@@ -19,11 +19,13 @@ DEFAULTS = {
 
 
 class GlossSettingsDialog(wx.Dialog):
-    def __init__(self, parent, values, selected_count):
+    def __init__(self, parent, values, selected_count, *, on_gloss=None,
+                 initial_log=""):
         super().__init__(parent, title="KiCad KRT Gloss")
         values = dict(DEFAULTS, **(values or {}))
-        notebook = wx.Notebook(self)
-        panel = wx.Panel(notebook)
+        self._on_gloss_callback = on_gloss
+        self.notebook = wx.Notebook(self)
+        panel = wx.Panel(self.notebook)
         content = wx.BoxSizer(wx.VERTICAL)
         scope = (f"{selected_count} selected net(s) will be glossed completely."
                  if selected_count else
@@ -73,9 +75,28 @@ class GlossSettingsDialog(wx.Dialog):
         row.Add(self.grid_step, 1)
         content.Add(row, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
         panel.SetSizer(content)
-        notebook.AddPage(panel, "General")
+        self.notebook.AddPage(panel, "General")
 
-        about = wx.Panel(notebook)
+        log_panel = wx.Panel(self.notebook)
+        log_content = wx.BoxSizer(wx.VERTICAL)
+        self.log_text = wx.TextCtrl(
+            log_panel, value=initial_log,
+            style=(wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2 |
+                   wx.HSCROLL | wx.VSCROLL | wx.ALWAYS_SHOW_SB),
+            size=(650, 340))
+        self.log_text.SetFont(wx.Font(
+            10, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL,
+            wx.FONTWEIGHT_NORMAL))
+        log_content.Add(self.log_text, 1, wx.EXPAND | wx.ALL, 5)
+        clear_log = wx.Button(log_panel, label="Clear Log")
+        clear_log.SetToolTip("Clear all Track Gloss log output.")
+        clear_log.Bind(wx.EVT_BUTTON, self._on_clear_log)
+        log_content.Add(clear_log, 0,
+                        wx.ALIGN_RIGHT | wx.RIGHT | wx.BOTTOM, 5)
+        log_panel.SetSizer(log_content)
+        self.notebook.AddPage(log_panel, "Log")
+
+        about = wx.Panel(self.notebook)
         about_content = wx.BoxSizer(wx.VERTICAL)
         about_content.AddSpacer(16)
         icon_path = os.path.join(os.path.dirname(__file__), "icon_64.png")
@@ -109,14 +130,44 @@ class GlossSettingsDialog(wx.Dialog):
         about_content.Add(license_text, 0, wx.ALIGN_CENTER | wx.ALL, 8)
         about_content.AddStretchSpacer()
         about.SetSizer(about_content)
-        notebook.AddPage(about, "About")
+        self.notebook.AddPage(about, "About")
 
         outer = wx.BoxSizer(wx.VERTICAL)
-        outer.Add(notebook, 1, wx.EXPAND)
-        buttons = self.CreateButtonSizer(wx.OK | wx.CANCEL)
+        outer.Add(self.notebook, 1, wx.EXPAND)
+        buttons = wx.BoxSizer(wx.HORIZONTAL)
+        self.gloss_button = wx.Button(self, label="Gloss")
+        self.gloss_button.SetToolTip("Run Track Gloss with these settings.")
+        self.gloss_button.Bind(wx.EVT_BUTTON, self._on_gloss)
+        close_button = wx.Button(self, label="Close")
+        close_button.SetToolTip("Close this dialog.")
+        close_button.Bind(wx.EVT_BUTTON,
+                          lambda _event: self.EndModal(wx.ID_CANCEL))
+        buttons.Add(self.gloss_button, 1, wx.RIGHT, 5)
+        buttons.Add(close_button, 1)
         outer.Add(buttons, 0, wx.EXPAND | wx.ALL, 10)
         self.SetSizerAndFit(outer)
         self.SetMinSize(self.GetSize())
+
+    def _on_clear_log(self, _event):
+        self.log_text.Clear()
+
+    def _on_gloss(self, _event):
+        if self._on_gloss_callback is None:
+            self.EndModal(wx.ID_OK)
+            return
+        self.gloss_button.Disable()
+        try:
+            self._on_gloss_callback(self.values(), self.append_log)
+        finally:
+            self.gloss_button.Enable()
+            self.notebook.SetSelection(1)
+
+    def append_log(self, text):
+        self.log_text.AppendText(str(text))
+        self.log_text.ShowPosition(self.log_text.GetLastPosition())
+
+    def log_value(self):
+        return self.log_text.GetValue()
 
     @staticmethod
     def _krt_version():

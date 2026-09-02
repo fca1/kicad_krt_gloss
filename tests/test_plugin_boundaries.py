@@ -102,10 +102,27 @@ def test_dialog_has_a_top_level_sizer_for_panel_and_buttons():
     source = (ROOT / "kicad_krt_gloss" / "settings_dialog.py").read_text(
         encoding="utf-8")
     assert "panel.SetSizer(content)" in source
-    assert 'notebook.AddPage(panel, "General")' in source
-    assert 'notebook.AddPage(about, "About")' in source
-    assert "outer.Add(notebook, 1, wx.EXPAND)" in source
+    assert 'self.notebook.AddPage(panel, "General")' in source
+    assert 'self.notebook.AddPage(log_panel, "Log")' in source
+    assert 'self.notebook.AddPage(about, "About")' in source
+    assert "outer.Add(self.notebook, 1, wx.EXPAND)" in source
     assert "self.SetSizerAndFit(outer)" in source
+
+
+def test_dialog_keeps_a_post_run_log_with_krt_style_controls():
+    source = (ROOT / "kicad_krt_gloss" / "settings_dialog.py").read_text(
+        encoding="utf-8")
+    assert 'label="Clear Log"' in source
+    assert 'label="Gloss"' in source
+    assert 'label="Close"' in source
+    assert "wx.TE_READONLY" in source
+    assert "self.notebook.SetSelection(1)" in source
+
+    action = (ROOT / "kicad_krt_gloss" / "action_plugin.py").read_text(
+        encoding="utf-8")
+    assert '_last_log = ""' in action
+    assert "initial_log=self.__class__._last_log" in action
+    assert 'print("\\n=== Track Gloss result ===")' in action
 
 
 def test_about_tab_uses_project_versions_and_attribution():
