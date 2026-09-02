@@ -10,6 +10,11 @@ import math
 LAYER_NAME = "TrackGloss Changes"
 STAGE_LAYERS = {"G3": 1, "G3.1": 2, "G3.2": 3,
                 "G3.3": 4, "G3.4": 5, "G3.5": 6, "G4": 1}
+INTERMEDIATE_LAYER_NAMES = {
+    2: "TrackGloss G3.1", 3: "TrackGloss G3.2",
+    4: "TrackGloss G3.3", 5: "TrackGloss G3.4",
+    6: "TrackGloss G3.5",
+}
 
 
 def _line_parts(start, end, dash=0.30, gap=0.20):
@@ -28,6 +33,35 @@ def _line_parts(start, end, dash=0.30, gap=0.20):
                       (x1 + ux * stop, y1 + uy * stop)))
         pos += dash + gap
     return parts
+
+
+def _disable_layer(layer_set, layer_id):
+    """Remove one layer from a KiCad LSET without deleting board objects."""
+    if not layer_set.Contains(layer_id):
+        return False
+    for name in ("RemoveLayer", "removeLayer"):
+        method = getattr(layer_set, name, None)
+        if method is not None:
+            method(layer_id)
+            return True
+    return False
+
+
+def disable_intermediate_layers(board, pcbnew):
+    """Disable legacy dgloss User.2--User.6 layers; preserve their drawings."""
+    enabled = board.GetEnabledLayers()
+    visible = board.GetVisibleLayers()
+    enabled_changed = visible_changed = False
+    for index, expected_name in INTERMEDIATE_LAYER_NAMES.items():
+        layer_id = getattr(pcbnew, f"User_{index}", None)
+        if layer_id is None or board.GetLayerName(layer_id) != expected_name:
+            continue
+        enabled_changed = _disable_layer(enabled, layer_id) or enabled_changed
+        visible_changed = _disable_layer(visible, layer_id) or visible_changed
+    if enabled_changed:
+        board.SetEnabledLayers(enabled)
+    if visible_changed:
+        board.SetVisibleLayers(visible)
 
 
 def add_layer_user(board, pcbnew, stage="G3"):

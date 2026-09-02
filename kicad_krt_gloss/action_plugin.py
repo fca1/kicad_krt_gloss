@@ -36,15 +36,16 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
             return
         net_ids = selected_net_ids(board)
         parent = wx.GetTopLevelWindows()[0] if wx.GetTopLevelWindows() else None
-        dialog = GlossSettingsDialog(
-            parent, self.__class__._settings, len(net_ids))
-        try:
-            if dialog.ShowModal() != wx.ID_OK:
-                return
-            values = dialog.values()
-        finally:
-            dialog.Destroy()
-        self.__class__._settings = values
+        values = dict(self.__class__._settings)
+        if not net_ids:
+            dialog = GlossSettingsDialog(parent, values, 0)
+            try:
+                if dialog.ShowModal() != wx.ID_OK:
+                    return
+                values = dialog.values()
+            finally:
+                dialog.Destroy()
+            self.__class__._settings = values
 
         try:
             wx.BeginBusyCursor()
@@ -75,13 +76,17 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
             pcbnew.Refresh()
             scope = (f"{len(net_ids)} selected net(s)"
                      if net_ids else "all routed nets")
-            wx.MessageBox(
-                f"Scope: {scope}\n"
-                f"Saved: {outcome.stats.get('saved_mm', 0.0):.4f} mm\n"
-                f"Tracks replaced: {removed} -> {added}\n"
-                f"Vias moved: {moved}\n\n"
-                "The board was modified but not saved.",
-                f"KiCad KRT Gloss {__version__}", wx.OK | wx.ICON_INFORMATION)
+            if len(net_ids) != 1:
+                wx.MessageBox(
+                    f"Scope: {scope}\n"
+                    f"Saved: {outcome.stats.get('saved_mm', 0.0):.4f} mm\n"
+                    f"Tracks replaced: {removed} -> {added}\n"
+                    f"Vias moved: {moved}\n\n"
+                    "Differences are shown on User.1 "
+                    "(\"TrackGloss Changes\") when available.\n\n"
+                    "The board was modified but not saved.",
+                    f"KiCad KRT Gloss {__version__}",
+                    wx.OK | wx.ICON_INFORMATION)
         except Exception:
             wx.MessageBox(
                 "Track Gloss failed; the board was left unchanged whenever "

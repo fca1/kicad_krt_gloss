@@ -102,8 +102,21 @@ def test_dialog_has_a_top_level_sizer_for_panel_and_buttons():
     source = (ROOT / "kicad_krt_gloss" / "settings_dialog.py").read_text(
         encoding="utf-8")
     assert "panel.SetSizer(content)" in source
-    assert "outer.Add(panel, 1, wx.EXPAND)" in source
+    assert 'notebook.AddPage(panel, "General")' in source
+    assert 'notebook.AddPage(about, "About")' in source
+    assert "outer.Add(notebook, 1, wx.EXPAND)" in source
     assert "self.SetSizerAndFit(outer)" in source
+
+
+def test_about_tab_uses_project_versions_and_attribution():
+    source = (ROOT / "kicad_krt_gloss" / "settings_dialog.py").read_text(
+        encoding="utf-8")
+    assert '("KRG version:", __version__)' in source
+    assert '("KRT version:", self._krt_version())' in source
+    assert '("Author:", "Frantz")' in source
+    assert '("Co-author:", "ChatGPT/Codex (OpenAI)")' in source
+    assert '("KRT author:", "DrAndyHaas")' in source
+    assert '"No net is selected: all routed nets will be glossed."' in source
 
 
 def test_dialog_exposes_the_integrated_gloss_options_by_public_name():
@@ -114,7 +127,27 @@ def test_dialog_exposes_the_integrated_gloss_options_by_public_name():
     assert "enable_g4" not in source
     assert source.count("SetToolTip(") >= 2
     assert "Repeat enabled optimizations" in source
-    assert "KRT defaults to 0.1 mm" in source
+    assert "KRT defaults to 0.1 mm" not in source
+    assert "For a direct KRT API call" not in source
+
+
+def test_settings_dialog_is_only_shown_without_selected_nets():
+    source = (ROOT / "kicad_krt_gloss" / "action_plugin.py").read_text(
+        encoding="utf-8")
+    assert "values = dict(self.__class__._settings)" in source
+    assert "if not net_ids:" in source
+    assert source.index("if not net_ids:") < source.index(
+        "dialog = GlossSettingsDialog")
+
+
+def test_single_selected_net_skips_the_success_summary_dialog():
+    source = (ROOT / "kicad_krt_gloss" / "action_plugin.py").read_text(
+        encoding="utf-8")
+    assert "if len(net_ids) != 1:" in source
+    assert source.index("if len(net_ids) != 1:") < source.index(
+        'f"Scope: {scope}\\n"')
+    assert '"Differences are shown on User.1 "' in source
+    assert '(\\"TrackGloss Changes\\") when available.' in source
 
 
 def test_plugin_config_delegates_dru_rules_to_krt():

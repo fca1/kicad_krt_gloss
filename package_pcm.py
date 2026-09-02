@@ -69,6 +69,7 @@ def build(output_dir):
                      runtime / "kicad_routing_plugin" / "deps_check.py")
         shutil.copy2(KRT / "requirements.txt", runtime / "requirements.txt")
         shutil.copy2(KRT / "LICENSE", runtime / "LICENSE")
+        shutil.copy2(KRT / "VERSION", runtime / "VERSION")
         _download_binaries(runtime / "rust_router")
 
         shutil.copy2(PLUGIN / "metadata.json", stage / "metadata.json")

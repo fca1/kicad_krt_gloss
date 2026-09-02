@@ -560,29 +560,19 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
             print(f"Track Gloss G3.5: {len(context.net_ids)} nets parcourus, "
                   f"{len(changed_net_ids)} améliorés, -{total_saved:.4f} mm, "
                   f"{elapsed_ms:.1f} ms")
-        if selected.enable_multipasses:
-            final_visual = _final_visual_changes(
-                baseline_segments, baseline_vias, pcb_data, changes)
-            for result in results[baseline_count:]:
-                result.pop("track_gloss_changes", None)
-            if final_visual:
-                results.append({
-                    "new_segments": [], "new_vias": [],
-                    "cleanup": "track_gloss_g4_visualization",
-                    "track_gloss_changes": final_visual.as_dict(),
-                })
-        elif changes:
-            # G3.5 owns no duplicate copper. This empty write-list entry gives
-            # the plugin a User.6 aggregate of the already-certified changes.
-            aggregate = {
-                "segments": [dict(entry, stage="G3.5")
-                             for entry in changes.segments],
-                "vias": [dict(entry, stage="G3.5")
-                         for entry in changes.vias],
-            }
-            results.append({"new_segments": [], "new_vias": [],
-                            "cleanup": "track_gloss_g3_5",
-                            "track_gloss_changes": aggregate})
+        # Since G4, visualisation is always the single final delta on User.1.
+        # The multipass switch controls optimisation only; it must never bring
+        # back the historical G3--G3.5 overlays on User.2 through User.6.
+        final_visual = _final_visual_changes(
+            baseline_segments, baseline_vias, pcb_data, changes)
+        for result in results[baseline_count:]:
+            result.pop("track_gloss_changes", None)
+        if final_visual:
+            results.append({
+                "new_segments": [], "new_vias": [],
+                "cleanup": "track_gloss_g4_visualization",
+                "track_gloss_changes": final_visual.as_dict(),
+            })
         return GlossOutcome(
             input_strip_segments=(krt_strips +
                                   initial["segment_strips"] +

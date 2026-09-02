@@ -124,7 +124,8 @@ def apply_gloss(board, results, outcome):
     """Apply prevalidated KRT objects to the live board and render overlays."""
     import pcbnew
     from kicad_parser import mm_to_iu
-    from .gloss_visualization import add_changes_to_board
+    from .gloss_visualization import (add_changes_to_board,
+                                      disable_intermediate_layers)
 
     tracks = defaultdict(list)
     vias = {}
@@ -204,6 +205,7 @@ def apply_gloss(board, results, outcome):
             raise RuntimeError("Partial native removal; use KiCad Undo")
         raise
 
+    disable_intermediate_layers(board, pcbnew)
     changes_by_stage = {}
     for result in results:
         changes = result.get("track_gloss_changes") or {}

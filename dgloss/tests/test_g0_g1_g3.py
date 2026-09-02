@@ -29,7 +29,8 @@ from dgloss.pad_terminals import optimize_pad_terminals
 from dgloss.sliding_nodes import slide_t_nodes
 from dgloss.via_mobile import move_mobile_vias, refine_mobile_vias
 from kicad_krt_gloss.gloss_visualization import (
-    _line_parts, add_changes_to_board, add_layer_user)
+    _line_parts, add_changes_to_board, add_layer_user,
+    disable_intermediate_layers)
 from kicad_parser import BoardInfo, Net, Pad, PCBData, Segment, Via
 from net_queries import calculate_route_length
 from routing_config import GridRouteConfig
@@ -253,12 +254,13 @@ def test_g3_slides_ordinary_diagonal_when_canonical_bends_are_blocked():
     assert outcome.stats["nets_processed"] == 1
     assert outcome.stats["segment_changes"] > 0
     assert outcome.stats["via_changes"] == 0
-    aggregate = [result for result in results
-                 if result.get("cleanup") == "track_gloss_g3_5"]
-    assert len(aggregate) == 1
-    assert aggregate[0]["new_segments"] == []
-    assert all(change.get("stage") == "G3.5" for kind in ("segments", "vias")
-               for change in aggregate[0]["track_gloss_changes"][kind])
+    visible = [result for result in results
+               if result.get("track_gloss_changes")]
+    assert len(visible) == 1
+    assert visible[0]["cleanup"] == "track_gloss_g4_visualization"
+    assert visible[0]["new_segments"] == []
+    assert all(change.get("stage") == "G4" for kind in ("segments", "vias")
+               for change in visible[0]["track_gloss_changes"][kind])
 
 
 def test_g4_exposes_only_the_final_user1_delta():
@@ -927,6 +929,38 @@ def test_add_layer_user_enables_missing_user1_without_overwriting_content():
     assert board.count == 1
     assert board.enabled.Contains(101) and board.visible.Contains(101)
     assert board.names[101] == "TrackGloss G3"
+
+
+def test_g4_disables_owned_intermediate_layers_without_deleting_drawings():
+    class LayerSet:
+        def __init__(self, layers): self.layers = set(layers)
+        def Contains(self, layer): return layer in self.layers
+        def RemoveLayer(self, layer): self.layers.remove(layer)
+
+    fake = types.SimpleNamespace(**{f"User_{i}": i for i in range(1, 7)})
+
+    class Board:
+        def __init__(self):
+            self.enabled = LayerSet(range(1, 7))
+            self.visible = LayerSet(range(1, 7))
+            self.names = {
+                1: "TrackGloss Changes", 2: "TrackGloss G3.1",
+                3: "TrackGloss G3.2", 4: "User notes",
+                5: "TrackGloss G3.4", 6: "TrackGloss G3.5",
+            }
+            self.drawings = [object(), object()]
+        def GetLayerName(self, layer): return self.names[layer]
+        def GetEnabledLayers(self): return self.enabled
+        def SetEnabledLayers(self, layers): self.enabled = layers
+        def GetVisibleLayers(self): return self.visible
+        def SetVisibleLayers(self, layers): self.visible = layers
+
+    board = Board()
+    before = list(board.drawings)
+    disable_intermediate_layers(board, fake)
+    assert board.enabled.layers == {1, 4}
+    assert board.visible.layers == {1, 4}
+    assert board.drawings == before
 
 
 if __name__ == "__main__":
