@@ -29,7 +29,7 @@ from dgloss.algorithm import (_Chain, _adaptive_sliding_candidates,
 from dgloss.pipeline import (_certify_g5_copper, _g5_grade, _grade,
                              _validate_final, run_final_gloss,
                              run_post_smooth_gloss)
-from dgloss.pad_terminals import optimize_pad_terminals
+from dgloss.pad_terminals import _best_pad_connector, optimize_pad_terminals
 from dgloss.sliding_nodes import slide_t_nodes
 from dgloss.via_mobile import move_mobile_vias, refine_mobile_vias
 from kicad_krt_gloss.gloss_visualization import (
@@ -436,6 +436,42 @@ def test_exact_foreign_segment_distance_composes_krt_primitives():
 
     assert math.isclose(crossing, -0.2, abs_tol=1e-12)
     assert math.isclose(parallel_with_rule, 0.6, abs_tol=1e-12)
+
+
+def test_pad_candidates_are_exact_checked_in_gain_order_until_one_passes():
+    pad = _pad("P", 0.0, 0.0, 1)
+    chain = [
+        Segment(0.0, 0.0, 0.0, 5.0, 0.2, "F.Cu", 1),
+        Segment(0.0, 5.0, 5.0, 5.0, 0.2, "F.Cu", 1),
+    ]
+    best_rejected = [
+        Segment(0.0, 0.0, 5.0, 5.0, 0.2, "F.Cu", 1)]
+    accepted = [
+        Segment(0.0, 0.0, 4.0, 0.0, 0.2, "F.Cu", 1),
+        Segment(4.0, 0.0, 5.0, 5.0, 0.2, "F.Cu", 1),
+    ]
+    worse_unused = [
+        Segment(0.0, 0.0, 4.5, 0.0, 0.2, "F.Cu", 1),
+        Segment(4.5, 0.0, 5.0, 5.0, 0.2, "F.Cu", 1),
+    ]
+    checked = []
+    adapter = types.SimpleNamespace(
+        connector_clears=lambda candidate:
+        checked.append(candidate) or candidate is accepted)
+    context = types.SimpleNamespace(
+        coord=types.SimpleNamespace(grid_step=0.1),
+        clearance_adapter=adapter)
+
+    with patch("dgloss.pad_terminals._candidate_segments",
+               return_value=iter((best_rejected, accepted, worse_unused))), \
+            patch("dgloss.pad_terminals._sliding_candidate_families",
+                  return_value=[]):
+        result = _best_pad_connector(
+            context, pad, chain, [(0.0, 0.0), (0.0, 5.0), (5.0, 5.0)],
+            [], [], object())
+
+    assert result is accepted
+    assert checked == [best_rejected, accepted]
 
 
 def test_g4_exposes_only_the_final_user1_delta():

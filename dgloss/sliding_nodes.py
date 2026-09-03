@@ -197,7 +197,8 @@ def _new_segments_join_cleanly(segments):
 def _best_slide(context, node, chain, anchor, rail_groups, current, net_vias,
                 foreign, incident, deadline=None):
     branch = chain[0]
-    best = None
+    candidates = []
+    sequence = 0
     for rails in rail_groups:
         if deadline is not None and perf_counter() >= deadline:
             break
@@ -265,7 +266,8 @@ def _best_slide(context, node, chain, anchor, rail_groups, current, net_vias,
                                 branch_candidate, anchor, outside):
                             continue
                         branch_clearance = _candidate_clearance(
-                            context, foreign, branch_candidate, provenance)
+                            context, foreign, branch_candidate, provenance,
+                            defer_exact=True)
                         if not branch_clearance:
                             continue
                         exact_segment_ids = set(
@@ -274,7 +276,8 @@ def _best_slide(context, node, chain, anchor, rail_groups, current, net_vias,
                             cleaned_clear = True
                             for segment in added[len(branch_candidate):]:
                                 decision = _candidate_clearance(
-                                    context, foreign, [segment], "canonical")
+                                    context, foreign, [segment], "canonical",
+                                    defer_exact=True)
                                 if not decision:
                                     cleaned_clear = False
                                     break
@@ -295,16 +298,23 @@ def _best_slide(context, node, chain, anchor, rail_groups, current, net_vias,
                         if cleaned and _new_boundary_right_angle(
                                 added, residual_end, outside):
                             continue
-                        if (not all(id(segment) in exact_segment_ids
-                                    for segment in added) and
-                                not context.clearance_adapter.connector_clears(
-                                    added)):
-                            continue
                         score = (-gain, new_length, len(added),
                                  point[0], point[1])
-                        if best is None or score < best[0]:
-                            best = score, removed, added, cleaned
-    return None if best is None else best[1:]
+                        candidates.append((
+                            score, sequence, removed, added, cleaned,
+                            frozenset(exact_segment_ids)))
+                        sequence += 1
+
+    # Generate and rank with cheap geometry/grid tests; ask KRT for exact
+    # clearance only for the best remaining candidate.
+    for (_score, _sequence, removed, added, cleaned,
+         exact_segment_ids) in sorted(candidates):
+        if deadline is not None and perf_counter() >= deadline:
+            break
+        if (all(id(segment) in exact_segment_ids for segment in added) or
+                context.clearance_adapter.connector_clears(added)):
+            return removed, added, cleaned
+    return None
 
 
 def slide_t_nodes(context, results, deadline=None, *,

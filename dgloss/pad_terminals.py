@@ -136,7 +136,8 @@ def _best_pad_connector(context, pad, chain, points, outside, net_vias,
                     _sliding_candidate_families(
                         centre, anchor, chain[0].layer, chain[0].width,
                         chain[0].net_id, context.coord.grid_step))
-    best = None
+    candidates = []
+    sequence = 0
     for source, family in families:
         if deadline is not None and perf_counter() >= deadline:
             break
@@ -147,7 +148,8 @@ def _best_pad_connector(context, pad, chain, points, outside, net_vias,
             if old_length - new_length <= context.coord.grid_step + 1e-12:
                 continue
             clearance = _candidate_clearance(
-                context, foreign, candidate, source, chain)
+                context, foreign, candidate, source, chain,
+                defer_exact=True)
             if not clearance:
                 continue
             if _touches_other_same_net(candidate, outside, net_vias,
@@ -156,15 +158,19 @@ def _best_pad_connector(context, pad, chain, points, outside, net_vias,
             if _new_boundary_right_angle(candidate, anchor, outside):
                 continue
             score = (new_length, len(candidate))
-            if best is None or score < best[0]:
-                best = score, candidate, clearance.exact_segment_ids
-    if best is None:
-        return None
-    candidate, exact_segment_ids = best[1], best[2]
-    if (not all(id(segment) in exact_segment_ids for segment in candidate) and
-            not context.clearance_adapter.connector_clears(candidate)):
-        return None
-    return candidate
+            candidates.append((score, sequence, candidate,
+                               clearance.exact_segment_ids))
+            sequence += 1
+
+    # Exact KRT geometry is authoritative, but only candidates competitive on
+    # length reach it.  A rejected winner advances to the next-best candidate.
+    for _score, _sequence, candidate, exact_segment_ids in sorted(candidates):
+        if deadline is not None and perf_counter() >= deadline:
+            break
+        if (all(id(segment) in exact_segment_ids for segment in candidate) or
+                context.clearance_adapter.connector_clears(candidate)):
+            return candidate
+    return None
 
 
 def optimize_pad_terminals(context, results, deadline=None, *, net_ids):

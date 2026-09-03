@@ -297,7 +297,7 @@ def _reuses_source_segment(candidate, source_segments):
 
 
 def _candidate_clearance(context, obstacles, segments, source,
-                         source_segments=()):
+                         source_segments=(), *, defer_exact=False):
     """G3 speed policy, explicitly split by candidate provenance.
 
     KRT's own canonical connectors use KRT's exact smooth predicate through the
@@ -310,6 +310,8 @@ def _candidate_clearance(context, obstacles, segments, source,
     if not _candidate_geometry_valid(context, segments):
         return _ClearanceDecision(False)
     if source == "canonical":
+        if defer_exact:
+            return _ClearanceDecision(True)
         clear = context.clearance_adapter.connector_clears(segments)
         return _ClearanceDecision(
             clear, frozenset(map(id, segments)) if clear else frozenset())
@@ -321,6 +323,8 @@ def _candidate_clearance(context, obstacles, segments, source,
             _reuses_source_segment(segment, source_segments)
             for segment in rejected):
         return _ClearanceDecision(False)
+    if defer_exact:
+        return _ClearanceDecision(True)
     clear = context.clearance_adapter.connector_clears(segments)
     return _ClearanceDecision(
         clear, frozenset(map(id, segments)) if clear else frozenset())
