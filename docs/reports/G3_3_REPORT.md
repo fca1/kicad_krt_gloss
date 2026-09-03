@@ -1,4 +1,4 @@
-# G3.3 — validation des T glissants
+# Rapport historique — G3.3 — validation des T glissants
 
 Date : 2026-09-02  
 Branche : `gloss_final`  

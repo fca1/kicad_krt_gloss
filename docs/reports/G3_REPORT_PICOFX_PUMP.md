@@ -1,4 +1,4 @@
-# G3 — synthèse globale KRT / dgloss sur picofx_pump
+# Rapport historique — G3 — synthèse globale KRT / dgloss sur picofx_pump
 
 Date : 2026-09-01  
 Branche : `gloss_final`  

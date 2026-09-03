@@ -1,4 +1,4 @@
-# G5 — certification finale de conformité
+# Rapport historique — G5 — certification finale de conformité
 
 G5 est une certification, pas une nouvelle passe géométrique. Le résultat G4
 est conservé à l'identique puis contrôlé avec les données et primitives KRT.

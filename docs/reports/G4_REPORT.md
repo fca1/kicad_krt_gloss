@@ -1,4 +1,4 @@
-# G4 — validation des passes multinet
+# Rapport historique — G4 — validation des passes multinet
 
 G4 réemploie la chaîne G3.5 complète, net par net, sans ajouter d'algorithme
 géométrique. `enable_multipasses` est actif par défaut. Les appels G3.5 internes

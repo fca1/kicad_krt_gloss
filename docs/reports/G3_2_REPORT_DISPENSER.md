@@ -1,4 +1,4 @@
-# G3.2 — validation ciblée sur dispenser
+# Rapport historique — G3.2 — validation ciblée sur dispenser
 
 Date : 2026-09-01  
 Branche : `gloss_final`  

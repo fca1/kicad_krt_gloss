@@ -192,6 +192,6 @@ atomique déjà possédé par G0.
 ## Validation et traçabilité
 
 Chaque étape donne lieu à une sortie testable, puis à un commit et un tag du
-même nom. Les rapports historiques G3 à G3.5 restent dans `dgloss/`. Les tests
-ciblés vérifient les transformations, les invariants, la désactivation des
-options, le budget et l'absence de second smooth dans l'entrée post-smooth.
+même nom. Les rapports historiques sont classés dans `docs/reports/`. Les
+tests ciblés vérifient les transformations, les invariants, la désactivation
+des options, le budget et l'absence de second smooth dans l'entrée post-smooth.

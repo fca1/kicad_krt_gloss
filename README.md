@@ -64,5 +64,5 @@ The standalone adaptation was created and developed by **ChatGPT/Codex
 this project under the MIT License.
 
 KiCad KRT Gloss is distributed under the [MIT License](LICENSE). Detailed
-credits and retained notices are available in [AUTHORS.md](AUTHORS.md) and
+credits and retained notices are available in [AUTHORS.md](docs/AUTHORS.md) and
 [NOTICE](NOTICE).

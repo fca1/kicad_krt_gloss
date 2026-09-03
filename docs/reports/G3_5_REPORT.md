@@ -1,4 +1,4 @@
-# G3.5 — conformité et réduction finale des segments
+# Rapport historique — G3.5 — conformité et réduction finale des segments
 
 G3.5 coordonne G3 à G3.4 puis termine l'objectif lexicographique de la
 spécification : après la réduction de longueur, réduire le nombre de segments

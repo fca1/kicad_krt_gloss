@@ -1,4 +1,4 @@
-# G3.4 — validation des vias complets
+# Rapport historique — G3.4 — validation des vias complets
 
 Date : 2026-09-02  
 Branche : `gloss_final`  
