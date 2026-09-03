@@ -132,12 +132,12 @@ class GlossSettingsDialog(wx.Dialog):
             ("Co-author:", "ChatGPT/Codex (OpenAI)", None),
             (None, None, None),
             ("KRT author:", "DrAndyHaas",
-             "https://github.com/drandyhaas/KiCadRoutingTools"),
+            "https://github.com/drandyhaas/KiCadRoutingTools"),
         )
         for label, value, url in rows:
             if label is None:
-                info.AddSpacer((1, 10))
-                info.AddSpacer((1, 10))
+                info.AddSpacer(10)
+                info.AddSpacer(10)
                 continue
             name = wx.StaticText(about, label=label)
             name.SetFont(name.GetFont().Bold())

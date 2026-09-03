@@ -170,6 +170,8 @@ def test_about_tab_uses_project_versions_and_attribution():
     assert 'label="GitHub Repository"' in source
     assert '"https://github.com/fca1/kicad_krt_gloss"' in source
     assert '"https://github.com/drandyhaas/KiCadRoutingTools"' in source
+    assert "info.AddSpacer(10)" in source
+    assert "info.AddSpacer((1, 10))" not in source
     assert 'selection_value = str(selected_count) if selected_count else "ALL"' \
         in source
 
