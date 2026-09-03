@@ -6,17 +6,14 @@ from time import perf_counter
 from check_connected import check_net_connectivity
 from check_drc import point_to_pad_distance
 from net_queries import calculate_route_length
-from obstacle_cache import (add_net_obstacles_from_cache,
-                            precompute_net_obstacles,
-                            remove_net_obstacles_from_cache)
 from routing_utils import pos_key
 
 from .algorithm import (_candidate_clears, _candidate_segments,
                         _connectivity_worse, _edge_directions,
-                        _remove_result_custody, _right_angle,
+                        _right_angle,
                         _sliding_candidate_families,
                         _touches_other_same_net)
-from .changes import GlossChanges
+from .changes import GlossChanges, release_result_custody
 
 
 def _pad_on_layer(pad, layer):
@@ -168,7 +165,7 @@ def _best_pad_connector(context, pad, chain, points, outside, net_vias,
     return candidate
 
 
-def optimize_pad_terminals(context, results, deadline=None):
+def optimize_pad_terminals(context, results, deadline=None, *, net_ids):
     """One deterministic G3.2 pass; pads stay fixed and terminate the walk."""
     started = perf_counter()
     changes = GlossChanges()
@@ -177,18 +174,10 @@ def optimize_pad_terminals(context, results, deadline=None):
     saved_mm = 0.0
     changed_net_ids = set()
     pads_changed = 0
-    locked_nets = {segment.net_id for segment in context.pcb_data.segments
-                   if getattr(segment, "locked", False)}
-
-    for net_id in context.net_ids:
+    for net_id in net_ids:
         if deadline is not None and perf_counter() >= deadline:
             break
-        if net_id in locked_nets:
-            continue
-        own_cache = context.net_obstacles.get(net_id)
-        foreign = context.working_obstacles.clone_fresh()
-        if own_cache is not None:
-            remove_net_obstacles_from_cache(foreign, own_cache)
+        foreign = context.foreign_obstacles(net_id)
         net_changed = False
         processed = set()
 
@@ -226,7 +215,9 @@ def optimize_pad_terminals(context, results, deadline=None):
             if _connectivity_worse(before_grade, after_grade):
                 continue
 
-            strips.extend(_remove_result_custody(results, chain))
+            native_segments, _native_vias = release_result_custody(
+                results, chain)
+            strips.extend(native_segments)
             context.pcb_data.segments = [segment for segment in
                                          context.pcb_data.segments
                                          if id(segment) not in removed_ids] + candidate
@@ -245,13 +236,7 @@ def optimize_pad_terminals(context, results, deadline=None):
             net_changed = True
 
         if net_changed:
-            if own_cache is not None:
-                remove_net_obstacles_from_cache(context.working_obstacles,
-                                                own_cache)
-            new_cache = precompute_net_obstacles(
-                context.pcb_data, net_id, context.config, extra_clearance=0.0)
-            context.net_obstacles[net_id] = new_cache
-            add_net_obstacles_from_cache(context.working_obstacles, new_cache)
+            context.refresh_net_obstacles(net_id)
 
     stats = {"pads_changed": pads_changed,
              "net_ids_changed": changed_net_ids,

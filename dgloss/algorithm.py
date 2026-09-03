@@ -9,13 +9,10 @@ from check_drc import point_to_pad_distance
 from geometry_utils import point_to_segment_distance, segments_intersect
 from kicad_parser import Segment
 from net_queries import calculate_route_length
-from obstacle_cache import (add_net_obstacles_from_cache,
-                            precompute_net_obstacles,
-                            remove_net_obstacles_from_cache)
 from pcb_modification import _octolinear_bends
 from routing_utils import pos_key
 from single_ended_routing import _segment_fits_wide
-from .changes import GlossChanges
+from .changes import GlossChanges, release_result_custody
 
 
 @dataclass
@@ -501,21 +498,8 @@ def _best_chain_replacement(context, chain, net_id, foreign_obstacles,
     return removed, added
 
 
-def _remove_result_custody(results, removed):
-    removed_ids = {id(seg) for seg in removed}
-    owned = set()
-    for result in results:
-        segments = list(result.get("new_segments") or [])
-        for seg in segments:
-            if id(seg) in removed_ids:
-                owned.add(id(seg))
-        result["new_segments"] = [seg for seg in segments
-                                  if id(seg) not in removed_ids]
-    return [seg for seg in removed if id(seg) not in owned]
-
-
-def shorten_routes(context, results, deadline=None, *, objective="shorter",
-                   stage="G3"):
+def shorten_routes(context, results, deadline=None, *, net_ids,
+                   objective="shorter", stage="G3"):
     """Run one deterministic dgloss pass, net by net, with fixed vias."""
     changes = GlossChanges()
     strips = []
@@ -524,24 +508,16 @@ def shorten_routes(context, results, deadline=None, *, objective="shorter",
     totals = {"nets_changed": 0, "segments_removed": 0,
               "segments_added": 0, "saved_mm": 0.0,
               "algorithm_ms": 0.0, "per_net": per_net}
-    locked_nets = {s.net_id for s in context.pcb_data.segments
-                   if getattr(s, "locked", False)}
-
-    for net_id in context.net_ids:
+    for net_id in net_ids:
         if deadline is not None and perf_counter() >= deadline:
             break
-        if net_id in locked_nets:
-            continue
         started = perf_counter()
         net_segments = [s for s in context.pcb_data.segments
                         if s.net_id == net_id]
         net_vias = [v for v in context.pcb_data.vias if v.net_id == net_id]
         before_length = calculate_route_length(net_segments, net_vias,
                                                context.pcb_data)
-        foreign = context.working_obstacles.clone_fresh()
-        own_cache = context.net_obstacles.get(net_id)
-        if own_cache is not None:
-            remove_net_obstacles_from_cache(foreign, own_cache)
+        foreign = context.foreign_obstacles(net_id)
 
         removed_net = []
         added_net = []
@@ -597,7 +573,9 @@ def shorten_routes(context, results, deadline=None, *, objective="shorter",
         if not removed_net:
             continue
 
-        strips.extend(_remove_result_custody(results, removed_net))
+        native_segments, _native_vias = release_result_custody(
+            results, removed_net)
+        strips.extend(native_segments)
         changes.segments.extend({"old": seg, "stage": stage}
                                 for seg in removed_net)
         changes.segments.extend({"new": seg, "stage": stage}
@@ -609,12 +587,7 @@ def shorten_routes(context, results, deadline=None, *, objective="shorter",
         totals["saved_mm"] += before_length - after_length
 
         # Keep the persistent KRT map authoritative for the following net.
-        if own_cache is not None:
-            remove_net_obstacles_from_cache(context.working_obstacles, own_cache)
-        new_cache = precompute_net_obstacles(
-            context.pcb_data, net_id, context.config, extra_clearance=0.0)
-        context.net_obstacles[net_id] = new_cache
-        add_net_obstacles_from_cache(context.working_obstacles, new_cache)
+        context.refresh_net_obstacles(net_id)
 
     totals["saved_mm"] = round(totals["saved_mm"], 4)
     totals["algorithm_ms"] = round(totals["algorithm_ms"], 3)

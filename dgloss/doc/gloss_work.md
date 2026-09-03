@@ -34,10 +34,20 @@ Le contrat détaillé de cette seconde entrée est défini dans
 de la création d'un CLI.
 
 Le gloss n'est appelé qu'une fois, après tous les smooth intermédiaires et la
-réconciliation finale. `build_gloss_context()` reconstruit alors, depuis le
-cuivre final, les couches, caches, obstacles et grilles nécessaires avec les
-constructeurs KRT. `KrtClearanceAdapter` reste une couche d'adaptation mince
-vers les contrôles KRT ; il ne recrée pas un moteur de clearance parallèle.
+réconciliation finale. G0 résout alors une fois la sélection et les exclusions,
+puis `build_gloss_context()` reconstruit, depuis le cuivre final, les couches,
+caches, obstacles et grilles nécessaires avec les constructeurs KRT. Les nets
+protégés par KRT et les nets à arcs sont retirés de la portée modifiable avant
+cette construction ; ils restent présents comme obstacles. Un via verrouillé
+protège son net complet, conformément à la politique KRT.
+
+Le même `GlossContext` est transmis à toute la chaîne et à G4. Les mises à jour
+ultérieures remplacent seulement le cache KRT du net effectivement modifié ;
+elles ne reconstruisent ni la grille, ni la base d'obstacles. Les modules issus
+des jalons G3.x fournissent uniquement leurs recherches géométriques internes :
+ils ne résolvent plus leur propre sélection et ne recalculent plus de liste de
+nets verrouillés. `KrtClearanceAdapter` reste une couche d'adaptation mince vers
+les contrôles KRT ; il ne recrée pas un moteur de clearance parallèle.
 
 ## Décomposition des étapes
 
@@ -122,18 +132,20 @@ gain dgloss et produit une vue cumulée de debug sans dupliquer le cuivre.
 
 ### G4 — passes de convergence
 
-Lorsque `enable_multipasses` est actif, G4 rappelle la chaîne G3.5 complète
-pour chaque net. Une liste vide signifie tous les nets. L'ordre déterministe
-alterne entre croissant et décroissant à chaque passe ; le résultat accepté
-d'un net est immédiatement utilisé pour construire le contexte du suivant.
+Lorsque `enable_multipasses` est actif, G4 rappelle la chaîne G3.5 complète une
+fois par passe avec toute la liste de nets. Une liste vide signifie tous les
+nets. L'ordre déterministe alterne entre croissant et décroissant à chaque
+passe ; le résultat accepté d'un net est immédiatement visible par le suivant.
 Les passes s'arrêtent à la première passe complète sans transformation ou à
 l'expiration du budget global. G4 ne possède aucun algorithme géométrique
 propre : il orchestre exclusivement G3.5 et ses options.
 
-G4 appelle directement le noyau interne `_run_g3_5_pass()` avec `[net_id]`.
-Il ne rappelle jamais l'entrée publique G0. Le noyau reconstruit néanmoins le
-contexte KRT depuis le cuivre courant pour chaque net. Une erreur remonte sans
-être convertie en résultat vide ; G0 restaure alors atomiquement tout le gloss.
+G4 appelle directement le noyau interne `_run_g3_5_pass()` une seule fois par
+passe, avec la liste complète dans l'ordre retenu et le `GlossContext` unique
+préparé par G0. Il ne rappelle ni l'entrée publique G0, ni
+`build_gloss_context()`. Après une transformation, seul le cache d'obstacles du
+net concerné est remplacé. Une erreur remonte sans être convertie en résultat
+vide ; G0 restaure alors atomiquement tout le gloss.
 
 À partir de G4, seule User.1 présente l'écart entre l'entrée du gloss et son
 résultat final.

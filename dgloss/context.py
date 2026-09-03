@@ -1,9 +1,14 @@
 """Thin adapter over KRT's existing obstacle-map machinery."""
 
 from dataclasses import dataclass, replace
+from collections import Counter
 
+from cleanup_pipeline import _smooth_skip_net_ids
 from obstacle_cache import (build_working_obstacle_map,
-                            precompute_all_net_obstacles)
+                            precompute_all_net_obstacles,
+                            add_net_obstacles_from_cache,
+                            precompute_net_obstacles,
+                            remove_net_obstacles_from_cache)
 from obstacle_map import build_base_obstacle_map
 from routing_config import GridCoord
 from routing_utils import build_layer_map
@@ -21,9 +26,60 @@ class GlossContext:
     working_obstacles: object
     net_obstacles: dict
     clearance_adapter: object
+    excluded_net_ids: set
+    exclusion_reasons: dict
+
+    def foreign_obstacles(self, net_id):
+        """Current KRT obstacle map with only this net's copper removed."""
+        foreign = self.working_obstacles.clone_fresh()
+        own_cache = self.net_obstacles.get(net_id)
+        if own_cache is not None:
+            remove_net_obstacles_from_cache(foreign, own_cache)
+        return foreign
+
+    def refresh_net_obstacles(self, net_id):
+        """Incrementally replace one changed net in the persistent KRT map."""
+        old_cache = self.net_obstacles.get(net_id)
+        if old_cache is not None:
+            remove_net_obstacles_from_cache(self.working_obstacles, old_cache)
+        new_cache = precompute_net_obstacles(
+            self.pcb_data, net_id, self.config, extra_clearance=0.0)
+        self.net_obstacles[net_id] = new_cache
+        add_net_obstacles_from_cache(self.working_obstacles, new_cache)
 
 
-def build_gloss_context(pcb_data, config, net_ids=None):
+def _linearized_arc_net_ids(pcb_data):
+    """Recognize text-parsed KRT arc chords by their shared native UUID."""
+    counts = Counter(segment.uuid for segment in pcb_data.segments
+                     if getattr(segment, "uuid", ""))
+    repeated = {uuid for uuid, count in counts.items() if count > 1}
+    return {segment.net_id for segment in pcb_data.segments
+            if getattr(segment, "uuid", "") in repeated and segment.net_id}
+
+
+def resolve_gloss_scope(pcb_data, net_ids=None, excluded_net_ids=None):
+    """G0: resolve the requested scope and every immutable net exactly once."""
+    present = {segment.net_id for segment in pcb_data.segments
+               if segment.net_id}
+    requested = set(net_ids or ())
+    scope = present if not requested else present.intersection(requested)
+    protected = set(_smooth_skip_net_ids(pcb_data))
+    arcs = _linearized_arc_net_ids(pcb_data)
+    external = set(excluded_net_ids or ())
+    excluded = scope.intersection(protected | arcs | external)
+    reasons = {}
+    for net_id in excluded:
+        labels = []
+        if net_id in protected:
+            labels.append("KRT protected")
+        if net_id in arcs or net_id in external:
+            labels.append("arc")
+        reasons[net_id] = ", ".join(labels)
+    return sorted(scope - excluded), excluded, reasons
+
+
+def build_gloss_context(pcb_data, config, net_ids=None, *,
+                        excluded_net_ids=None, exclusion_reasons=None):
     """Rebuild KRT obstacles from the post-smooth board."""
     layers = list(pcb_data.board_info.copper_layers or config.layers)
     gloss_config = replace(config, layers=layers)
@@ -47,4 +103,6 @@ def build_gloss_context(pcb_data, config, net_ids=None):
         working_obstacles=working,
         net_obstacles=caches,
         clearance_adapter=KrtClearanceAdapter(pcb_data, gloss_config),
+        excluded_net_ids=set(excluded_net_ids or ()),
+        exclusion_reasons=dict(exclusion_reasons or {}),
     )

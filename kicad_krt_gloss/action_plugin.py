@@ -10,7 +10,7 @@ import pcbnew
 import wx
 
 from .runtime import configure_krt_runtime, ensure_krt_dependencies
-from .selection import selected_net_ids
+from .selection import native_arc_net_ids, selected_net_ids
 from .settings_dialog import DEFAULTS, GlossSettingsDialog
 from .version import __version__
 
@@ -114,7 +114,8 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                 )
                 results = []
                 outcome = run_final_gloss(
-                    results, pcb_data, config, gloss_config, net_ids=net_ids)
+                    results, pcb_data, config, gloss_config, net_ids=net_ids,
+                    excluded_net_ids=native_arc_net_ids(board))
                 removed, added, moved = apply_gloss(
                     board, results, outcome)
                 pcbnew.Refresh()

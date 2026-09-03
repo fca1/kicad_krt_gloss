@@ -85,6 +85,11 @@ ne relance pas `smooth_octolinear_chains()`. C'est aussi l'API publique prévue
 pour une intégration directe par KRT ; le CLI l'emploie sans la réserver à
 celui-ci.
 
+G0 construit ce contexte une seule fois, y compris lorsque G4 est actif. Avant
+sa construction, il exclut les groupes à longueur/temps imposé, les paires
+différentielles couplées, les nets d'impédance, tout net contenant du cuivre
+verrouillé et tout net contenant un arc. Ces nets restent des obstacles.
+
 ## Configuration
 
 `GlossConfig` est indépendante de `GridRouteConfig`. Le plugin transmet
@@ -112,7 +117,8 @@ ses options.
 Le bilan global contient notamment les nets parcourus et améliorés, les
 longueurs avant/après, les changements de segments et de vias, le gain dgloss,
 le gain KRT séparé, le temps, l'état du budget et le nombre de régressions de
-connectivité.
+connectivité. `nets_excluded`, `excluded_net_ids` et `exclusion_reasons`
+décrivent les exclusions décidées par G0.
 
 La réduction finale de segments expose aussi :
 

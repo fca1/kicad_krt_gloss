@@ -1,6 +1,5 @@
 """G4: deterministic multi-net passes over the complete G3.5 chain."""
 
-from dataclasses import replace
 from time import perf_counter
 
 from net_queries import calculate_route_length
@@ -17,10 +16,11 @@ def _collect(target, source):
     target.vias.extend(source.get("vias", []))
 
 
-def run_multinet_passes(pcb_data, config, gloss_config, net_ids, results,
+def run_multinet_passes(context, gloss_config, net_ids, results,
                         deadline, run_g3_5):
-    """Replay configured G3.5 for each net, alternating order to convergence."""
-    base_order = sorted(set(net_ids))
+    """Replay G3.5 once per complete pass, alternating order to convergence."""
+    pcb_data = context.pcb_data
+    base_order = sorted(set(net_ids).intersection(context.net_ids))
     changes = GlossChanges()
     segment_strips = []
     via_strips = []
@@ -40,37 +40,23 @@ def run_multinet_passes(pcb_data, config, gloss_config, net_ids, results,
                  else list(reversed(base_order)))
         before = calculate_route_length(pcb_data.segments)
         pass_started = perf_counter()
-        pass_changes = 0
-        pass_segment_reduction = 0
-        completed = True
-
-        for net_id in order:
-            if perf_counter() >= deadline:
-                completed = False
-                stop_reason = "budget"
-                break
-            remaining = max(0.0, deadline - perf_counter())
-            one_pass = replace(
-                gloss_config, budget_seconds=remaining,
-                enable_multipasses=False)
-            outcome = run_g3_5(
-                results, pcb_data, config, one_pass, [net_id], deadline,
-                emit_log=False)
-            _collect(changes, outcome["changes"].as_dict())
-            segment_strips.extend(outcome["segment_strips"])
-            via_strips.extend(outcome["via_strips"])
-            stage_rows = outcome["stage_stats"].as_dict()["stages"]
-            net_changes = sum(
-                row.get("changes", 0) for stage, row in stage_rows.items()
-                if stage not in ("G4", "G5"))
-            pass_segment_reduction += (
-                outcome["equal"]["segments_removed"] -
-                outcome["equal"]["segments_added"] +
-                outcome["merged_count"])
-
-            pass_changes += net_changes
-            if outcome["changed_net_ids"]:
-                changed_net_ids.add(net_id)
+        outcome = run_g3_5(
+            results, context, gloss_config, order, deadline, emit_log=False)
+        _collect(changes, outcome["changes"].as_dict())
+        segment_strips.extend(outcome["segment_strips"])
+        via_strips.extend(outcome["via_strips"])
+        stage_rows = outcome["stage_stats"].as_dict()["stages"]
+        pass_changes = sum(
+            row.get("changes", 0) for stage, row in stage_rows.items()
+            if stage not in ("G4", "G5"))
+        pass_segment_reduction = (
+            outcome["equal"]["segments_removed"] -
+            outcome["equal"]["segments_added"] +
+            outcome["merged_count"])
+        changed_net_ids.update(outcome["changed_net_ids"])
+        completed = perf_counter() < deadline
+        if not completed:
+            stop_reason = "budget"
 
         after = calculate_route_length(pcb_data.segments)
         elapsed_ms = (perf_counter() - pass_started) * 1000.0

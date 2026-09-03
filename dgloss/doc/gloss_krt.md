@@ -26,6 +26,18 @@ L'ordre impératif des objectifs est :
   coupure de connexion.
 - Aucune apparence supposée ne confère une protection implicite à une piste.
 
+Avant toute transformation, les nets suivants sont exclus intégralement de la
+portée modifiable :
+
+1. groupes à longueur ou temps imposé ;
+2. paires différentielles couplées ;
+3. nets avec contrainte d'impédance ;
+4. nets contenant du cuivre verrouillé, piste ou via ;
+5. nets contenant des arcs.
+
+Ces exclusions restent des obstacles pour les autres nets. Une sélection
+explicite ne lève pas leur protection.
+
 ## Règles et sécurité
 
 - Les règles effectives, les largeurs, les clearances, les obstacles, les

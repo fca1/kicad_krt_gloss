@@ -152,6 +152,52 @@ def test_empty_net_list_means_all_and_nonempty_list_filters_complete_nets():
     assert math.isclose(selected.stats["after_mm"], 6.0)
 
 
+def test_g0_excludes_krt_protected_nets_once_for_every_gloss_stage():
+    pcb, config, first, second = _parallel_board()
+    with patch("dgloss.context._smooth_skip_net_ids", return_value={1}):
+        outcome = run_post_smooth_gloss(
+            [], pcb, config, GlossConfig(False, False, False, False))
+    assert outcome.stats["nets_processed"] == 1
+    assert outcome.stats["excluded_net_ids"] == [1]
+    assert outcome.stats["exclusion_reasons"][1] == "KRT protected"
+    assert pcb.segments == [first, second]
+
+
+def test_g0_excludes_linearized_arc_nets_before_building_the_grid():
+    pcb, config, first, second = _parallel_board()
+    first.uuid = "arc-source"
+    pcb.segments.append(Segment(
+        first.end_x, first.end_y, first.end_x + 0.1, first.end_y,
+        first.width, first.layer, first.net_id, uuid="arc-source"))
+    outcome = run_post_smooth_gloss(
+        [], pcb, config, GlossConfig(False, False, False, False))
+    assert outcome.stats["nets_processed"] == 1
+    assert outcome.stats["excluded_net_ids"] == [1]
+    assert outcome.stats["exclusion_reasons"][1] == "arc"
+
+
+def test_g0_treats_a_locked_via_as_protection_for_the_complete_net():
+    pcb, config, _first, _second = _parallel_board()
+    pcb.vias.append(Via(
+        3.0, 2.0, 0.5, 0.2, ["F.Cu", "B.Cu"], 1, locked=True))
+    outcome = run_post_smooth_gloss(
+        [], pcb, config, GlossConfig(False, False, False, False))
+    assert outcome.stats["nets_processed"] == 1
+    assert outcome.stats["excluded_net_ids"] == [1]
+    assert "KRT protected" in outcome.stats["exclusion_reasons"][1]
+
+
+def test_g4_reuses_the_single_context_built_by_g0():
+    pcb, config, _first, _second = _parallel_board()
+    from dgloss.context import build_gloss_context as real_build
+    with patch("dgloss.pipeline.build_gloss_context",
+               wraps=real_build) as build:
+        run_post_smooth_gloss(
+            [], pcb, config, GlossConfig(
+                False, False, False, False, enable_multipasses=True))
+    assert build.call_count == 1
+
+
 def test_nonempty_selection_without_routed_copper_does_not_expand_to_all():
     pcb, config, first, second = _parallel_board()
     outcome = run_post_smooth_gloss(
@@ -186,6 +232,28 @@ def test_final_entry_passes_the_same_complete_net_scope_to_krt_and_dgloss():
             [], pcb, config, disabled, net_ids=[2])
     assert smooth.call_args.args[2] == [2]
     assert outcome.stats["nets_processed"] == 1
+
+
+def test_final_entry_excludes_adapter_arc_nets_before_krt_smooth_and_g0():
+    pcb, config, _first, _second = _parallel_board()
+    disabled = GlossConfig(False, False, False, False)
+    with patch("dgloss.pipeline.smooth_octolinear_chains",
+               return_value=(0, set(), [], [], {"saved_mm": 0.0})) as smooth:
+        outcome = run_final_gloss(
+            [], pcb, config, disabled, excluded_net_ids=[1])
+    assert smooth.call_args.args[2] == [2]
+    assert outcome.stats["nets_processed"] == 1
+    assert outcome.stats["excluded_net_ids"] == [1]
+
+
+def test_g3_stage_modules_do_not_rebuild_locked_lists_or_krt_caches():
+    for name in ("algorithm.py", "via_mobile.py", "pad_terminals.py",
+                 "sliding_nodes.py"):
+        with open(os.path.join(REPO, "dgloss", name), encoding="utf-8") as handle:
+            source = handle.read()
+        assert "locked_nets" not in source
+        assert "precompute_net_obstacles" not in source
+        assert "remove_net_obstacles_from_cache" not in source
 
 
 def test_g3_5_each_optional_stage_can_be_disabled_independently():
@@ -649,7 +717,7 @@ def test_g3_2_uses_the_native_pad_centre_as_fixed_terminal():
     before = calculate_route_length(pcb.segments)
 
     strips, added, changes, stats = optimize_pad_terminals(
-        context, [])
+        context, [], net_ids=context.net_ids)
 
     assert stats["pads_changed"] == 1
     assert calculate_route_length(pcb.segments) < before - config.grid_step
@@ -684,7 +752,8 @@ def test_g3_3_slides_only_the_t_branch_and_keeps_rail_identity():
         layers=["F.Cu", "B.Cu"], board_edge_clearance=0.0)
     context = build_gloss_context(pcb, config)
 
-    strips, added, changes, stats = slide_t_nodes(context, [])
+    strips, added, changes, stats = slide_t_nodes(
+        context, [], net_ids=context.net_ids)
 
     assert stats["t_branches_slid"] == 1
     assert rail_left in pcb.segments and rail_right in pcb.segments
@@ -718,7 +787,8 @@ def test_g3_3_pad_or_via_at_node_has_priority_over_sliding():
                              layers=["F.Cu", "B.Cu"])
     context = build_gloss_context(pcb, config)
 
-    _strips, _added, _changes, stats = slide_t_nodes(context, [])
+    _strips, _added, _changes, stats = slide_t_nodes(
+        context, [], net_ids=context.net_ids)
 
     assert stats["t_branches_slid"] == 0
     assert pcb.segments == rails + [branch]
@@ -741,7 +811,8 @@ def test_g3_3_experiment_slides_noncollinear_t_and_cleans_old_right_angle():
     context = build_gloss_context(pcb, config)
     before = calculate_route_length(pcb.segments)
 
-    strips, added, _changes, stats = slide_t_nodes(context, [])
+    strips, added, _changes, stats = slide_t_nodes(
+        context, [], net_ids=context.net_ids)
 
     assert stats["noncollinear_t_slid"] == 1
     assert stats["right_angles_cleaned"] == 1
@@ -782,7 +853,8 @@ def test_g3_3_noncollinear_t_variant_can_be_disabled():
         layers=["F.Cu", "B.Cu"], board_edge_clearance=0.0)
 
     _strips, _added, _changes, stats = slide_t_nodes(
-        build_gloss_context(pcb, config), [], allow_noncollinear=False)
+        build_gloss_context(pcb, config), [], net_ids=[1],
+        allow_noncollinear=False)
 
     assert stats["noncollinear_t_slid"] == 0
     assert pcb.segments == original
@@ -814,13 +886,15 @@ def test_g3_4_optimizes_both_complete_portions_around_mobile_via():
     with patch("dgloss.via_mobile._clears_krt_grid", return_value=False) as grid, \
             patch.object(context.clearance_adapter, "connector_clears") as exact:
         _blocked_in, _blocked_out, _blocked_changes, blocked = \
-            refine_mobile_vias(context, [])
+            refine_mobile_vias(context, [], net_ids=context.net_ids)
     assert grid.call_count > 0
     exact.assert_not_called()
     assert blocked["vias_moved"] == 0
 
-    _s1, _v1, _c1, g31 = move_mobile_vias(context, [])
-    input_vias, emitted, changes, g34 = refine_mobile_vias(context, [])
+    _s1, _v1, _c1, g31 = move_mobile_vias(
+        context, [], net_ids=context.net_ids)
+    input_vias, emitted, changes, g34 = refine_mobile_vias(
+        context, [], net_ids=context.net_ids)
 
     assert g31["vias_moved"] == 0
     assert g34["vias_moved"] == 1
@@ -837,35 +911,6 @@ def test_g3_4_optimizes_both_complete_portions_around_mobile_via():
             via.tenting_attrs)
     assert all(change.get("stage") == "G3.4"
                for change in changes.segments + changes.vias)
-
-
-def test_g3_4_fixed_via_does_not_freeze_another_via_on_same_net():
-    segments = [
-        Segment(1.0, 1.0, 3.0, 1.0, 0.2, "F.Cu", 1),
-        Segment(3.0, 1.0, 3.0, 4.0, 0.2, "B.Cu", 1),
-        Segment(7.0, 8.0, 8.0, 8.0, 0.2, "F.Cu", 1),
-        Segment(8.0, 8.0, 8.0, 9.0, 0.2, "B.Cu", 1),
-    ]
-    mobile = Via(3.0, 1.0, 0.5, 0.2, ["F.Cu", "B.Cu"], 1)
-    fixed = Via(8.0, 8.0, 0.5, 0.2, ["F.Cu", "B.Cu"], 1,
-                locked=True)
-    pads = {1: [_pad("A", 1.0, 1.0, 1),
-                _pad("B", 3.0, 4.0, 1, "B.Cu"),
-                _pad("C", 7.0, 8.0, 1),
-                _pad("D", 8.0, 9.0, 1, "B.Cu")]}
-    pcb = PCBData(
-        BoardInfo({}, ["F.Cu", "B.Cu"], (0.0, 0.0, 10.0, 10.0)),
-        {1: Net(1, "N1")}, {}, [mobile, fixed], segments, pads)
-    config = GridRouteConfig(
-        track_width=0.2, clearance=0.1, grid_step=0.1,
-        layers=["F.Cu", "B.Cu"], board_edge_clearance=0.0)
-    context = build_gloss_context(pcb, config)
-
-    _strips, emitted, _changes, stats = move_mobile_vias(context, [])
-
-    assert stats["vias_moved"] == 1
-    assert fixed in pcb.vias and (fixed.x, fixed.y) == (8.0, 8.0)
-    assert len(emitted) == 1 and (emitted[0].x, emitted[0].y) != (3.0, 1.0)
 
 
 def test_g3_comparison_uses_identical_input_and_reports_timing():

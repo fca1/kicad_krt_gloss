@@ -5,7 +5,6 @@ from dataclasses import dataclass, field
 from time import perf_counter
 
 from check_connected import check_net_connectivity
-from cleanup_pipeline import _smooth_skip_net_ids
 from geometry_utils import UnionFind
 from net_queries import calculate_route_length
 from pcb_modification import merge_collinear_segments, smooth_octolinear_chains
@@ -13,7 +12,7 @@ from pcb_modification import merge_collinear_segments, smooth_octolinear_chains
 from .algorithm import _connectivity_worse, shorten_routes
 from .changes import GlossChanges
 from .config import GlossConfig
-from .context import build_gloss_context
+from .context import build_gloss_context, resolve_gloss_scope
 from .pad_terminals import optimize_pad_terminals
 from .passes import run_multinet_passes
 from .sliding_nodes import slide_t_nodes
@@ -106,16 +105,14 @@ def _empty_via_stats():
             "added_segments": []}
 
 
-def _run_g3_5_pass(results, pcb_data, config, selected, net_ids, deadline, *,
-                    emit_log):
+def _run_g3_5_pass(results, context, selected, net_ids, deadline, *, emit_log):
     """Execute G3--G3.5 directly for the supplied complete KRT net list."""
-    # ``None`` is the public "all routed nets" sentinel.  At this internal
-    # boundary an empty list is already a resolved scope and must stay empty:
-    # turning it back into None would unexpectedly gloss every routed net.
-    context = build_gloss_context(pcb_data, config, net_ids=net_ids)
+    pcb_data = context.pcb_data
+    run_net_ids = [net_id for net_id in net_ids
+                   if net_id in context.net_ids]
     before_length = calculate_route_length(pcb_data.segments)
     before_grades = {net_id: _grade(pcb_data, net_id)
-                     for net_id in context.net_ids}
+                     for net_id in run_net_ids}
     changes = GlossChanges()
     stage_stats = GlossStats(
         budget_seconds=max(0.0, deadline - perf_counter()), emit=emit_log)
@@ -126,7 +123,7 @@ def _run_g3_5_pass(results, pcb_data, config, selected, net_ids, deadline, *,
         return enabled and not expired, expired
 
     strips, added, g3_changes, g3 = shorten_routes(
-        context, results, deadline=deadline)
+        context, results, deadline=deadline, net_ids=run_net_ids)
     _append_result(results, "track_gloss_g3", added, [], g3_changes)
     changes.segments.extend(g3_changes.segments)
     changes.vias.extend(g3_changes.vias)
@@ -137,7 +134,8 @@ def _run_g3_5_pass(results, pcb_data, config, selected, net_ids, deadline, *,
 
     run, expired = available(selected.enable_g3_1)
     via_strips, added_vias, via_changes, via = \
-        move_mobile_vias(context, results, deadline=deadline) \
+        move_mobile_vias(
+            context, results, deadline=deadline, net_ids=run_net_ids) \
         if run else ([], [], GlossChanges(), _empty_via_stats())
     _append_result(results, "track_gloss_g3_1", via["added_segments"],
                    added_vias, via_changes)
@@ -150,7 +148,8 @@ def _run_g3_5_pass(results, pcb_data, config, selected, net_ids, deadline, *,
 
     run, expired = available(selected.enable_g3_2)
     pad_strips, pad_added, pad_changes, pad = \
-        optimize_pad_terminals(context, results, deadline=deadline) \
+        optimize_pad_terminals(
+            context, results, deadline=deadline, net_ids=run_net_ids) \
         if run else ([], [], GlossChanges(), {
             "pads_changed": 0, "saved_mm": 0.0,
             "net_ids_changed": set(), "algorithm_ms": 0.0})
@@ -165,7 +164,8 @@ def _run_g3_5_pass(results, pcb_data, config, selected, net_ids, deadline, *,
     node_strips, node_added, node_changes, node = \
         slide_t_nodes(
             context, results, deadline=deadline,
-            allow_noncollinear=selected.enable_noncollinear_t_rails) \
+            allow_noncollinear=selected.enable_noncollinear_t_rails,
+            net_ids=run_net_ids) \
         if run else ([], [], GlossChanges(), {
             "t_branches_slid": 0, "saved_mm": 0.0,
             "noncollinear_t_slid": 0, "right_angles_cleaned": 0,
@@ -185,7 +185,8 @@ def _run_g3_5_pass(results, pcb_data, config, selected, net_ids, deadline, *,
 
     run, expired = available(selected.enable_g3_4)
     refine_strips, refine_vias, refine_changes, refine = \
-        refine_mobile_vias(context, results, deadline=deadline) \
+        refine_mobile_vias(
+            context, results, deadline=deadline, net_ids=run_net_ids) \
         if run else ([], [], GlossChanges(), _empty_via_stats())
     _append_result(results, "track_gloss_g3_4", refine["added_segments"],
                    refine_vias, refine_changes)
@@ -202,7 +203,8 @@ def _run_g3_5_pass(results, pcb_data, config, selected, net_ids, deadline, *,
     equal_strips, equal_added, equal_changes, equal = \
         shorten_routes(
             context, results, deadline=deadline,
-            objective="fewer_segments", stage="G3.5") \
+            objective="fewer_segments", stage="G3.5",
+            net_ids=run_net_ids) \
         if run else ([], [], GlossChanges(), {
             "nets_changed": 0, "segments_removed": 0,
             "segments_added": 0, "saved_mm": 0.0,
@@ -221,7 +223,7 @@ def _run_g3_5_pass(results, pcb_data, config, selected, net_ids, deadline, *,
     merge_started = perf_counter()
     if run:
         merged_count, merged_nets, merge_strips, merge_added, merge = \
-            merge_collinear_segments(results, pcb_data, set(context.net_ids))
+            merge_collinear_segments(results, pcb_data, set(run_net_ids))
     else:
         merged_count, merged_nets = 0, 0
         merge_strips, merge_added = [], []
@@ -378,7 +380,7 @@ def _certify_g5_copper(context, before_grades, changes):
 
 
 def run_final_gloss(results, pcb_data, config, gloss_config=None, *,
-                    net_ids=None):
+                    net_ids=None, excluded_net_ids=None):
     """Plugin wrapper: run the last KRT smooth, then the post-smooth G0 API."""
     original_segments = list(pcb_data.segments)
     original_vias = list(pcb_data.vias)
@@ -386,25 +388,21 @@ def run_final_gloss(results, pcb_data, config, gloss_config=None, *,
     original_results = _result_snapshot(results)
     try:
         started = perf_counter()
-        present_net_ids = {segment.net_id for segment in pcb_data.segments
-                           if segment.net_id}
-        scope_net_ids = list(net_ids or ())
-        requested_net_ids = set(scope_net_ids)
-        smooth_net_ids = sorted(
-            present_net_ids if not requested_net_ids else
-            present_net_ids.intersection(requested_net_ids))
+        active_net_ids, excluded, exclusion_reasons = resolve_gloss_scope(
+            pcb_data, net_ids, excluded_net_ids)
         _count, _nets, strips, _added, krt_stats = smooth_octolinear_chains(
-            results, pcb_data, smooth_net_ids,
+            results, pcb_data, active_net_ids,
             clearance=config.clearance,
             net_clearances=getattr(config, "net_clearances", None),
             board_edge_clearance=config.board_edge_clearance,
-            config=config, skip_net_ids=_smooth_skip_net_ids(pcb_data),
+            config=config, skip_net_ids=excluded,
             min_gain=config.grid_step)
         krt_ms = (perf_counter() - started) * 1000.0
         return run_post_smooth_gloss(
             results, pcb_data, config, gloss_config=gloss_config,
-            net_ids=scope_net_ids, krt_strips=strips, krt_stats=krt_stats,
-            krt_ms=krt_ms)
+            net_ids=active_net_ids, krt_strips=strips, krt_stats=krt_stats,
+            krt_ms=krt_ms,
+            _resolved_scope=(active_net_ids, excluded, exclusion_reasons))
     except Exception as exc:
         _restore(results, original_count, original_results, pcb_data,
                  original_segments, original_vias)
@@ -415,7 +413,8 @@ def run_final_gloss(results, pcb_data, config, gloss_config=None, *,
 
 def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
                           net_ids=None, krt_strips=None, krt_stats=None,
-                          krt_ms=0.0, _emit_log=True):
+                          krt_ms=0.0, excluded_net_ids=None, _emit_log=True,
+                          _resolved_scope=None):
     """G0 API for a caller that already owns the final KRT smooth result."""
     baseline_segments = list(pcb_data.segments)
     baseline_vias = list(pcb_data.vias)
@@ -432,12 +431,16 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
     deadline = started + max(0.0, selected.budget_seconds)
 
     try:
-        present_net_ids = {segment.net_id for segment in pcb_data.segments
-                           if segment.net_id}
-        requested_net_ids = set(net_ids or ())
-        scope_net_ids = sorted(
-            present_net_ids if not requested_net_ids else
-            present_net_ids.intersection(requested_net_ids))
+        if _resolved_scope is None:
+            scope_net_ids, excluded, exclusion_reasons = resolve_gloss_scope(
+                pcb_data, net_ids, excluded_net_ids)
+        else:
+            scope_net_ids, excluded, exclusion_reasons = _resolved_scope
+        context = build_gloss_context(
+            pcb_data, config, net_ids=scope_net_ids,
+            excluded_net_ids=excluded, exclusion_reasons=exclusion_reasons)
+        if _emit_log and excluded:
+            print(f"Track Gloss G0: {len(excluded)} protected net(s) excluded")
         board_before_length = calculate_route_length(pcb_data.segments)
         before_length = calculate_route_length([
             segment for segment in pcb_data.segments
@@ -447,9 +450,8 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
         g5_before_grades = {net_id: _g5_grade(pcb_data, net_id)
                             for net_id in scope_net_ids}
         initial = _run_g3_5_pass(
-            results, pcb_data, config, selected, scope_net_ids, deadline,
+            results, context, selected, scope_net_ids, deadline,
             emit_log=_emit_log)
-        context = initial["context"]
         changes = initial["changes"]
         gloss_stats = initial["stage_stats"]
         g3, via, pad = initial["g3"], initial["via"], initial["pad"]
@@ -466,7 +468,7 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
 
         run, expired = available(selected.enable_multipasses)
         g4 = run_multinet_passes(
-            pcb_data, config, selected, list(context.net_ids), results,
+            context, selected, list(context.net_ids), results,
             deadline, _run_g3_5_pass) if run else {
                 "segment_strips": [], "via_strips": [],
                 "changes": GlossChanges(), "passes": [],
@@ -506,6 +508,9 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
         stats.update({
             "config": selected.as_dict(), "gloss": gloss_stats.as_dict(),
             "nets_processed": len(context.net_ids),
+            "nets_excluded": len(context.excluded_net_ids),
+            "excluded_net_ids": sorted(context.excluded_net_ids),
+            "exclusion_reasons": dict(context.exclusion_reasons),
             "nets_changed": len(changed_net_ids), "saved_mm": total_saved,
             "segment_changes": len(changes.segments),
             "via_changes": len(changes.vias),

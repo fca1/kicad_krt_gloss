@@ -27,3 +27,18 @@ def selected_net_ids(board):
         if net_id > 0:
             net_ids.add(net_id)
     return sorted(net_ids)
+
+
+def native_arc_net_ids(board):
+    """Return nets whose native arc tracks cannot be rewritten as KRT chords."""
+    net_ids = set()
+    for item in board.GetTracks():
+        try:
+            is_arc = item.GetClass() == "PCB_ARC"
+        except AttributeError:
+            is_arc = False
+        if is_arc:
+            net_id = int(item.GetNetCode())
+            if net_id > 0:
+                net_ids.add(net_id)
+    return sorted(net_ids)

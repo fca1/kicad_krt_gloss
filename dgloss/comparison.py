@@ -54,7 +54,8 @@ def compare_smoothers(pcb_data, config, net_ids=None):
         context = build_gloss_context(gloss_board, config, net_ids=[net_id])
         preparation_ms = (perf_counter() - started) * 1000.0
         started = perf_counter()
-        _strips, _added, _changes, stats = shorten_routes(context, gloss_results)
+        _strips, _added, _changes, stats = shorten_routes(
+            context, gloss_results, net_ids=context.net_ids)
         gloss_ms = (perf_counter() - started) * 1000.0
         gloss_length = net_copper_length(gloss_board, net_id)
 

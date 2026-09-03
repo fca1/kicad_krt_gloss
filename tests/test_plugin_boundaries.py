@@ -11,7 +11,7 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from kicad_krt_gloss.selection import selected_net_ids
+from kicad_krt_gloss.selection import native_arc_net_ids, selected_net_ids
 from kicad_krt_gloss.board_adapter import (
     _krt_via_key, _native_segment_key, _native_via_key, _segment_key,
     build_krt_config)
@@ -28,6 +28,9 @@ class Item:
 
     def IsSelected(self):
         return self.selected
+
+    def GetClass(self):
+        return "PCB_TRACK"
 
 
 class Footprint(Item):
@@ -61,6 +64,14 @@ class Board:
 
 def test_selection_filters_every_supported_item_to_unique_complete_net_ids():
     assert selected_net_ids(Board()) == [7, 9, 10, 11]
+
+
+def test_native_arc_nets_are_excluded_at_the_plugin_boundary():
+    straight = Item(7)
+    arc = Item(8)
+    arc.GetClass = lambda: "PCB_ARC"
+    board = types.SimpleNamespace(GetTracks=lambda: [straight, arc])
+    assert native_arc_net_ids(board) == [8]
 
 
 def test_dgloss_runtime_does_not_depend_on_pcbnew_or_plugin_package():

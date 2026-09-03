@@ -34,6 +34,7 @@ run_post_smooth_gloss(
     krt_strips=None,
     krt_stats=None,
     krt_ms=0.0,
+    excluded_net_ids=None,
 )
 ```
 
@@ -52,16 +53,24 @@ Il est pris en charge par le dépôt autonome `kicad_krt_gloss`.
 | `krt_strips` | KRT | Segments déjà remplacés par le traitement précédent |
 | `krt_stats` | KRT | Statistiques du traitement KRT précédent |
 | `krt_ms` | KRT | Temps KRT à conserver séparément du temps dgloss |
+| `excluded_net_ids` | appelant | Exclusions supplémentaires imposées par le support d'entrée, notamment les arcs natifs |
 
 La sélection porte sur les nets complets. Les objets éventuellement
 sélectionnés dans une interface servent uniquement à construire `net_ids` ; ils
 ne limitent pas la portée géométrique à une sous-connexion.
 
+G0 fusionne cette portée avec les protections KRT : groupes à longueur ou temps
+imposé, paires différentielles couplées, impédance et cuivre verrouillé. Les
+arcs reconnus dans les données KRT ou signalés par `excluded_net_ids` sont aussi
+exclus. Une exclusion concerne toujours le net complet et n'est pas levée par
+une sélection explicite.
+
 `GlossConfig.enable_multipasses`, actif par défaut, demande à G4 de rappeler la
-chaîne G3.5 complète pour chaque net selon un ordre alterné. Chaque rappel
-interne utilise directement le noyau privé G3.5 et force cette option à
-`False`, de sorte que seul l'orchestrateur G4 crée les passes. L'entrée publique
-`run_post_smooth_gloss()` n'est appelée qu'une fois. L'option
+chaîne G3.5 complète selon un ordre de nets alterné. Chaque passe complète
+appelle une seule fois le noyau privé G3.5 avec toute la liste ordonnée ; il
+n'existe plus de rappel autonome par net. Toutes les passes réutilisent le
+contexte, la grille et la base d'obstacles construits une fois par G0. L'entrée
+publique `run_post_smooth_gloss()` n'est appelée qu'une fois. L'option
 `enable_noncollinear_t_rails`, également active par défaut, contrôle la variante
 correspondante de G3.3.
 

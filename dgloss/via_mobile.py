@@ -8,14 +8,11 @@ from time import perf_counter
 from check_connected import check_net_connectivity
 from kicad_parser import Segment
 from net_queries import calculate_route_length
-from obstacle_cache import (add_net_obstacles_from_cache,
-                            precompute_net_obstacles,
-                            remove_net_obstacles_from_cache)
 from routing_utils import pos_key
 
 from .algorithm import (_clears_krt_grid, _connectivity_worse, _right_angle,
                         _touches_other_same_net)
-from .changes import GlossChanges
+from .changes import GlossChanges, release_result_custody
 
 
 _DIRECTIONS = ((1.0, 0.0), (0.0, 1.0), (1.0, 1.0), (1.0, -1.0))
@@ -93,26 +90,8 @@ def _creates_boundary_right_angle(candidate, anchor, outside):
     return False
 
 
-def _remove_custody(results, removed_segments, old_via):
-    segment_ids = {id(segment) for segment in removed_segments}
-    segment_owned = set()
-    via_owned = False
-    for result in results:
-        old_segments = list(result.get("new_segments") or [])
-        segment_owned.update(id(segment) for segment in old_segments
-                             if id(segment) in segment_ids)
-        result["new_segments"] = [segment for segment in old_segments
-                                  if id(segment) not in segment_ids]
-        old_vias = list(result.get("new_vias") or [])
-        via_owned = via_owned or any(via is old_via for via in old_vias)
-        result["new_vias"] = [via for via in old_vias if via is not old_via]
-    segment_strips = [segment for segment in removed_segments
-                      if id(segment) not in segment_owned]
-    return segment_strips, not via_owned
-
-
-def move_mobile_vias(context, results, *, stage="G3.1", full_chains=False,
-                     deadline=None):
+def move_mobile_vias(context, results, *, net_ids, stage="G3.1",
+                     full_chains=False, deadline=None):
     """Move only unlocked vias having exactly two unlocked cross-layer legs.
 
     G3.1 considers the two incident segments.  G3.4 uses the same operation and
@@ -127,18 +106,10 @@ def move_mobile_vias(context, results, *, stage="G3.1", full_chains=False,
     saved_mm = 0.0
     changed_net_ids = set()
 
-    locked_nets = {segment.net_id for segment in context.pcb_data.segments
-                   if getattr(segment, "locked", False)}
-
-    for net_id in context.net_ids:
+    for net_id in net_ids:
         if deadline is not None and perf_counter() >= deadline:
             break
-        if net_id in locked_nets:
-            continue
-        own_cache = context.net_obstacles.get(net_id)
-        foreign = context.working_obstacles.clone_fresh()
-        if own_cache is not None:
-            remove_net_obstacles_from_cache(foreign, own_cache)
+        foreign = context.foreign_obstacles(net_id)
 
         net_changed = False
         for old_via in list(context.pcb_data.vias):
@@ -230,10 +201,10 @@ def move_mobile_vias(context, results, *, stage="G3.1", full_chains=False,
             if _connectivity_worse(before_grade, after_grade):
                 continue
 
-            strips, input_owned = _remove_custody(
-                results, removed_segments, old_via)
+            strips, native_vias = release_result_custody(
+                results, removed_segments, [old_via])
             segment_strips.extend(strips)
-            if input_owned:
+            if native_vias:
                 input_vias.append(old_via)
             context.pcb_data.segments = [segment for segment in context.pcb_data.segments
                                          if id(segment) not in removed_ids] + candidate
@@ -254,13 +225,7 @@ def move_mobile_vias(context, results, *, stage="G3.1", full_chains=False,
             net_changed = True
 
         if net_changed:
-            if own_cache is not None:
-                remove_net_obstacles_from_cache(context.working_obstacles,
-                                                own_cache)
-            new_cache = precompute_net_obstacles(
-                context.pcb_data, net_id, context.config, extra_clearance=0.0)
-            context.net_obstacles[net_id] = new_cache
-            add_net_obstacles_from_cache(context.working_obstacles, new_cache)
+            context.refresh_net_obstacles(net_id)
 
     stats = {"vias_moved": len(changes.vias),
              "saved_mm": round(saved_mm, 4),
@@ -271,7 +236,7 @@ def move_mobile_vias(context, results, *, stage="G3.1", full_chains=False,
     return input_vias, emitted_vias, changes, stats
 
 
-def refine_mobile_vias(context, results, deadline=None):
+def refine_mobile_vias(context, results, deadline=None, *, net_ids):
     """G3.4: jointly optimize both complete portions around a mobile via."""
     return move_mobile_vias(context, results, stage="G3.4", full_chains=True,
-                            deadline=deadline)
+                            deadline=deadline, net_ids=net_ids)

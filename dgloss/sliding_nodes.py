@@ -10,16 +10,13 @@ from check_drc import point_to_pad_distance
 from geometry_utils import point_to_segment_distance, segments_intersect
 from kicad_parser import Segment
 from net_queries import calculate_route_length
-from obstacle_cache import (add_net_obstacles_from_cache,
-                            precompute_net_obstacles,
-                            remove_net_obstacles_from_cache)
 from routing_utils import pos_key
 
-from .algorithm import (_connectivity_worse, _remove_result_custody,
+from .algorithm import (_connectivity_worse,
                         _candidate_clears, _candidate_segments,
                         _segments_for_points, _sliding_candidate_families,
                         _touches_other_same_net)
-from .changes import GlossChanges
+from .changes import GlossChanges, release_result_custody
 from .pad_terminals import _new_boundary_right_angle, _pad_on_layer
 from .via_mobile import _DIRECTIONS, _line_intersection, _other_end
 
@@ -298,7 +295,7 @@ def _best_slide(context, node, chain, anchor, rail_groups, current, net_vias,
 
 
 def slide_t_nodes(context, results, deadline=None, *,
-                  allow_noncollinear=True):
+                  net_ids, allow_noncollinear=True):
     """Run one deterministic net-by-net G3.3 pass without moving any rail."""
     started = perf_counter()
     changes = GlossChanges()
@@ -309,18 +306,10 @@ def slide_t_nodes(context, results, deadline=None, *,
     branches_slid = 0
     noncollinear_slid = 0
     right_angles_cleaned = 0
-    locked_nets = {segment.net_id for segment in context.pcb_data.segments
-                   if getattr(segment, "locked", False)}
-
-    for net_id in context.net_ids:
+    for net_id in net_ids:
         if deadline is not None and perf_counter() >= deadline:
             break
-        if net_id in locked_nets:
-            continue
-        own_cache = context.net_obstacles.get(net_id)
-        foreign = context.working_obstacles.clone_fresh()
-        if own_cache is not None:
-            remove_net_obstacles_from_cache(foreign, own_cache)
+        foreign = context.foreign_obstacles(net_id)
         nodes = defaultdict(list)
         for segment in context.pcb_data.segments:
             if (segment.net_id != net_id or
@@ -388,7 +377,9 @@ def slide_t_nodes(context, results, deadline=None, *,
                 if _connectivity_worse(before_grade, after_grade):
                     continue
 
-                strips.extend(_remove_result_custody(results, removed))
+                native_segments, _native_vias = release_result_custody(
+                    results, removed)
+                strips.extend(native_segments)
                 context.pcb_data.segments = [
                     segment for segment in context.pcb_data.segments
                     if id(segment) not in removed_ids] + candidate
@@ -409,13 +400,7 @@ def slide_t_nodes(context, results, deadline=None, *,
                 net_changed = True
 
         if net_changed:
-            if own_cache is not None:
-                remove_net_obstacles_from_cache(context.working_obstacles,
-                                                own_cache)
-            new_cache = precompute_net_obstacles(
-                context.pcb_data, net_id, context.config, extra_clearance=0.0)
-            context.net_obstacles[net_id] = new_cache
-            add_net_obstacles_from_cache(context.working_obstacles, new_cache)
+            context.refresh_net_obstacles(net_id)
 
     stats = {"t_branches_slid": branches_slid,
              "noncollinear_t_slid": noncollinear_slid,
