@@ -16,6 +16,7 @@ DEFAULTS = {
     "enable_noncollinear_t_rails": True,
     "enable_multipasses": True,
     "grid_step": 0.1,
+    "budget_seconds": 20.0,
 }
 
 
@@ -88,6 +89,21 @@ class GlossSettingsDialog(wx.Dialog):
             "Grid resolution used by standalone gloss.")
         row.Add(self.grid_step, 1)
         content.Add(row, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
+
+        budget_row = wx.BoxSizer(wx.HORIZONTAL)
+        budget_row.Add(wx.StaticText(panel, label="Gloss time budget (s):"),
+                       0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 8)
+        self.budget_seconds = wx.SpinCtrlDouble(
+            panel, min=10.0, max=240.0,
+            initial=float(values["budget_seconds"]), inc=10.0)
+        self.budget_seconds.SetDigits(0)
+        self.budget_seconds.SetToolTip(
+            "Cooperative dgloss optimization budget. Total runtime may be "
+            "longer because final KRT smooth, certification, and KiCad apply "
+            "run outside this strict limit.")
+        budget_row.Add(self.budget_seconds, 1)
+        content.Add(budget_row, 0,
+                    wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
         panel.SetSizer(content)
         self.notebook.AddPage(panel, "General")
 
@@ -213,4 +229,5 @@ class GlossSettingsDialog(wx.Dialog):
     def values(self):
         return {key: control.GetValue()
                 for key, control in self.controls.items()} | {
-                    "grid_step": self.grid_step.GetValue()}
+                    "grid_step": self.grid_step.GetValue(),
+                    "budget_seconds": self.budget_seconds.GetValue()}

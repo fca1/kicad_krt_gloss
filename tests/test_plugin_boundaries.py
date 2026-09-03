@@ -191,6 +191,14 @@ def test_dialog_exposes_the_integrated_gloss_options_by_public_name():
     assert "Repeat enabled optimizations" in source
     assert "KRT defaults to 0.1 mm" not in source
     assert "For a direct KRT API call" not in source
+    assert '"budget_seconds": 20.0' in source
+    assert 'label="Gloss time budget (s):"' in source
+    assert "min=10.0, max=240.0" in source
+    assert "inc=10.0" in source
+
+    action = (ROOT / "kicad_krt_gloss" / "action_plugin.py").read_text(
+        encoding="utf-8")
+    assert 'budget_seconds=values["budget_seconds"]' in action
 
 
 def test_settings_dialog_is_shown_unless_exactly_one_net_is_selected():

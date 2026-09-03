@@ -30,7 +30,8 @@ selected net count, or **ALL** without a selection. The dialog lets you choose
 BE or complete-net selection and enable or disable mobile-via optimization, pad-terminal
 optimization, sliding T-junctions, non-collinear T rails, complete via-chain
 optimization and multi-net convergence passes. It also sets the KRT grid step
-used by the standalone plugin. Every control has a short tooltip explaining
+used by the standalone plugin and a 10–240 second dgloss optimization budget,
+in 10-second increments. Every control has a short tooltip explaining
 its purpose. Its **Log** tab retains the latest stage statistics and final
 result; **Clear Log** removes that history. The **Gloss** and **Close** buttons
 let an all-net run complete while the dialog remains available for review.

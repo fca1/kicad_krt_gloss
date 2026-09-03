@@ -48,6 +48,7 @@ options are enabled by default:
 | `Track Gloss G3.4 — complete via chains` | Optimizes complete chains around vias |
 | `G4 — multi-net convergence passes` | Repeats G3.5 until convergence |
 | `G5 — final compliance certification` | Certifies output without changing geometry |
+| `Gloss time budget (s)` | 10–240 second dgloss optimization budget, in 10-second increments |
 
 G3 ordinary-chain reduction is the always-active foundation. A disabled option
 runs neither its stage nor its visualization.
@@ -62,6 +63,10 @@ The dialog opens when zero or several nets are selected. With exactly one net,
 processing starts immediately with the remembered settings; initial settings
 use BEs. A read-only label shows the selected-net count, or `ALL` without a
 selection. These are plugin-only choices: the CLI always selects complete nets.
+
+The plugin budget defaults to 20 seconds and can be set from 10 to 240 seconds
+in 10-second increments. It cooperatively limits dgloss searches, not total
+runtime including final KRT smooth, certification, and KiCad application.
 
 ## Python library use
 

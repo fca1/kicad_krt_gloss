@@ -159,6 +159,7 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                     enable_noncollinear_t_rails=values[
                         "enable_noncollinear_t_rails"],
                     enable_multipasses=values["enable_multipasses"],
+                    budget_seconds=values["budget_seconds"],
                 )
                 results = []
                 outcome = run_final_gloss(
