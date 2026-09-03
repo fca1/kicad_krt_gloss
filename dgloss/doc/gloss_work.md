@@ -49,6 +49,14 @@ ils ne résolvent plus leur propre sélection et ne recalculent plus de liste de
 nets verrouillés. `KrtClearanceAdapter` reste une couche d'adaptation mince vers
 les contrôles KRT ; il ne recrée pas un moteur de clearance parallèle.
 
+La vue d'obstacles étrangers est également unique pour toute l'exécution. Elle
+est clonée une seule fois depuis la grille KRT persistante, puis l'exclusion
+passe d'un net au suivant avec les opérations batch d'ajout et de retrait déjà
+fournies par KRT. Lorsqu'un net change, son cache recalculé remplace l'ancien
+dans la grille persistante et dans cette vue réutilisable. Cette organisation
+évite une copie profonde de la grille pour chaque couple étape/net sans changer
+son contenu observable ni les règles de clearance.
+
 ## Décomposition des étapes
 
 ### G0 — intégration transparente

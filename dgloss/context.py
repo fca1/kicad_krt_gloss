@@ -28,24 +28,41 @@ class GlossContext:
     clearance_adapter: object
     excluded_net_ids: set
     exclusion_reasons: dict
+    foreign_working: object = None
+    foreign_excluded_net_id: object = None
 
     def foreign_obstacles(self, net_id):
-        """Current KRT obstacle map with only this net's copper removed."""
-        foreign = self.working_obstacles.clone_fresh()
+        """Reusable KRT obstacle map with only ``net_id`` copper removed."""
+        if self.foreign_working is None:
+            self.foreign_working = self.working_obstacles.clone_fresh()
+        elif self.foreign_excluded_net_id == net_id:
+            return self.foreign_working
+        else:
+            previous = self.net_obstacles.get(self.foreign_excluded_net_id)
+            if previous is not None:
+                add_net_obstacles_from_cache(self.foreign_working, previous)
         own_cache = self.net_obstacles.get(net_id)
         if own_cache is not None:
-            remove_net_obstacles_from_cache(foreign, own_cache)
-        return foreign
+            remove_net_obstacles_from_cache(self.foreign_working, own_cache)
+        self.foreign_excluded_net_id = net_id
+        return self.foreign_working
 
     def refresh_net_obstacles(self, net_id):
         """Incrementally replace one changed net in the persistent KRT map."""
         old_cache = self.net_obstacles.get(net_id)
         if old_cache is not None:
             remove_net_obstacles_from_cache(self.working_obstacles, old_cache)
+            if (self.foreign_working is not None and
+                    self.foreign_excluded_net_id != net_id):
+                remove_net_obstacles_from_cache(
+                    self.foreign_working, old_cache)
         new_cache = precompute_net_obstacles(
             self.pcb_data, net_id, self.config, extra_clearance=0.0)
         self.net_obstacles[net_id] = new_cache
         add_net_obstacles_from_cache(self.working_obstacles, new_cache)
+        if (self.foreign_working is not None and
+                self.foreign_excluded_net_id != net_id):
+            add_net_obstacles_from_cache(self.foreign_working, new_cache)
 
 
 def _linearized_arc_net_ids(pcb_data):

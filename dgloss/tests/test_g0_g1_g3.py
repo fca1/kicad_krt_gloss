@@ -15,7 +15,7 @@ for path in (REPO, KRT, os.path.join(KRT, "py_router"),
     if path not in sys.path:
         sys.path.insert(0, path)
 
-from dgloss.context import build_gloss_context
+from dgloss.context import GlossContext, build_gloss_context
 from dgloss.krt_clearance import KrtClearanceAdapter
 from dgloss.config import GlossConfig
 from dgloss.changes import GlossChanges
@@ -103,6 +103,56 @@ def test_g0_rebuilds_all_layers_with_krt_rust_map():
     assert set(context.layer_map) == {"F.Cu", "B.Cu"}
     assert context.working_obstacles is not None
     assert hasattr(context.working_obstacles, "segment_blocked")
+
+
+def test_g0_reuses_one_foreign_map_and_keeps_it_synchronized():
+    class FakeMap:
+        def __init__(self, cells):
+            self.cells = set(cells)
+            self.clone_calls = 0
+
+        def clone_fresh(self):
+            self.clone_calls += 1
+            return FakeMap(self.cells)
+
+    working = FakeMap({"n1", "n2"})
+    context = GlossContext(
+        pcb_data=object(), config=object(), coord=None, layer_map={},
+        net_ids=[1, 2], working_obstacles=working,
+        net_obstacles={1: "n1", 2: "n2"}, clearance_adapter=None,
+        excluded_net_ids=set(), exclusion_reasons={})
+    revisions = iter(("n1-new", "n1-newer"))
+
+    def add(obstacles, cache):
+        obstacles.cells.add(cache)
+
+    def remove(obstacles, cache):
+        obstacles.cells.discard(cache)
+
+    with patch("dgloss.context.add_net_obstacles_from_cache",
+               side_effect=add), \
+         patch("dgloss.context.remove_net_obstacles_from_cache",
+               side_effect=remove), \
+         patch("dgloss.context.precompute_net_obstacles",
+               side_effect=lambda *_args, **_kwargs: next(revisions)):
+        foreign = context.foreign_obstacles(1)
+        assert foreign.cells == {"n2"}
+        assert context.foreign_obstacles(1) is foreign
+
+        # The new cache of a changed excluded net is restored on transition.
+        context.refresh_net_obstacles(1)
+        assert foreign.cells == {"n2"}
+        assert context.foreign_obstacles(2) is foreign
+        assert foreign.cells == {"n1-new"}
+
+        # A changed non-excluded net is synchronized in both maps.
+        context.refresh_net_obstacles(1)
+        assert foreign.cells == {"n1-newer"}
+        context.foreign_obstacles(1)
+        assert foreign.cells == {"n2"}
+
+    assert working.clone_calls == 1
+    assert working.cells == {"n1-newer", "n2"}
 
 
 def test_dgloss_runtime_has_no_pcbnew_or_plugin_dependency():
