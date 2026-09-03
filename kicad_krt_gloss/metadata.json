@@ -2,7 +2,7 @@
   "$schema": "https://go.kicad.org/pcm/schemas/v2",
   "name": "KiCad KRT Gloss",
   "description": "Apply the KRT-based final track gloss to selected or all routed nets.",
-  "description_full": "Shorten and simplify an already routed PCB while preserving connectivity and clearances. Selected PCB objects identify complete nets; an empty selection processes every routed net. The dialog controls the available gloss stages and grid step. When User.1 is free, TrackGloss Changes shows old copper dashed, new copper solid, and moved-via positions. Built on KiCad Routing Tools by DrAndyHaas. The standalone adaptation was created with ChatGPT/Codex (OpenAI), co-authored and maintained by Frantz, and distributed under the MIT License.",
+  "description_full": "Shorten and simplify an already routed PCB while preserving connectivity and clearances. Select one or more nets to gloss them; the before-and-after result is shown on the TrackGloss User layer. With no selection, every routed net is processed. Based on [KiCad Routing Tools (KRT)](https://github.com/drandyhaas/KiCadRoutingTools).",
   "identifier": "com.github.fca1.kicadkrtgloss",
   "type": "plugin",
   "author": {
