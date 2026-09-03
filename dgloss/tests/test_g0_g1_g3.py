@@ -641,6 +641,69 @@ def test_g3_rejects_new_90_degree_corner_at_candidate_boundary():
     assert replacement is None
 
 
+def test_g3_lazy_exact_keeps_micro_guard_before_krt_clearance():
+    points = [(0.0, 0.0), (0.0, 2.0), (3.0, 2.0)]
+    segments = [Segment(*points[i], *points[i + 1], 0.2, "F.Cu", 1)
+                for i in range(len(points) - 1)]
+    chain = _Chain(segments, points, "F.Cu", 0.2)
+    micro = [
+        Segment(0.0, 0.0, 0.025, 0.025, 0.2, "F.Cu", 1),
+        Segment(0.025, 0.025, 2.0, 2.0, 0.2, "F.Cu", 1),
+        Segment(2.0, 2.0, 3.0, 2.0, 0.2, "F.Cu", 1),
+    ]
+    valid = [
+        Segment(0.0, 0.0, 1.0, 0.0, 0.2, "F.Cu", 1),
+        Segment(1.0, 0.0, 3.0, 2.0, 0.2, "F.Cu", 1),
+    ]
+    checked = []
+    context = types.SimpleNamespace(
+        coord=types.SimpleNamespace(grid_step=0.1),
+        clearance_adapter=types.SimpleNamespace(
+            connector_clears=lambda candidate:
+            checked.append(candidate) or True))
+
+    with patch("dgloss.algorithm._candidate_segments",
+               return_value=iter((micro, valid))), \
+            patch("dgloss.algorithm._adaptive_sliding_candidates",
+                  return_value=[]):
+        replacement = _best_chain_replacement(
+            context, chain, 1, None, segments, [])
+
+    assert replacement == (segments, valid)
+    assert checked == [valid]
+
+
+def test_g3_lazy_exact_advances_to_next_family_candidate_after_rejection():
+    points = [(0.0, 0.0), (0.0, 2.0), (3.0, 2.0)]
+    segments = [Segment(*points[i], *points[i + 1], 0.2, "F.Cu", 1)
+                for i in range(len(points) - 1)]
+    chain = _Chain(segments, points, "F.Cu", 0.2)
+    rejected = [
+        Segment(0.0, 0.0, 2.0, 2.0, 0.2, "F.Cu", 1),
+        Segment(2.0, 2.0, 3.0, 2.0, 0.2, "F.Cu", 1),
+    ]
+    accepted = [
+        Segment(0.0, 0.0, 1.0, 0.0, 0.2, "F.Cu", 1),
+        Segment(1.0, 0.0, 3.0, 2.0, 0.2, "F.Cu", 1),
+    ]
+    checked = []
+    context = types.SimpleNamespace(
+        coord=types.SimpleNamespace(grid_step=0.1),
+        clearance_adapter=types.SimpleNamespace(
+            connector_clears=lambda candidate:
+            checked.append(candidate) or candidate is accepted))
+
+    with patch("dgloss.algorithm._candidate_segments",
+               return_value=iter((rejected, accepted))), \
+            patch("dgloss.algorithm._adaptive_sliding_candidates",
+                  return_value=[]):
+        replacement = _best_chain_replacement(
+            context, chain, 1, None, segments, [])
+
+    assert replacement == (segments, accepted)
+    assert checked == [rejected, accepted]
+
+
 def test_locked_segment_is_unchanged():
     pcb, config, segments = _staircase_board()
     segments[0].locked = True

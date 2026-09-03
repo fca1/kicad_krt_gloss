@@ -297,8 +297,7 @@ def _candidate_clears(context, obstacles, segments, source,
     source, the selected replacement is checked exactly once more before it can
     leave this module.
     """
-    if any(calculate_route_length([segment]) < context.coord.grid_step - 1e-9
-           for segment in segments):
+    if not _candidate_geometry_valid(context, segments):
         return False
     if source == "canonical":
         return context.clearance_adapter.connector_clears(segments)
@@ -311,6 +310,13 @@ def _candidate_clears(context, obstacles, segments, source,
             for segment in rejected):
         return False
     return context.clearance_adapter.connector_clears(segments)
+
+
+def _candidate_geometry_valid(context, segments):
+    """Keep mandatory, cheap geometry guards ahead of clearance policy."""
+    return bool(segments) and not any(
+        calculate_route_length([segment]) < context.coord.grid_step - 1e-9
+        for segment in segments)
 
 
 def _touches_other_same_net(candidate, outside, vias, allowed_ends):
@@ -369,6 +375,51 @@ def _right_angle(first, second):
     return first[0] * second[0] + first[1] * second[1] == 0
 
 
+def _shortest_path(edges, points, excluded):
+    """Select the best G3 DAG path, ignoring exact-KRT rejected edges."""
+    n = len(points) - 1
+    best = [dict() for _ in range(n + 1)]
+    previous = {}
+    best[0][(None, False)] = (0.0, 0)
+    for i in range(n):
+        for state, cost in list(best[i].items()):
+            prior_direction, prior_changed = state
+            for edge in sorted(edges[i], key=lambda item: (item[0], item[3])):
+                j, candidate, changed, length, edge_id = edge
+                if edge_id in excluded:
+                    continue
+                first_direction, last_direction = _edge_directions(
+                    candidate, points[i], points[j])
+                if (prior_direction is not None and
+                        _right_angle(prior_direction, first_direction) and
+                        (prior_changed or changed)):
+                    continue
+                next_state = (last_direction, changed)
+                score = (cost[0] + length, cost[1] + len(candidate))
+                current_score = best[j].get(next_state)
+                better = (current_score is None or
+                          score[0] < current_score[0] - 1e-12 or
+                          (abs(score[0] - current_score[0]) <= 1e-12 and
+                           score[1] < current_score[1]))
+                if better:
+                    best[j][next_state] = score
+                    previous[(j, next_state)] = (i, state, edge)
+
+    if not best[n]:
+        return []
+    selected = []
+    cursor = n
+    state = min(best[n], key=lambda item: (
+        round(best[n][item][0], 12), best[n][item][1]))
+    while cursor:
+        i, prior_state, edge = previous[(cursor, state)]
+        selected.append((i, edge))
+        cursor = i
+        state = prior_state
+    selected.reverse()
+    return selected
+
+
 def _best_chain_replacement(context, chain, net_id, foreign_obstacles,
                             net_segments, net_vias, deadline=None,
                             objective="shorter"):
@@ -381,9 +432,15 @@ def _best_chain_replacement(context, chain, net_id, foreign_obstacles,
     # Keeping an original edge is always a valid option.
     for i, seg in enumerate(chain.segments):
         edges[i].append((i + 1, [seg], False,
-                         calculate_route_length([seg])))
+                         calculate_route_length([seg]), None))
 
     min_gain = context.coord.grid_step
+    next_edge_id = 0
+    next_family_id = 0
+    family_edges = {}
+    edge_families = {}
+    edge_candidates = {}
+
     for i in range(n - 1):
         if deadline is not None and perf_counter() >= deadline:
             break
@@ -398,86 +455,78 @@ def _best_chain_replacement(context, chain, net_id, foreign_obstacles,
                 families.append(("sliding_exact", _adaptive_sliding_candidates(
                     context, foreign_obstacles, chain.points[i], chain.points[j],
                     chain.layer, chain.width, net_id, old_length)))
-            for source, family in families:
+            for _source, family in families:
                 if deadline is not None and perf_counter() >= deadline:
                     break
+                family_id = next_family_id
+                next_family_id += 1
+                family_edges[family_id] = []
                 for candidate in family:
                     if deadline is not None and perf_counter() >= deadline:
                         break
                     new_length = calculate_route_length(candidate)
                     gain = old_length - new_length
                     if objective == "fewer_segments":
-                        # A one-segment equal replacement is an exact
-                        # collinear merge; leave it to KRT's purpose-built
-                        # merge_collinear_segments() final pass.
                         if (len(candidate) == 1 or abs(gain) > 1e-9 or
                                 len(candidate) >= j - i):
                             continue
-                    # Families are shortest-first. Once one member clears, a
-                    # shorter member of that same geometry cannot follow.
                     elif gain <= 1e-12:
                         break
-                    if source == "sliding_exact":
-                        clears = context.clearance_adapter.connector_clears(
-                            candidate)
-                    else:
-                        clears = _candidate_clears(
-                            context, foreign_obstacles, candidate, source,
-                            chain.segments[i:j])
-                    if not clears:
+                    if not _candidate_geometry_valid(context, candidate):
                         continue
                     if _touches_other_same_net(
                             candidate, outside, net_vias,
                             (chain.points[i], chain.points[j])):
                         continue
-                    edges[i].append((j, candidate, True, new_length))
+                    edge_id = next_edge_id
+                    next_edge_id += 1
+                    edges[i].append(
+                        (j, candidate, True, new_length, edge_id))
+                    family_edges[family_id].append(edge_id)
+                    edge_families[edge_id] = family_id
+                    edge_candidates[edge_id] = candidate
+
+    # Exact KRT geometry remains authoritative. When an edge wins, validate its
+    # family predecessors in generator order. The first exact-valid candidate
+    # becomes that family's sole option, exactly matching the eager policy.
+    excluded = set()
+    exact_status = {}
+    while True:
+        selected = _shortest_path(edges, chain.points, excluded)
+        if not selected:
+            return None
+        changed_selection = False
+        for _i, edge in selected:
+            edge_id = edge[4]
+            if not edge[2]:
+                continue
+            family = family_edges[edge_families[edge_id]]
+            selected_rank = family.index(edge_id)
+            first_valid = None
+            for preceding_id in family[:selected_rank + 1]:
+                if preceding_id not in exact_status:
+                    exact_status[preceding_id] = (
+                        context.clearance_adapter.connector_clears(
+                            edge_candidates[preceding_id]))
+                if exact_status[preceding_id]:
+                    first_valid = preceding_id
                     break
-
-    # Direction is part of the state: a valid edge may still make a 90-degree
-    # corner with the preceding edge.  Existing input-input corners remain a
-    # legal fallback; G3 only forbids creating a new one.
-    best = [dict() for _ in range(n + 1)]
-    previous = {}
-    best[0][(None, False)] = (0.0, 0)
-    for i in range(n):
-        for state, cost in list(best[i].items()):
-            prior_direction, prior_changed = state
-            for edge in sorted(edges[i], key=lambda item: (item[0], item[3])):
-                j, candidate, changed, length = edge
-                first_direction, last_direction = _edge_directions(
-                    candidate, chain.points[i], chain.points[j])
-                if (prior_direction is not None and
-                        _right_angle(prior_direction, first_direction) and
-                        (prior_changed or changed)):
-                    continue
-                next_state = (last_direction, changed)
-                score = (cost[0] + length, cost[1] + len(candidate))
-                current_score = best[j].get(next_state)
-                better = (current_score is None or
-                          score[0] < current_score[0] - 1e-12 or
-                          (abs(score[0] - current_score[0]) <= 1e-12 and
-                           score[1] < current_score[1]))
-                if better:
-                    best[j][next_state] = score
-                    previous[(j, next_state)] = (
-                        i, state, candidate, changed)
-
-    if not best[n]:
-        return None
-    selected = []
-    cursor = n
-    state = min(best[n], key=lambda item: (
-        round(best[n][item][0], 12), best[n][item][1]))
-    while cursor:
-        i, prior_state, candidate, changed = previous[(cursor, state)]
-        selected.append((i, cursor, candidate, changed))
-        cursor = i
-        state = prior_state
-    selected.reverse()
+                excluded.add(preceding_id)
+            if first_valid is None:
+                changed_selection = True
+                continue
+            # Eager G3 stops this family at its first exact-valid candidate.
+            first_rank = family.index(first_valid)
+            excluded.update(family[first_rank + 1:])
+            if first_valid != edge_id:
+                changed_selection = True
+        if not changed_selection:
+            break
 
     removed = []
     added = []
-    for i, j, candidate, changed in selected:
+    for i, edge in selected:
+        j, candidate, changed, _length, _edge_id = edge
         if changed:
             removed.extend(chain.segments[i:j])
             added.extend(candidate)
@@ -490,10 +539,6 @@ def _best_chain_replacement(context, chain, net_id, foreign_obstacles,
         if abs(gain) > 1e-9 or len(added) >= len(removed):
             return None
     elif gain <= min_gain:
-        return None
-    # G3's fast grid search is never the final safety authority: every emitted
-    # connector is rechecked with the exact KRT smooth semantics.
-    if not context.clearance_adapter.connector_clears(added):
         return None
     return removed, added
 
