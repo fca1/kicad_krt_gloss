@@ -9,7 +9,9 @@ défini dans [`gloss_krt.md`](gloss_krt.md) et sa réalisation dans
 - Branche de développement : `main`
 - Version du plugin : `0.1.0`
 - Étape intégrée : G5
-- Portée : nets complets sélectionnés ; sans sélection, tous les nets routés
+- Portée plugin : branches élémentaires des pistes droites sélectionnées ; les
+  autres objets sélectionnent des nets complets ; sans sélection, tous les
+  nets routés
 - Déclenchement : une fois, après le dernier smooth KRT
 - Budget plugin par défaut : 20 secondes
 - CLI dédié : `gloss.py`
@@ -51,6 +53,13 @@ suivantes sont visibles dans sa boîte de dialogue et activées par défaut :
 G3, réduction des chaînes ordinaires, constitue le socle et reste actif. Une
 option décochée ne lance pas son étape et ne crée pas sa visualisation.
 
+Une piste droite sélectionnée sert de graine. G0 détermine sa branche
+élémentaire maximale, puis toutes les étapes restent limitées à cette branche.
+Plusieurs pistes peuvent désigner plusieurs branches, y compris sur plusieurs
+nets. En présence d'au moins une piste droite, seules ces graines définissent
+la portée BE. Un pad, via, footprint ou zone sélectionné sans piste droite
+conserve la sélection historique du net complet.
+
 ## Emploi comme bibliothèque Python
 
 Pour reproduire le comportement actuel du plugin :
@@ -67,7 +76,10 @@ options = GlossConfig(
     enable_noncollinear_t_rails=True,
     enable_multipasses=True,
 )
-outcome = run_final_gloss(results, pcb_data, krt_config, options)
+outcome = run_final_gloss(
+    results, pcb_data, krt_config, options,
+    seed_segments=selected_final_krt_segments,
+)
 ```
 
 Pour un appelant qui possède déjà le résultat du dernier smooth KRT :
@@ -77,9 +89,15 @@ from dgloss import run_post_smooth_gloss
 
 outcome = run_post_smooth_gloss(
     results, pcb_data, krt_config, gloss_config=options,
-    net_ids=selected_net_ids, krt_smooth_complete=True
+    net_ids=selected_net_ids, krt_smooth_complete=True,
+    seed_segments=selected_final_krt_segments,
 )
 ```
+
+`seed_segments` est facultatif. S'il est absent, `net_ids` conserve sa
+sémantique de nets complets. S'il est fourni, ses objets doivent être les
+instances `Segment` présentes dans le `pcb_data` final ; leur identité permet
+de limiter strictement les modifications sans recopier le cuivre.
 
 Le second emploi est strictement post-smooth : il reconstruit le contexte mais
 ne relance pas `smooth_octolinear_chains()`. Le certificat
@@ -122,6 +140,9 @@ longueurs avant/après, les changements de segments et de vias, le gain dgloss,
 le gain KRT séparé, le temps, l'état du budget et le nombre de régressions de
 connectivité. `nets_excluded`, `excluded_net_ids` et `exclusion_reasons`
 décrivent les exclusions décidées par G0.
+`branch_scoped`, `elementary_branches` et la ligne de log G0 indiquent si une
+portée BE est active, combien de branches ont été résolues et combien de
+segments sont initialement modifiables.
 
 La réduction finale de segments expose aussi :
 

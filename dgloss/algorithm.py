@@ -49,11 +49,13 @@ def _pad_holds_point(pad, point, layer, half_width):
     return point_to_pad_distance(point[0], point[1], pad) <= half_width + 1e-6
 
 
-def _simple_chains(pcb_data, net_id):
+def _simple_chains(pcb_data, net_id, allowed_segment_ids=None):
     """Return conservative same-layer/width chains; pads, vias and nodes anchor."""
     net_segments = [s for s in pcb_data.segments if s.net_id == net_id and
                     not getattr(s, "graphic", False) and
-                    not getattr(s, "locked", False)]
+                    not getattr(s, "locked", False) and
+                    (allowed_segment_ids is None or
+                     id(s) in allowed_segment_ids)]
     if len(net_segments) < 2:
         return []
 
@@ -594,7 +596,8 @@ def shorten_routes(context, results, deadline=None, *, net_ids,
 
         removed_net = []
         added_net = []
-        for chain in _simple_chains(context.pcb_data, net_id):
+        for chain in _simple_chains(
+                context.pcb_data, net_id, context.editable_segment_ids):
             if deadline is not None and perf_counter() >= deadline:
                 break
             current = [s for s in context.pcb_data.segments if s.net_id == net_id]
@@ -629,6 +632,7 @@ def shorten_routes(context, results, deadline=None, *, net_ids,
             context.pcb_data.segments = [
                 seg for seg in context.pcb_data.segments
                 if id(seg) not in removed_ids] + added
+            context.replace_editable_segments(removed, added)
             if hasattr(context.pcb_data, "_foreign_seg_arr_cache"):
                 context.pcb_data._foreign_seg_arr_cache = None
             removed_net.extend(removed)

@@ -16,8 +16,14 @@ L'ordre impératif des objectifs est :
 
 ## Portée
 
-- Le gloss peut traiter un seul net ou plusieurs nets. Il porte sur
-  l'intégralité des nets qui lui sont fournis.
+- Le gloss peut traiter un seul net, plusieurs nets ou une ou plusieurs
+  branches élémentaires explicitement désignées.
+- Une branche élémentaire est le chemin maximal non ramifié contenant sa
+  graine. Elle s'arrête à un pad, une extrémité libre ou une jonction T/X.
+  Elle reste continue à travers un changement de largeur, un changement de
+  couche et un via qui ne constitue pas lui-même une ramification.
+- Hors portée, le reste du net est conservé et participe aux mêmes contrôles
+  de topologie et d'obstacles que le cuivre des autres nets.
 - Une connexion est considérée de pad fixe à pad fixe et reste continue à
   travers ses vias.
 - Seul le cuivre appartenant à la connexion examinée peut être modifié ; tout

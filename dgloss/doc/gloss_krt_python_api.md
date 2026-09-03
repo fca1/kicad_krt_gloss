@@ -35,6 +35,8 @@ run_post_smooth_gloss(
     krt_stats=None,
     krt_ms=0.0,
     excluded_net_ids=None,
+    krt_smooth_complete=False,
+    seed_segments=None,
 )
 ```
 
@@ -54,10 +56,15 @@ Il est pris en charge par le dépôt autonome `kicad_krt_gloss`.
 | `krt_stats` | KRT | Statistiques du traitement KRT précédent |
 | `krt_ms` | KRT | Temps KRT à conserver séparément du temps dgloss |
 | `excluded_net_ids` | appelant | Exclusions supplémentaires imposées par le support d'entrée, notamment les arcs natifs |
+| `krt_smooth_complete` | KRT | Certifie que le dernier smooth est déjà terminé |
+| `seed_segments` | KRT ou plugin | Instances `Segment` finales servant de graines à une portée par branches élémentaires |
 
-La sélection porte sur les nets complets. Les objets éventuellement
-sélectionnés dans une interface servent uniquement à construire `net_ids` ; ils
-ne limitent pas la portée géométrique à une sous-connexion.
+Sans `seed_segments`, la sélection porte sur les nets complets. Avec des
+graines, G0 résout une seule fois l'union de leurs branches élémentaires et
+toutes les étapes restent dans cette portée. Les graines doivent être les
+instances présentes dans le `pcb_data` transmis après le smooth ; elles ne sont
+pas des copies géométriques. Le reste de chaque net demeure présent comme
+cuivre fixe pour les obstacles, la topologie et la certification finale.
 
 G0 fusionne cette portée avec les protections KRT : groupes à longueur ou temps
 imposé, paires différentielles couplées, impédance et cuivre verrouillé. Les
@@ -114,6 +121,8 @@ certification. G5 ne modifie pas le routage reçu de G4.
 - Employer les types KRT plutôt que des copies propres à dgloss.
 - Ajouter les nouveaux paramètres en options nommées avec des défauts
   rétrocompatibles.
+- Conserver `seed_segments=None` comme comportement historique sur nets
+  complets.
 - Ne jamais imposer le plugin pour utiliser l'API.
 - Ne jamais imposer un CLI pour utiliser l'API.
 - Tester l'import et l'exécution sans `pcbnew`.

@@ -28,8 +28,25 @@ class GlossContext:
     clearance_adapter: object
     excluded_net_ids: set
     exclusion_reasons: dict
+    editable_segment_ids: set = None
     foreign_working: object = None
     foreign_excluded_net_id: object = None
+
+    @property
+    def branch_scoped(self):
+        return self.editable_segment_ids is not None
+
+    def segments_editable(self, segments):
+        return (self.editable_segment_ids is None or
+                all(id(segment) in self.editable_segment_ids
+                    for segment in segments))
+
+    def replace_editable_segments(self, removed, added):
+        if self.editable_segment_ids is None:
+            return
+        self.editable_segment_ids.difference_update(
+            id(segment) for segment in removed)
+        self.editable_segment_ids.update(id(segment) for segment in added)
 
     def foreign_obstacles(self, net_id):
         """Reusable KRT obstacle map with only ``net_id`` copper removed."""
@@ -96,7 +113,8 @@ def resolve_gloss_scope(pcb_data, net_ids=None, excluded_net_ids=None):
 
 
 def build_gloss_context(pcb_data, config, net_ids=None, *,
-                        excluded_net_ids=None, exclusion_reasons=None):
+                        excluded_net_ids=None, exclusion_reasons=None,
+                        editable_segment_ids=None):
     """Rebuild KRT obstacles from the post-smooth board."""
     layers = list(pcb_data.board_info.copper_layers or config.layers)
     gloss_config = replace(config, layers=layers)
@@ -122,4 +140,6 @@ def build_gloss_context(pcb_data, config, net_ids=None, *,
         clearance_adapter=KrtClearanceAdapter(pcb_data, gloss_config),
         excluded_net_ids=set(excluded_net_ids or ()),
         exclusion_reasons=dict(exclusion_reasons or {}),
+        editable_segment_ids=(None if editable_segment_ids is None else
+                              set(editable_segment_ids)),
     )

@@ -10,7 +10,8 @@ from net_queries import calculate_route_length
 from pcb_modification import merge_collinear_segments, smooth_octolinear_chains
 
 from .algorithm import _connectivity_worse, shorten_routes
-from .changes import GlossChanges
+from .branches import elementary_branch_segment_ids
+from .changes import GlossChanges, release_result_custody
 from .config import GlossConfig
 from .context import build_gloss_context, resolve_gloss_scope
 from .pad_terminals import optimize_pad_terminals
@@ -107,6 +108,46 @@ def _empty_via_stats():
     return {"vias_moved": 0, "saved_mm": 0.0, "net_ids_changed": set(),
             "algorithm_ms": 0.0, "segment_strips": [],
             "added_segments": []}
+
+
+def _run_scoped_krt_smooth(results, pcb_data, net_ids, editable_ids, **kwargs):
+    """Use KRT's keep-input gate as a thin elementary-branch adapter."""
+    before = [segment for segment in pcb_data.segments
+              if id(segment) in editable_ids]
+    scratch = [{"new_segments": list(before), "new_vias": [],
+                "cleanup": "track_gloss_be_scope"}]
+    changed, nets, _ignored, added, stats = smooth_octolinear_chains(
+        scratch, pcb_data, net_ids, keep_input_copper=True, **kwargs)
+    current_ids = {id(segment) for segment in pcb_data.segments}
+    removed = [segment for segment in before if id(segment) not in current_ids]
+    native, _vias = release_result_custody(results, removed)
+    if added:
+        results.append({"new_segments": list(added), "new_vias": [],
+                        "cleanup": "smooth_octolinear_be"})
+    updated = (set(editable_ids) - {id(segment) for segment in removed}) | \
+        {id(segment) for segment in added}
+    return changed, nets, native, added, stats, updated
+
+
+def _merge_collinear_in_scope(results, context, net_ids):
+    """Call KRT's merge while exposing only current BE copper as mutable."""
+    if not context.branch_scoped:
+        return merge_collinear_segments(
+            results, context.pcb_data, set(net_ids))
+    before = [segment for segment in context.pcb_data.segments
+              if id(segment) in context.editable_segment_ids]
+    scratch = [{"new_segments": list(before), "new_vias": [],
+                "cleanup": "track_gloss_be_scope"}]
+    changed, nets, _ignored, added, stats = merge_collinear_segments(
+        scratch, context.pcb_data, set(net_ids), keep_input_copper=True)
+    current_ids = {id(segment) for segment in context.pcb_data.segments}
+    removed = [segment for segment in before if id(segment) not in current_ids]
+    native, _vias = release_result_custody(results, removed)
+    if added:
+        results.append({"new_segments": list(added), "new_vias": [],
+                        "cleanup": "track_gloss_g3_5_segments_be"})
+    context.replace_editable_segments(removed, added)
+    return changed, nets, native, added, stats
 
 
 def _run_g3_5_pass(results, context, selected, net_ids, deadline, *, emit_log,
@@ -229,7 +270,7 @@ def _run_g3_5_pass(results, context, selected, net_ids, deadline, *, emit_log,
     merge_started = perf_counter()
     if run:
         merged_count, merged_nets, merge_strips, merge_added, merge = \
-            merge_collinear_segments(results, pcb_data, set(run_net_ids))
+            _merge_collinear_in_scope(results, context, run_net_ids)
     else:
         merged_count, merged_nets = 0, 0
         merge_strips, merge_added = [], []
@@ -386,7 +427,7 @@ def _certify_g5_copper(context, before_grades, changes):
 
 
 def run_final_gloss(results, pcb_data, config, gloss_config=None, *,
-                    net_ids=None, excluded_net_ids=None):
+                    net_ids=None, excluded_net_ids=None, seed_segments=None):
     """Plugin wrapper: run the last KRT smooth, then the post-smooth G0 API."""
     original_segments = list(pcb_data.segments)
     original_vias = list(pcb_data.vias)
@@ -394,22 +435,50 @@ def run_final_gloss(results, pcb_data, config, gloss_config=None, *,
     original_results = _result_snapshot(results)
     try:
         started = perf_counter()
+        if seed_segments:
+            seeded_net_ids = {segment.net_id for segment in seed_segments
+                              if segment.net_id}
+            net_ids = (seeded_net_ids if not net_ids else
+                       set(net_ids).intersection(seeded_net_ids))
+            if not net_ids:
+                raise RuntimeError(
+                    "selected seeds do not belong to the requested nets")
         active_net_ids, excluded, exclusion_reasons = resolve_gloss_scope(
             pcb_data, net_ids, excluded_net_ids)
-        _count, _nets, strips, _added, krt_stats = smooth_octolinear_chains(
-            results, pcb_data, active_net_ids,
-            clearance=config.clearance,
-            net_clearances=getattr(config, "net_clearances", None),
-            board_edge_clearance=config.board_edge_clearance,
-            config=config, skip_net_ids=excluded,
-            min_gain=config.grid_step)
+        editable_ids = None
+        branch_count = 0
+        if seed_segments:
+            editable_ids, branch_count = elementary_branch_segment_ids(
+                pcb_data, seed_segments)
+            if not editable_ids:
+                raise RuntimeError(
+                    "no elementary branch matched the selected seed")
+            (_count, _nets, strips, _added, krt_stats,
+             editable_ids) = _run_scoped_krt_smooth(
+                results, pcb_data, active_net_ids, editable_ids,
+                clearance=config.clearance,
+                net_clearances=getattr(config, "net_clearances", None),
+                board_edge_clearance=config.board_edge_clearance,
+                config=config, skip_net_ids=excluded,
+                min_gain=config.grid_step)
+        else:
+            _count, _nets, strips, _added, krt_stats = \
+                smooth_octolinear_chains(
+                    results, pcb_data, active_net_ids,
+                    clearance=config.clearance,
+                    net_clearances=getattr(config, "net_clearances", None),
+                    board_edge_clearance=config.board_edge_clearance,
+                    config=config, skip_net_ids=excluded,
+                    min_gain=config.grid_step)
         krt_ms = (perf_counter() - started) * 1000.0
         return run_post_smooth_gloss(
             results, pcb_data, config, gloss_config=gloss_config,
             net_ids=active_net_ids, krt_strips=strips, krt_stats=krt_stats,
             krt_ms=krt_ms,
             krt_smooth_complete=True,
-            _resolved_scope=(active_net_ids, excluded, exclusion_reasons))
+            _resolved_scope=(active_net_ids, excluded, exclusion_reasons),
+            _editable_segment_ids=editable_ids,
+            _branch_count=branch_count)
     except Exception as exc:
         _restore(results, original_count, original_results, pcb_data,
                  original_segments, original_vias)
@@ -422,7 +491,8 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
                           net_ids=None, krt_strips=None, krt_stats=None,
                           krt_ms=0.0, excluded_net_ids=None, _emit_log=True,
                           _resolved_scope=None,
-                          krt_smooth_complete=False):
+                          krt_smooth_complete=False, seed_segments=None,
+                          _editable_segment_ids=None, _branch_count=0):
     """G0 API; callers may certify that final KRT smooth already completed."""
     baseline_segments = list(pcb_data.segments)
     baseline_vias = list(pcb_data.vias)
@@ -439,14 +509,32 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
     deadline = started + max(0.0, selected.budget_seconds)
 
     try:
+        if seed_segments:
+            seeded_net_ids = {segment.net_id for segment in seed_segments
+                              if segment.net_id}
+            net_ids = (seeded_net_ids if not net_ids else
+                       set(net_ids).intersection(seeded_net_ids))
+            if not net_ids:
+                raise RuntimeError(
+                    "selected seeds do not belong to the requested nets")
         if _resolved_scope is None:
             scope_net_ids, excluded, exclusion_reasons = resolve_gloss_scope(
                 pcb_data, net_ids, excluded_net_ids)
         else:
             scope_net_ids, excluded, exclusion_reasons = _resolved_scope
+        if seed_segments and _editable_segment_ids is None:
+            _editable_segment_ids, _branch_count = \
+                elementary_branch_segment_ids(pcb_data, seed_segments)
+            if not _editable_segment_ids:
+                raise RuntimeError(
+                    "no elementary branch matched the selected seed")
         context = build_gloss_context(
             pcb_data, config, net_ids=scope_net_ids,
-            excluded_net_ids=excluded, exclusion_reasons=exclusion_reasons)
+            excluded_net_ids=excluded, exclusion_reasons=exclusion_reasons,
+            editable_segment_ids=_editable_segment_ids)
+        if _emit_log and _editable_segment_ids is not None:
+            print(f"Track Gloss G0: {_branch_count} elementary branch(es), "
+                  f"{len(_editable_segment_ids)} editable segment(s)")
         if _emit_log and excluded:
             print(f"Track Gloss G0: {len(excluded)} protected net(s) excluded")
         board_before_length = calculate_route_length(pcb_data.segments)
@@ -521,6 +609,8 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
             "excluded_net_ids": sorted(context.excluded_net_ids),
             "exclusion_reasons": dict(context.exclusion_reasons),
             "nets_changed": len(changed_net_ids), "saved_mm": total_saved,
+            "elementary_branches": int(_branch_count),
+            "branch_scoped": context.branch_scoped,
             "segment_changes": len(changes.segments),
             "via_changes": len(changes.vias),
             "before_mm": round(before_length, 4),

@@ -49,6 +49,27 @@ ils ne résolvent plus leur propre sélection et ne recalculent plus de liste de
 nets verrouillés. `KrtClearanceAdapter` reste une couche d'adaptation mince vers
 les contrôles KRT ; il ne recrée pas un moteur de clearance parallèle.
 
+### Portée par branche élémentaire
+
+Lorsqu'un appelant fournit des segments graines, G0 construit une seule fois
+leur union de branches élémentaires depuis la topologie KRT finale. Le parcours
+s'arrête aux pads, extrémités libres et jonctions ; il emploie les primitives
+KRT de géométrie des pads et de portée des vias. Le net complet reste présent
+pour les obstacles et les contrôles de connectivité.
+
+Le contexte transporte l'ensemble des identités de segments modifiables. À
+chaque remplacement accepté, il retire les anciennes identités et ajoute les
+nouvelles. Les étapes G3 à G3.5 filtrent sur cet ensemble commun au lieu de
+reconstruire la branche. Le dernier smooth et la fusion collinéaire restent les
+fonctions KRT : un résultat temporaire limité à la branche active leur option
+`keep_input_copper`, puis l'adaptateur réconcilie leurs ajouts et suppressions
+avec le résultat réel. Aucun changement de KRT ou de Rust n'est nécessaire.
+
+Dans un T à rail collinéaire, la branche sélectionnée peut déplacer son point
+de raccordement sur le rail car le cuivre du rail demeure géométriquement
+inchangé. La variante sans rail collinéaire n'est tentée que si toutes les
+branches qu'elle devrait réécrire appartiennent à la portée modifiable.
+
 La vue d'obstacles étrangers est également unique pour toute l'exécution. Elle
 est clonée une seule fois depuis la grille KRT persistante, puis l'exclusion
 passe d'un net au suivant avec les opérations batch d'ajout et de retrait déjà
@@ -155,8 +176,8 @@ préparé par G0. Il ne rappelle ni l'entrée publique G0, ni
 net concerné est remplacé. Une erreur remonte sans être convertie en résultat
 vide ; G0 restaure alors atomiquement tout le gloss.
 
-À partir de G4, seule User.1 présente l'écart entre l'entrée du gloss et son
-résultat final.
+À partir de G4, une seule couche User présente l'écart entre l'entrée du gloss
+et son résultat final.
 
 ### G5 — certification de conformité
 
@@ -176,6 +197,7 @@ atomique déjà possédé par G0.
 | Module | Responsabilité |
 |---|---|
 | `pipeline.py` | Entrée G0, noyau G3.5, certification G5 et repli |
+| `branches.py` | Résolution unique des branches élémentaires depuis leurs graines |
 | `context.py` | Reconstruction du contexte de grille KRT |
 | `krt_clearance.py` | Adaptation mince aux contrôles KRT |
 | `algorithm.py` | G3, chaînes ordinaires |

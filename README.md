@@ -17,7 +17,10 @@ Install the plugin ZIP with KiCad's Plugin and Content Manager. In the PCB
 Editor, optionally select tracks, vias, pads, footprints or zones, then run
 **KiCad KRT Gloss**:
 
-- if objects are selected, their complete nets are processed;
+- each selected straight track is a seed: only its complete elementary branch,
+  up to the next pad, free end or junction, is processed;
+- if no straight track is selected, other selected objects continue to select
+  complete nets;
 - if nothing is selected, every routed net is processed.
 
 The dialog lets you enable or disable mobile-via optimization, pad-terminal

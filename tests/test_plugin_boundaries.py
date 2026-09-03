@@ -11,7 +11,8 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from kicad_krt_gloss.selection import native_arc_net_ids, selected_net_ids
+from kicad_krt_gloss.selection import (
+    native_arc_net_ids, selected_net_ids, selected_seed_segments)
 from kicad_krt_gloss.board_adapter import (
     _krt_via_key, _native_segment_key, _native_via_key, _segment_key,
     build_krt_config)
@@ -64,6 +65,28 @@ class Board:
 
 def test_selection_filters_every_supported_item_to_unique_complete_net_ids():
     assert selected_net_ids(Board()) == [7, 9, 10, 11]
+
+
+def test_selected_straight_track_maps_to_its_krt_segment_seed():
+    class Point:
+        def __init__(self, x, y): self.x, self.y = x, y
+
+    class Track(Item):
+        def GetStart(self): return Point(1.0, 2.0)
+        def GetEnd(self): return Point(3.0, 4.0)
+        def GetLayer(self): return 0
+        def GetWidth(self): return 0.2
+
+    track = Track(7)
+    board = types.SimpleNamespace(
+        GetTracks=lambda: [track], GetLayerName=lambda _layer: "F.Cu")
+    segment = types.SimpleNamespace(
+        start_x=3.0, start_y=4.0, end_x=1.0, end_y=2.0,
+        layer="F.Cu", net_id=7, width=0.2, graphic=False)
+    pcb_data = types.SimpleNamespace(segments=[segment])
+
+    with patch.dict(sys.modules, {"pcbnew": types.SimpleNamespace(ToMM=float)}):
+        assert selected_seed_segments(board, pcb_data) == [segment]
 
 
 def test_native_arc_nets_are_excluded_at_the_plugin_boundary():

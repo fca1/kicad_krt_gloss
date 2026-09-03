@@ -198,6 +198,8 @@ def optimize_pad_terminals(context, results, deadline=None, *, net_ids):
             chain, points = walked
             if not chain or any(id(segment) in processed for segment in chain):
                 continue
+            if not context.segments_editable(chain):
+                continue
             removed_ids = {id(segment) for segment in chain}
             current = [segment for segment in context.pcb_data.segments
                        if segment.net_id == net_id]
@@ -229,6 +231,7 @@ def optimize_pad_terminals(context, results, deadline=None, *, net_ids):
             context.pcb_data.segments = [segment for segment in
                                          context.pcb_data.segments
                                          if id(segment) not in removed_ids] + candidate
+            context.replace_editable_segments(chain, candidate)
             if hasattr(context.pcb_data, "_foreign_seg_arr_cache"):
                 context.pcb_data._foreign_seg_arr_cache = None
             processed.update(removed_ids)

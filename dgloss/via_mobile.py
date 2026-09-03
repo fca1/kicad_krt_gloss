@@ -140,6 +140,8 @@ def move_mobile_vias(context, results, *, net_ids, stage="G3.1",
                 chains = [item[0] for item in walked]
                 anchors = [item[1] for item in walked]
             removed_segments = [segment for chain in chains for segment in chain]
+            if not context.segments_editable(removed_segments):
+                continue
             removed_ids = {id(segment) for segment in removed_segments}
             outside = [segment for segment in net_segments
                        if id(segment) not in removed_ids]
@@ -208,6 +210,7 @@ def move_mobile_vias(context, results, *, net_ids, stage="G3.1",
                 input_vias.append(old_via)
             context.pcb_data.segments = [segment for segment in context.pcb_data.segments
                                          if id(segment) not in removed_ids] + candidate
+            context.replace_editable_segments(removed_segments, candidate)
             context.pcb_data.vias = [via for via in context.pcb_data.vias
                                      if via is not old_via] + [moved_via]
             if hasattr(context.pcb_data, "_foreign_seg_arr_cache"):

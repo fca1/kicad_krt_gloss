@@ -10,7 +10,8 @@ import pcbnew
 import wx
 
 from .runtime import configure_krt_runtime, ensure_krt_dependencies
-from .selection import native_arc_net_ids, selected_net_ids
+from .selection import (native_arc_net_ids, selected_net_ids,
+                        selected_seed_segments)
 from .settings_dialog import DEFAULTS, GlossSettingsDialog
 from .version import __version__
 
@@ -101,6 +102,12 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                 from .board_adapter import apply_gloss, build_krt_config
 
                 pcb_data = build_pcb_data_from_board(board)
+                seed_segments = selected_seed_segments(board, pcb_data)
+                if seed_segments:
+                    net_ids = sorted({segment.net_id
+                                      for segment in seed_segments})
+                    print(f"Track Gloss BE: {len(seed_segments)} segment "
+                          f"seed(s) on {len(net_ids)} net(s)")
                 config = build_krt_config(
                     board, pcb_data, values["grid_step"], net_ids=net_ids)
                 gloss_config = GlossConfig(
@@ -115,7 +122,8 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                 results = []
                 outcome = run_final_gloss(
                     results, pcb_data, config, gloss_config, net_ids=net_ids,
-                    excluded_net_ids=native_arc_net_ids(board))
+                    excluded_net_ids=native_arc_net_ids(board),
+                    seed_segments=seed_segments)
                 removed, added, moved, debug_layer = apply_gloss(
                     board, results, outcome)
                 pcbnew.Refresh()
@@ -130,6 +138,9 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                 print(f"Tracks replaced: {removed} -> {added}")
                 print(f"Vias moved: {moved}")
                 print(f"G4 passes: {stats.get('g4_passes_completed', 0)}")
+                if stats.get("branch_scoped"):
+                    print("Elementary branches: "
+                          f"{stats.get('elementary_branches', 0)}")
                 print(f"G5 valid: {bool(stats.get('g5_valid', False))}")
             if len(net_ids) != 1:
                 overlay_note = (

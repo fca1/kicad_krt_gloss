@@ -380,12 +380,19 @@ def slide_t_nodes(context, results, deadline=None, *,
                             if via.net_id == net_id]
                 chain, anchor = _walk_branch_chain(
                     context.pcb_data, net_id, node, branch)
+                if not context.segments_editable(chain):
+                    continue
+                if (context.branch_scoped and noncollinear_variant and
+                        not context.segments_editable(initial_incident)):
+                    continue
                 replacement = _best_slide(
                     context, node, chain, anchor, rail_groups, current,
                     net_vias, foreign, initial_incident, deadline=deadline)
                 if replacement is None:
                     continue
                 removed, candidate, cleaned = replacement
+                if not context.segments_editable(removed):
+                    continue
                 removed_ids = {id(segment) for segment in removed}
                 before_grade = check_net_connectivity(
                     net_id, current, net_vias,
@@ -406,6 +413,7 @@ def slide_t_nodes(context, results, deadline=None, *,
                 context.pcb_data.segments = [
                     segment for segment in context.pcb_data.segments
                     if id(segment) not in removed_ids] + candidate
+                context.replace_editable_segments(removed, candidate)
                 if hasattr(context.pcb_data, "_foreign_seg_arr_cache"):
                     context.pcb_data._foreign_seg_arr_cache = None
                 processed.update(removed_ids)
