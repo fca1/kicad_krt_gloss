@@ -20,7 +20,8 @@ from dgloss.krt_clearance import KrtClearanceAdapter
 from dgloss.config import GlossConfig
 from dgloss.changes import GlossChanges
 from dgloss.comparison import compare_smoothers, format_comparison_table
-from dgloss.algorithm import (_Chain, _best_chain_replacement,
+from dgloss.algorithm import (_Chain, _adaptive_sliding_candidates,
+                              _best_chain_replacement,
                               _candidate_clears,
                               _sliding_candidate_families)
 from dgloss.pipeline import (_certify_g5_copper, _g5_grade, _grade,
@@ -524,6 +525,28 @@ def test_g3_sliding_candidates_never_join_axes_at_90_degrees():
                                         abs_tol=1e-9)
 
 
+def test_g3_adaptive_slide_uses_five_grid_cells_then_refines_one_cell():
+    context = types.SimpleNamespace(
+        coord=types.SimpleNamespace(grid_step=0.1),
+        clearance_adapter=types.SimpleNamespace(
+            connector_clears=lambda segments: segments[0].start_x >= 3.0))
+
+    def indexed_candidate(_a, _b, layer, width, net_id, _step, index, _order):
+        return [Segment(float(index), 0.0, float(index + 1), 0.0,
+                        width, layer, net_id)]
+
+    with patch("dgloss.algorithm._last_positive_sliding_index",
+               return_value=16), \
+            patch("dgloss.algorithm._sliding_candidate_at",
+                  side_effect=indexed_candidate), \
+            patch("dgloss.algorithm._clears_krt_grid", return_value=False):
+        candidates = list(_adaptive_sliding_candidates(
+            context, object(), (0.0, 0.0), (10.0, 10.0),
+            "F.Cu", 0.2, 1, 20.0))
+
+    assert [candidate[0].start_x for candidate in candidates] == [3.0, 3.0]
+
+
 def test_g3_rejects_new_90_degree_corner_at_candidate_boundary():
     points = [(0.0, 0.0), (0.0, 1.0), (3.0, 4.0),
               (4.0, 5.0), (8.0, 5.0)]
@@ -542,7 +565,7 @@ def test_g3_rejects_new_90_degree_corner_at_candidate_boundary():
 
     with patch("dgloss.algorithm._candidate_segments",
                side_effect=only_bad_boundary_candidate), \
-            patch("dgloss.algorithm._sliding_candidate_families",
+            patch("dgloss.algorithm._adaptive_sliding_candidates",
                   return_value=[]), \
             patch("dgloss.algorithm._candidate_clears", return_value=True):
         replacement = _best_chain_replacement(

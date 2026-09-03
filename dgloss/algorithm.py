@@ -128,15 +128,9 @@ def _segments_for_points(points, layer, width, net_id):
 
 def _sliding_candidate_families(a, b, layer, width, net_id, grid_step):
     """Monotone axis/diagonal/axis paths, longest diagonal first on KRT's step."""
-    ax, ay = a
-    bx, by = b
-    dx, dy = bx - ax, by - ay
-    adx, ady = abs(dx), abs(dy)
-    diagonal_max = min(adx, ady)
+    diagonal_max = min(abs(b[0] - a[0]), abs(b[1] - a[1]))
     if diagonal_max <= grid_step + 1e-9:
         return
-    sx = 1.0 if dx >= 0 else -1.0
-    sy = 1.0 if dy >= 0 else -1.0
     # The diagonal must separate the two orthogonal moves.  Any other
     # permutation puts X and Y next to each other and creates a 90-degree
     # corner even though every individual segment is octolinear.
@@ -144,25 +138,125 @@ def _sliding_candidate_families(a, b, layer, width, net_id, grid_step):
 
     for order in orders:
         def family(order=order):
-            slide = grid_step
-            while slide < diagonal_max - 1e-9:
-                diagonal = diagonal_max - slide
-                moves = {
-                    "x": (sx * (adx - diagonal), 0.0),
-                    "y": (0.0, sy * (ady - diagonal)),
-                    "d": (sx * diagonal, sy * diagonal),
-                }
-                points = [a]
-                x, y = a
-                for kind in order:
-                    mx, my = moves[kind]
-                    if abs(mx) > 1e-9 or abs(my) > 1e-9:
-                        x, y = round(x + mx, 6), round(y + my, 6)
-                        points.append((x, y))
-                points[-1] = b
-                yield _segments_for_points(points, layer, width, net_id)
-                slide += grid_step
+            index = 1
+            while index * grid_step < diagonal_max - 1e-9:
+                yield _sliding_candidate_at(
+                    a, b, layer, width, net_id, grid_step, index, order)
+                index += 1
         yield family()
+
+
+def _sliding_candidate_at(a, b, layer, width, net_id, grid_step, index,
+                          order):
+    """Build one sliding candidate directly at an integer KRT-grid index."""
+    ax, ay = a
+    bx, by = b
+    dx, dy = bx - ax, by - ay
+    adx, ady = abs(dx), abs(dy)
+    diagonal = min(adx, ady) - index * grid_step
+    if diagonal <= 1e-9:
+        return []
+    sx = 1.0 if dx >= 0 else -1.0
+    sy = 1.0 if dy >= 0 else -1.0
+    moves = {
+        "x": (sx * (adx - diagonal), 0.0),
+        "y": (0.0, sy * (ady - diagonal)),
+        "d": (sx * diagonal, sy * diagonal),
+    }
+    points = [a]
+    x, y = a
+    for kind in order:
+        mx, my = moves[kind]
+        if abs(mx) > 1e-9 or abs(my) > 1e-9:
+            x, y = round(x + mx, 6), round(y + my, 6)
+            points.append((x, y))
+    points[-1] = b
+    return _segments_for_points(points, layer, width, net_id)
+
+
+def _last_positive_sliding_index(a, b, layer, width, net_id, grid_step,
+                                 order, old_length):
+    """Find the least-gain useful position without materializing the family."""
+    diagonal_max = min(abs(b[0] - a[0]), abs(b[1] - a[1]))
+    upper = max(0, int((diagonal_max - 1e-9) // grid_step))
+    if upper < 1:
+        return 0
+
+    def improves(index):
+        candidate = _sliding_candidate_at(
+            a, b, layer, width, net_id, grid_step, index, order)
+        return (bool(candidate) and
+                calculate_route_length(candidate) < old_length - 1e-12)
+
+    if not improves(1):
+        return 0
+    if improves(upper):
+        return upper
+    low, high = 1, upper
+    while low + 1 < high:
+        middle = (low + high) // 2
+        if improves(middle):
+            low = middle
+        else:
+            high = middle
+    return low
+
+
+def _adaptive_sliding_candidates(context, obstacles, a, b, layer, width,
+                                 net_id, old_length):
+    """Search the first locally reachable slide, five KRT cells at a time.
+
+    The search starts next to the existing geometry and moves toward the
+    shortest connector. A grid rejection gets KRT's exact confirmation; a
+    confirmed first obstruction ends that family. Only the last five-cell
+    interval is refined at the actual KRT grid step.
+    """
+    stride = 5
+    orders = (("x", "d", "y"), ("y", "d", "x"))
+
+    def candidate(index, order):
+        return _sliding_candidate_at(
+            a, b, layer, width, net_id, context.coord.grid_step, index, order)
+
+    def clears(segments):
+        if (not segments or any(
+                calculate_route_length([segment]) <
+                context.coord.grid_step - 1e-9 for segment in segments)):
+            return False
+        if _clears_krt_grid(context, obstacles, segments):
+            return True
+        return context.clearance_adapter.connector_clears(segments)
+
+    for order in orders:
+        last = _last_positive_sliding_index(
+            a, b, layer, width, net_id, context.coord.grid_step, order,
+            old_length)
+        if not last:
+            continue
+
+        probe = max(1, last - stride)
+        first = candidate(probe, order)
+        if not clears(first):
+            continue
+        best = probe
+
+        while best > 1:
+            probe = max(1, best - stride)
+            tested = candidate(probe, order)
+            if clears(tested):
+                best = probe
+                continue
+
+            # Move back from the first obstruction one real grid cell at a
+            # time. Stop at the first valid point: anything beyond the
+            # obstruction belongs to another local basin.
+            for index in range(probe + 1, best):
+                tested = candidate(index, order)
+                if clears(tested):
+                    best = index
+                    break
+            break
+        yield candidate(best, order)
 
 
 def _clears_krt_grid(context, obstacles, segments):
@@ -304,11 +398,9 @@ def _best_chain_replacement(context, chain, net_id, foreign_obstacles,
                 chain.points[i], chain.points[j], chain.layer, chain.width,
                 net_id))]
             if objective == "shorter":
-                families.extend(("sliding", family) for family in
-                                _sliding_candidate_families(
-                                    chain.points[i], chain.points[j],
-                                    chain.layer, chain.width, net_id,
-                                    context.coord.grid_step))
+                families.append(("sliding_exact", _adaptive_sliding_candidates(
+                    context, foreign_obstacles, chain.points[i], chain.points[j],
+                    chain.layer, chain.width, net_id, old_length)))
             for source, family in families:
                 if deadline is not None and perf_counter() >= deadline:
                     break
@@ -328,9 +420,14 @@ def _best_chain_replacement(context, chain, net_id, foreign_obstacles,
                     # shorter member of that same geometry cannot follow.
                     elif gain <= 1e-12:
                         break
-                    if not _candidate_clears(
+                    if source == "sliding_exact":
+                        clears = context.clearance_adapter.connector_clears(
+                            candidate)
+                    else:
+                        clears = _candidate_clears(
                             context, foreign_obstacles, candidate, source,
-                            chain.segments[i:j]):
+                            chain.segments[i:j])
+                    if not clears:
                         continue
                     if _touches_other_same_net(
                             candidate, outside, net_vias,

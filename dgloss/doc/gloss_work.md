@@ -68,8 +68,12 @@ doivent pas servir de base au gloss.
 
 Réduire la longueur net par net, vias fixes, en parcourant les chaînes simples.
 Les raccordements d'une diagonale peuvent glisser sur les segments adjacents,
-au pas de la grille KRT. Chaque candidat est comparé à la chaîne existante,
-contrôlé par KRT puis soumis au contrôle de connectivité avant application.
+au pas de la grille KRT. La recherche part de la géométrie existante par bonds
+de cinq cellules KRT. Au premier obstacle confirmé par le contrôle exact KRT,
+elle revient dans le dernier intervalle et l'affine cellule par cellule. La
+famille est abandonnée si son premier bond est réellement bloqué. Le candidat
+retenu est comparé à la chaîne existante, contrôlé par KRT puis soumis au
+contrôle de connectivité avant application.
 
 ### G3.1 — vias mobiles locaux
 
