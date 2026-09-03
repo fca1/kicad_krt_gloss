@@ -286,6 +286,19 @@ def test_final_entry_passes_the_same_complete_net_scope_to_krt_and_dgloss():
     assert outcome.stats["nets_processed"] == 1
 
 
+def test_final_entry_certifies_that_krt_smooth_completed():
+    pcb, config, _first, _second = _parallel_board()
+    sentinel = object()
+    with patch("dgloss.pipeline.smooth_octolinear_chains",
+               return_value=(0, set(), [], [], {"saved_mm": 0.0})), \
+            patch("dgloss.pipeline.run_post_smooth_gloss",
+                  return_value=sentinel) as post_smooth:
+        outcome = run_final_gloss([], pcb, config, net_ids=[1])
+
+    assert outcome is sentinel
+    assert post_smooth.call_args.kwargs["krt_smooth_complete"] is True
+
+
 def test_final_entry_excludes_adapter_arc_nets_before_krt_smooth_and_g0():
     pcb, config, _first, _second = _parallel_board()
     disabled = GlossConfig(False, False, False, False)

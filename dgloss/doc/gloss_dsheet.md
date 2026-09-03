@@ -76,14 +76,17 @@ Pour un appelant qui possède déjà le résultat du dernier smooth KRT :
 from dgloss import run_post_smooth_gloss
 
 outcome = run_post_smooth_gloss(
-    results, pcb_data, krt_config, gloss_config=options, net_ids=selected_net_ids
+    results, pcb_data, krt_config, gloss_config=options,
+    net_ids=selected_net_ids, krt_smooth_complete=True
 )
 ```
 
 Le second emploi est strictement post-smooth : il reconstruit le contexte mais
-ne relance pas `smooth_octolinear_chains()`. C'est aussi l'API publique prévue
-pour une intégration directe par KRT ; le CLI l'emploie sans la réserver à
-celui-ci.
+ne relance pas `smooth_octolinear_chains()`. Le certificat
+`krt_smooth_complete=True` permet au gloss de ne pas reproduire les familles
+canoniques que le dernier smooth vient de traiter. C'est aussi l'API publique
+prévue pour une intégration directe par KRT. Le CLI autonome ne positionne pas
+ce certificat et conserve donc ces familles.
 
 G0 construit ce contexte une seule fois, y compris lorsque G4 est actif. Avant
 sa construction, il exclut les groupes à longueur/temps imposé, les paires

@@ -105,7 +105,8 @@ def _empty_via_stats():
             "added_segments": []}
 
 
-def _run_g3_5_pass(results, context, selected, net_ids, deadline, *, emit_log):
+def _run_g3_5_pass(results, context, selected, net_ids, deadline, *, emit_log,
+                   skip_smoothed_canonical=False):
     """Execute G3--G3.5 directly for the supplied complete KRT net list."""
     pcb_data = context.pcb_data
     run_net_ids = [net_id for net_id in net_ids
@@ -123,7 +124,8 @@ def _run_g3_5_pass(results, context, selected, net_ids, deadline, *, emit_log):
         return enabled and not expired, expired
 
     strips, added, g3_changes, g3 = shorten_routes(
-        context, results, deadline=deadline, net_ids=run_net_ids)
+        context, results, deadline=deadline, net_ids=run_net_ids,
+        include_canonical=not skip_smoothed_canonical)
     _append_result(results, "track_gloss_g3", added, [], g3_changes)
     changes.segments.extend(g3_changes.segments)
     changes.vias.extend(g3_changes.vias)
@@ -402,6 +404,7 @@ def run_final_gloss(results, pcb_data, config, gloss_config=None, *,
             results, pcb_data, config, gloss_config=gloss_config,
             net_ids=active_net_ids, krt_strips=strips, krt_stats=krt_stats,
             krt_ms=krt_ms,
+            krt_smooth_complete=True,
             _resolved_scope=(active_net_ids, excluded, exclusion_reasons))
     except Exception as exc:
         _restore(results, original_count, original_results, pcb_data,
@@ -414,8 +417,9 @@ def run_final_gloss(results, pcb_data, config, gloss_config=None, *,
 def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
                           net_ids=None, krt_strips=None, krt_stats=None,
                           krt_ms=0.0, excluded_net_ids=None, _emit_log=True,
-                          _resolved_scope=None):
-    """G0 API for a caller that already owns the final KRT smooth result."""
+                          _resolved_scope=None,
+                          krt_smooth_complete=False):
+    """G0 API; callers may certify that final KRT smooth already completed."""
     baseline_segments = list(pcb_data.segments)
     baseline_vias = list(pcb_data.vias)
     baseline_count = len(results)
@@ -451,7 +455,8 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
                             for net_id in scope_net_ids}
         initial = _run_g3_5_pass(
             results, context, selected, scope_net_ids, deadline,
-            emit_log=_emit_log)
+            emit_log=_emit_log,
+            skip_smoothed_canonical=krt_smooth_complete)
         changes = initial["changes"]
         gloss_stats = initial["stage_stats"]
         g3, via, pad = initial["g3"], initial["via"], initial["pad"]

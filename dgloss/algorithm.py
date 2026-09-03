@@ -447,7 +447,7 @@ def _shortest_path(edges, points, excluded):
 
 def _best_chain_replacement(context, chain, net_id, foreign_obstacles,
                             net_segments, net_vias, deadline=None,
-                            objective="shorter"):
+                            objective="shorter", include_canonical=True):
     """Shortest valid path through a chain's ordered vertices (DAG dynamic program)."""
     n = len(chain.segments)
     span_ids = {id(seg) for seg in chain.segments}
@@ -473,9 +473,11 @@ def _best_chain_replacement(context, chain, net_id, foreign_obstacles,
             if deadline is not None and perf_counter() >= deadline:
                 break
             old_length = calculate_route_length(chain.segments[i:j])
-            families = [("canonical", _candidate_segments(
-                chain.points[i], chain.points[j], chain.layer, chain.width,
-                net_id))]
+            families = []
+            if include_canonical:
+                families.append(("canonical", _candidate_segments(
+                    chain.points[i], chain.points[j], chain.layer,
+                    chain.width, net_id)))
             if objective == "shorter":
                 families.append(("sliding_exact", _adaptive_sliding_candidates(
                     context, foreign_obstacles, chain.points[i], chain.points[j],
@@ -569,7 +571,8 @@ def _best_chain_replacement(context, chain, net_id, foreign_obstacles,
 
 
 def shorten_routes(context, results, deadline=None, *, net_ids,
-                   objective="shorter", stage="G3"):
+                   objective="shorter", stage="G3",
+                   include_canonical=True):
     """Run one deterministic dgloss pass, net by net, with fixed vias."""
     changes = GlossChanges()
     strips = []
@@ -597,7 +600,8 @@ def shorten_routes(context, results, deadline=None, *, net_ids,
             current = [s for s in context.pcb_data.segments if s.net_id == net_id]
             replacement = _best_chain_replacement(
                 context, chain, net_id, foreign, current, net_vias,
-                deadline=deadline, objective=objective)
+                deadline=deadline, objective=objective,
+                include_canonical=include_canonical)
             if replacement is None:
                 continue
             removed, added = replacement
