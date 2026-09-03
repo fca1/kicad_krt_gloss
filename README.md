@@ -26,8 +26,8 @@ Editor, optionally select tracks, vias, pads, footprints or zones, then run
 
 The dialog opens when zero or more than one net is selected; an exact one-net
 selection runs immediately with the remembered settings. It reports the
-selected net and elementary-branch counts. The dialog lets you choose BE or
-complete-net selection and enable or disable mobile-via optimization, pad-terminal
+selected net count, or **ALL** without a selection. The dialog lets you choose
+BE or complete-net selection and enable or disable mobile-via optimization, pad-terminal
 optimization, sliding T-junctions, non-collinear T rails, complete via-chain
 optimization and multi-net convergence passes. It also sets the KRT grid step
 used by the standalone plugin. Every control has a short tooltip explaining

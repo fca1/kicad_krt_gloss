@@ -162,16 +162,16 @@ def test_dialog_keeps_a_post_run_log_with_krt_style_controls():
 def test_about_tab_uses_project_versions_and_attribution():
     source = (ROOT / "kicad_krt_gloss" / "settings_dialog.py").read_text(
         encoding="utf-8")
-    assert '("KRG version:", __version__)' in source
-    assert '("KRT version:", self._krt_version())' in source
-    assert '("Author:", "Frantz")' in source
-    assert '("Co-author:", "ChatGPT/Codex (OpenAI)")' in source
-    assert '("KRT author:", "DrAndyHaas")' in source
-    assert 'label="KRG GitHub Repository"' in source
-    assert 'url="https://github.com/fca1/kicad_krt_gloss"' in source
-    assert 'label="KRT GitHub Repository"' in source
-    assert 'url="https://github.com/drandyhaas/KiCadRoutingTools"' in source
-    assert '"Selected nets: 0 (all routed nets)"' in source
+    assert '("KRG version:", __version__, None)' in source
+    assert '("KRT version:", self._krt_version(), None)' in source
+    assert '("Author:", "Frantz",' in source
+    assert '("Co-author:", "ChatGPT/Codex (OpenAI)", None)' in source
+    assert '("KRT author:", "DrAndyHaas",' in source
+    assert 'label="GitHub Repository"' in source
+    assert '"https://github.com/fca1/kicad_krt_gloss"' in source
+    assert '"https://github.com/drandyhaas/KiCadRoutingTools"' in source
+    assert 'selection_value = str(selected_count) if selected_count else "ALL"' \
+        in source
 
 
 def test_pcm_package_includes_the_about_logo():
@@ -208,7 +208,8 @@ def test_plugin_selection_mode_defaults_to_be_and_cli_stays_net_only():
     cli = (ROOT / "gloss.py").read_text(encoding="utf-8")
     key = '"selection_uses_elementary_branches"'
     assert dialog.index(f"{key}: True") < dialog.index('"enable_g3_1": True')
-    assert "Selected elementary branches:" in dialog
+    assert "Selected elementary branches:" not in dialog
+    assert 'content.Add(selected_net, 0, wx.ALIGN_RIGHT' in dialog
     assert "stopping at a pad, free end, or T/X" in dialog
     assert key in action
     assert key not in cli

@@ -20,14 +20,25 @@ DEFAULTS = {
 
 
 class GlossSettingsDialog(wx.Dialog):
-    def __init__(self, parent, values, selected_count,
-                 selected_branch_count=0, *, on_gloss=None, initial_log=""):
+    def __init__(self, parent, values, selected_count, *, on_gloss=None,
+                 initial_log=""):
         super().__init__(parent, title="KiCad KRT Gloss")
         values = dict(DEFAULTS, **(values or {}))
         self._on_gloss_callback = on_gloss
         self.notebook = wx.Notebook(self)
         panel = wx.Panel(self.notebook)
         content = wx.BoxSizer(wx.VERTICAL)
+        selection_label = "Selected Net" if selected_count <= 1 else \
+            "Selected Nets"
+        selection_value = str(selected_count) if selected_count else "ALL"
+        selected_net = wx.StaticText(
+            panel, label=f"{selection_label}: {selection_value}")
+        selected_font = selected_net.GetFont()
+        selected_font.SetPointSize(selected_font.GetPointSize() + 4)
+        selected_font.SetWeight(wx.FONTWEIGHT_BOLD)
+        selected_net.SetFont(selected_font)
+        content.Add(selected_net, 0, wx.ALIGN_RIGHT | wx.ALL, 10)
+
         self.controls = {}
         labels = {
             "selection_uses_elementary_branches": (
@@ -65,16 +76,6 @@ class GlossSettingsDialog(wx.Dialog):
             control.SetToolTip(tooltips[key])
             self.controls[key] = control
             content.Add(control, 0, wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
-            if key == "selection_uses_elementary_branches":
-                scope = (f"Selected nets: {selected_count}"
-                         if selected_count else
-                         "Selected nets: 0 (all routed nets)")
-                content.Add(wx.StaticText(panel, label=scope), 0,
-                            wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
-                content.Add(wx.StaticText(
-                    panel, label=f"Selected elementary branches: "
-                                 f"{selected_branch_count}"), 0,
-                    wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
 
         row = wx.BoxSizer(wx.HORIZONTAL)
         row.Add(wx.StaticText(panel, label="KRT grid step (mm):"), 0,
@@ -123,25 +124,33 @@ class GlossSettingsDialog(wx.Dialog):
         about_content.Add(title, 0, wx.ALIGN_CENTER | wx.ALL, 5)
 
         info = wx.FlexGridSizer(cols=2, hgap=12, vgap=6)
-        for label, value in (
-                ("KRG version:", __version__),
-                ("KRT version:", self._krt_version()),
-                ("Author:", "Frantz"),
-                ("Co-author:", "ChatGPT/Codex (OpenAI)"),
-                ("KRT author:", "DrAndyHaas")):
+        rows = (
+            ("KRG version:", __version__, None),
+            ("KRT version:", self._krt_version(), None),
+            ("Author:", "Frantz",
+             "https://github.com/fca1/kicad_krt_gloss"),
+            ("Co-author:", "ChatGPT/Codex (OpenAI)", None),
+            (None, None, None),
+            ("KRT author:", "DrAndyHaas",
+             "https://github.com/drandyhaas/KiCadRoutingTools"),
+        )
+        for label, value, url in rows:
+            if label is None:
+                info.AddSpacer((1, 10))
+                info.AddSpacer((1, 10))
+                continue
             name = wx.StaticText(about, label=label)
             name.SetFont(name.GetFont().Bold())
             info.Add(name, 0, wx.ALIGN_RIGHT)
-            info.Add(wx.StaticText(about, label=value), 0, wx.ALIGN_LEFT)
+            value_row = wx.BoxSizer(wx.HORIZONTAL)
+            value_row.Add(wx.StaticText(about, label=value), 0,
+                          wx.ALIGN_CENTER_VERTICAL)
+            if url:
+                value_row.Add(wx.adv.HyperlinkCtrl(
+                    about, label="GitHub Repository", url=url), 0,
+                    wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 12)
+            info.Add(value_row, 0, wx.ALIGN_LEFT)
         about_content.Add(info, 0, wx.ALIGN_CENTER | wx.ALL, 12)
-        about_content.Add(wx.adv.HyperlinkCtrl(
-            about, label="KRG GitHub Repository",
-            url="https://github.com/fca1/kicad_krt_gloss"),
-            0, wx.ALIGN_CENTER | wx.TOP | wx.LEFT | wx.RIGHT, 8)
-        about_content.Add(wx.adv.HyperlinkCtrl(
-            about, label="KRT GitHub Repository",
-            url="https://github.com/drandyhaas/KiCadRoutingTools"),
-            0, wx.ALIGN_CENTER | wx.ALL, 8)
         license_text = wx.StaticText(about, label="Open source — MIT License")
         license_text.SetForegroundColour(wx.Colour(128, 128, 128))
         about_content.Add(license_text, 0, wx.ALIGN_CENTER | wx.ALL, 8)

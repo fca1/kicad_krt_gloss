@@ -64,8 +64,9 @@ conserve la sélection historique du net complet.
 La boîte s'affiche si zéro net ou plusieurs nets sont sélectionnés. Avec un
 seul net sélectionné, le traitement démarre immédiatement avec les derniers
 réglages mémorisés ; le réglage initial utilise les BE. La boîte affiche en
-lecture seule le nombre de nets et de BE sélectionnés. Ces options sont propres
-au plugin : le CLI continue toujours à désigner des nets complets.
+lecture seule le nombre de nets sélectionnés, ou `ALL` sans sélection. Ces
+options sont propres au plugin : le CLI continue toujours à désigner des nets
+complets.
 
 ## Emploi comme bibliothèque Python
 

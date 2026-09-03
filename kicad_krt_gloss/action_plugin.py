@@ -44,7 +44,6 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
         values = dict(self.__class__._settings)
         if len(net_ids) != 1:
             prepared = None
-            branch_count = 0
             if net_ids:
                 prepared = self._prepare_selection(board, parent)
                 if prepared is None:
@@ -60,8 +59,7 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                                 append_log=append_log, prepared=ready)
 
             dialog = GlossSettingsDialog(
-                parent, values, len(net_ids), branch_count,
-                on_gloss=run_from_dialog,
+                parent, values, len(net_ids), on_gloss=run_from_dialog,
                 initial_log=self.__class__._last_log)
             try:
                 dialog.ShowModal()
@@ -83,13 +81,10 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
         try:
             wx.BeginBusyCursor()
             from kicad_parser import build_pcb_data_from_board
-            from dgloss.branches import elementary_branch_segment_ids
 
             pcb_data = build_pcb_data_from_board(board)
             seed_segments = selected_seed_segments(board, pcb_data)
-            _editable_ids, branch_count = elementary_branch_segment_ids(
-                pcb_data, seed_segments)
-            return pcb_data, seed_segments, branch_count
+            return pcb_data, seed_segments
         except Exception:
             wx.MessageBox(
                 "Track Gloss could not inspect the current selection.\n\n" +
@@ -144,7 +139,7 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                     pcb_data = build_pcb_data_from_board(board)
                     seed_segments = selected_seed_segments(board, pcb_data)
                 else:
-                    pcb_data, seed_segments, _branch_count = prepared
+                    pcb_data, seed_segments = prepared
                 use_branches = bool(
                     values["selection_uses_elementary_branches"])
                 if not use_branches:
