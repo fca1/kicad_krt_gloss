@@ -217,6 +217,20 @@ def test_plugin_selection_mode_defaults_to_be_and_cli_stays_net_only():
     assert key not in cli
 
 
+def test_runtime_log_messages_are_english_only():
+    sources = "\n".join(
+        (ROOT / relative).read_text(encoding="utf-8")
+        for relative in ("dgloss/pipeline.py", "dgloss/passes.py",
+                         "dgloss/stats.py", "kicad_krt_gloss/action_plugin.py",
+                         "gloss.py"))
+    french_log_terms = (
+        "améliorés", "déplacés", "optimisés", "sans rail colinéaire",
+        "coudes", "affinés", "supprimés", "désactivé", "expiré",
+        "parcourus", "certifiés", "transformations multinet",
+    )
+    assert not any(term in sources for term in french_log_terms)
+
+
 def test_single_selected_net_skips_the_success_summary_dialog():
     source = (ROOT / "kicad_krt_gloss" / "action_plugin.py").read_text(
         encoding="utf-8")

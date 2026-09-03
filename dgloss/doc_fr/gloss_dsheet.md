@@ -168,7 +168,7 @@ et après le gloss.
 Le log affiche une ligne courte par étape, puis une ligne globale de la forme :
 
 ```text
-Track Gloss G3.5: 120 nets parcourus, 8 améliorés, -12.3400 mm, 8500.0 ms
+Track Gloss G3.5: 120 nets processed, 8 improved, -12.3400 mm, 8500.0 ms
 ```
 
 ## Visualisation KiCad

@@ -32,9 +32,9 @@ class GlossStats:
         self.stages[stage] = row
         if self.emit:
             if not enabled:
-                print(f"Track Gloss {stage}: désactivé")
+                print(f"Track Gloss {stage}: disabled")
             elif skipped_budget:
-                print(f"Track Gloss {stage}: budget expiré")
+                print(f"Track Gloss {stage}: budget expired")
             else:
                 gain = (f"-{row.saved_mm:.4f}"
                         if row.saved_mm > 0.0 else "0.0000")

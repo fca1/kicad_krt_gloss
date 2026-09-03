@@ -177,7 +177,7 @@ def _run_g3_5_pass(results, context, selected, net_ids, deadline, *, emit_log,
     stage_stats.record("G3", changes=g3["nets_changed"],
                        saved_mm=g3["saved_mm"],
                        elapsed_ms=g3["algorithm_ms"],
-                       label="nets améliorés")
+                       label="nets improved")
 
     run, expired = available(selected.enable_g3_1)
     via_strips, added_vias, via_changes, via = \
@@ -191,7 +191,7 @@ def _run_g3_5_pass(results, context, selected, net_ids, deadline, *, emit_log,
     stage_stats.record("G3.1", enabled=selected.enable_g3_1,
                        skipped_budget=expired and selected.enable_g3_1,
                        changes=via["vias_moved"], saved_mm=via["saved_mm"],
-                       elapsed_ms=via["algorithm_ms"], label="vias déplacés")
+                       elapsed_ms=via["algorithm_ms"], label="vias moved")
 
     run, expired = available(selected.enable_g3_2)
     pad_strips, pad_added, pad_changes, pad = \
@@ -205,7 +205,7 @@ def _run_g3_5_pass(results, context, selected, net_ids, deadline, *, emit_log,
     stage_stats.record("G3.2", enabled=selected.enable_g3_2,
                        skipped_budget=expired and selected.enable_g3_2,
                        changes=pad["pads_changed"], saved_mm=pad["saved_mm"],
-                       elapsed_ms=pad["algorithm_ms"], label="pads optimisés")
+                       elapsed_ms=pad["algorithm_ms"], label="pads optimized")
 
     run, expired = available(selected.enable_g3_3)
     node_strips, node_added, node_changes, node = \
@@ -224,11 +224,12 @@ def _run_g3_5_pass(results, context, selected, net_ids, deadline, *, emit_log,
                        changes=node["t_branches_slid"],
                        saved_mm=node["saved_mm"],
                        elapsed_ms=node["algorithm_ms"],
-                       label="branches en T déplacées")
+                       label="T branches moved")
     if emit_log and node["noncollinear_t_slid"]:
         print("Track Gloss G3.3 non-collinear variant: "
-              f"{node['noncollinear_t_slid']} T sans rail colinéaire, "
-              f"{node['right_angles_cleaned']} coudes à 90° nettoyés")
+              f"{node['noncollinear_t_slid']} T junction(s) without a "
+              f"collinear rail, {node['right_angles_cleaned']} "
+              "90-degree bend(s) cleaned")
 
     run, expired = available(selected.enable_g3_4)
     refine_strips, refine_vias, refine_changes, refine = \
@@ -244,7 +245,7 @@ def _run_g3_5_pass(results, context, selected, net_ids, deadline, *, emit_log,
                        changes=refine["vias_moved"],
                        saved_mm=refine["saved_mm"],
                        elapsed_ms=refine["algorithm_ms"],
-                       label="vias affinés")
+                       label="vias refined")
 
     run, expired = available(True)
     equal_strips, equal_added, equal_changes, equal = \
@@ -263,7 +264,7 @@ def _run_g3_5_pass(results, context, selected, net_ids, deadline, *, emit_log,
         "G3.5 equal length", skipped_budget=expired,
         changes=equal["segments_removed"] - equal["segments_added"],
         saved_mm=0.0, elapsed_ms=equal["algorithm_ms"],
-        label="segments supprimés à longueur égale")
+        label="segments removed at equal length")
 
     run, expired = available(True)
     merge_before = list(pcb_data.segments)
@@ -290,7 +291,7 @@ def _run_g3_5_pass(results, context, selected, net_ids, deadline, *, emit_log,
     stage_stats.record(
         "G3.5 segments", skipped_budget=expired,
         changes=merge.get("joints", 0), saved_mm=0.0,
-        elapsed_ms=merge_ms, label="jonctions colinéaires supprimées")
+        elapsed_ms=merge_ms, label="collinear joints removed")
 
     after_length = _validate_final(
         context, before_grades, before_length, changes)
@@ -581,7 +582,7 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
             "G4", enabled=selected.enable_multipasses,
             skipped_budget=expired and selected.enable_multipasses,
             changes=g4["transformations"], saved_mm=g4["saved_mm"],
-            elapsed_ms=g4["algorithm_ms"], label="transformations multinet")
+            elapsed_ms=g4["algorithm_ms"], label="multi-net transformations")
 
         _validate_final(context, before_grades, board_before_length, changes)
         after_length = calculate_route_length([
@@ -594,7 +595,7 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
             "G5", changes=(g5["segments_certified"] +
                            g5["vias_certified"]),
             saved_mm=0.0, elapsed_ms=g5_ms,
-            label="objets finaux certifiés")
+            label="final objects certified")
         changed_net_ids = set(initial["changed_net_ids"])
         changed_net_ids.update(g4["net_ids_changed"])
         elapsed_ms = (perf_counter() - started) * 1000.0
@@ -661,8 +662,8 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
             "connectivity_regressions": 0,
         })
         if _emit_log:
-            print(f"Track Gloss G3.5: {len(context.net_ids)} nets parcourus, "
-                  f"{len(changed_net_ids)} améliorés, -{total_saved:.4f} mm, "
+            print(f"Track Gloss G3.5: {len(context.net_ids)} nets processed, "
+                  f"{len(changed_net_ids)} improved, -{total_saved:.4f} mm, "
                   f"{elapsed_ms:.1f} ms")
         # Since G4, visualisation is always one final delta on the first free
         # User layer (or the layer already owned by Track Gloss).

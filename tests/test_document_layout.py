@@ -3,6 +3,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 REPORTS = ROOT / "docs" / "reports"
+DOC_FR = ROOT / "dgloss" / "doc_fr"
+DOC_EN = ROOT / "dgloss" / "doc_en"
 
 
 def _project_markdown_files():
@@ -24,3 +26,15 @@ def test_reports_are_kept_in_the_reports_directory():
         if "_REPORT" in path.name.upper() and path.parent != REPORTS
     ]
     assert misplaced == []
+
+
+def test_gloss_reference_documents_have_french_and_english_versions():
+    assert not (ROOT / "dgloss" / "doc").exists()
+    french = sorted(path.name for path in DOC_FR.glob("*.md"))
+    english = sorted(path.name for path in DOC_EN.glob("*.md"))
+    assert french == english == [
+        "gloss_dsheet.md",
+        "gloss_krt.md",
+        "gloss_krt_python_api.md",
+        "gloss_work.md",
+    ]
