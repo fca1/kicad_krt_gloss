@@ -23,6 +23,17 @@ class _Chain:
     width: float
 
 
+@dataclass(frozen=True)
+class _ClearanceDecision:
+    """Clearance verdict plus exact certification carried by the candidate."""
+
+    clear: bool
+    exact_segment_ids: frozenset = frozenset()
+
+    def __bool__(self):
+        return self.clear
+
+
 def _connectivity_worse(before, after):
     """Use KRT's connectivity grade without requiring an initially clean net."""
     return ((before.get("connected") and not after.get("connected")) or
@@ -285,31 +296,41 @@ def _reuses_source_segment(candidate, source_segments):
         for source in source_segments)
 
 
-def _candidate_clears(context, obstacles, segments, source,
-                      source_segments=()):
+def _candidate_clearance(context, obstacles, segments, source,
+                         source_segments=()):
     """G3 speed policy, explicitly split by candidate provenance.
 
     KRT's own canonical connectors use KRT's exact smooth predicate through the
     thin adapter.  The much larger dgloss sliding family is searched on KRT's
     Rust grid.  A grid rejection is confirmed by KRT's exact predicate only
     when every rejected segment is copper retained from the replaced source;
-    genuinely new copper must always pass the grid.  Whatever the search
-    source, the selected replacement is checked exactly once more before it can
-    leave this module.
+    genuinely new copper must always pass the grid.  An exact certificate is
+    returned with the verdict so a selected replacement does not repeat work.
     """
     if not _candidate_geometry_valid(context, segments):
-        return False
+        return _ClearanceDecision(False)
     if source == "canonical":
-        return context.clearance_adapter.connector_clears(segments)
+        clear = context.clearance_adapter.connector_clears(segments)
+        return _ClearanceDecision(
+            clear, frozenset(map(id, segments)) if clear else frozenset())
     rejected = [segment for segment in segments
                 if not _clears_krt_grid(context, obstacles, [segment])]
     if not rejected:
-        return True
+        return _ClearanceDecision(True)
     if not source_segments or not all(
             _reuses_source_segment(segment, source_segments)
             for segment in rejected):
-        return False
-    return context.clearance_adapter.connector_clears(segments)
+        return _ClearanceDecision(False)
+    clear = context.clearance_adapter.connector_clears(segments)
+    return _ClearanceDecision(
+        clear, frozenset(map(id, segments)) if clear else frozenset())
+
+
+def _candidate_clears(context, obstacles, segments, source,
+                      source_segments=()):
+    """Compatibility boolean wrapper around the transported decision."""
+    return bool(_candidate_clearance(
+        context, obstacles, segments, source, source_segments))
 
 
 def _candidate_geometry_valid(context, segments):

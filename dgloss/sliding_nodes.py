@@ -13,7 +13,7 @@ from net_queries import calculate_route_length
 from routing_utils import pos_key
 
 from .algorithm import (_connectivity_worse,
-                        _candidate_clears, _candidate_segments,
+                        _candidate_clearance, _candidate_segments,
                         _segments_for_points, _sliding_candidate_families,
                         _touches_other_same_net)
 from .changes import GlossChanges, release_result_custody
@@ -264,14 +264,24 @@ def _best_slide(context, node, chain, anchor, rail_groups, current, net_vias,
                         if _new_boundary_right_angle(
                                 branch_candidate, anchor, outside):
                             continue
-                        if not _candidate_clears(
-                                context, foreign, branch_candidate,
-                                provenance):
+                        branch_clearance = _candidate_clearance(
+                            context, foreign, branch_candidate, provenance)
+                        if not branch_clearance:
                             continue
-                        if cleaned and not all(_candidate_clears(
-                                context, foreign, [segment], "canonical")
-                                for segment in added[len(branch_candidate):]):
-                            continue
+                        exact_segment_ids = set(
+                            branch_clearance.exact_segment_ids)
+                        if cleaned:
+                            cleaned_clear = True
+                            for segment in added[len(branch_candidate):]:
+                                decision = _candidate_clearance(
+                                    context, foreign, [segment], "canonical")
+                                if not decision:
+                                    cleaned_clear = False
+                                    break
+                                exact_segment_ids.update(
+                                    decision.exact_segment_ids)
+                            if not cleaned_clear:
+                                continue
                         allowed = (anchor, point)
                         if cleaned:
                             allowed += (rail_end, residual_end)
@@ -285,7 +295,10 @@ def _best_slide(context, node, chain, anchor, rail_groups, current, net_vias,
                         if cleaned and _new_boundary_right_angle(
                                 added, residual_end, outside):
                             continue
-                        if not context.clearance_adapter.connector_clears(added):
+                        if (not all(id(segment) in exact_segment_ids
+                                    for segment in added) and
+                                not context.clearance_adapter.connector_clears(
+                                    added)):
                             continue
                         score = (-gain, new_length, len(added),
                                  point[0], point[1])

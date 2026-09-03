@@ -16,12 +16,14 @@ for path in (REPO, KRT, os.path.join(KRT, "py_router"),
         sys.path.insert(0, path)
 
 from dgloss.context import GlossContext, build_gloss_context
-from dgloss.krt_clearance import KrtClearanceAdapter
+from dgloss.krt_clearance import (KrtClearanceAdapter,
+                                  _exact_foreign_segment_distance)
 from dgloss.config import GlossConfig
 from dgloss.changes import GlossChanges
 from dgloss.comparison import compare_smoothers, format_comparison_table
 from dgloss.algorithm import (_Chain, _adaptive_sliding_candidates,
                               _best_chain_replacement,
+                              _candidate_clearance,
                               _candidate_clears,
                               _sliding_candidate_families)
 from dgloss.pipeline import (_certify_g5_copper, _g5_grade, _grade,
@@ -402,6 +404,38 @@ def test_a11_style_grid_rejection_uses_exact_krt_only_for_retained_copper():
         new_rejected = Segment(3.0, 2.0, 3.0, 6.0, 0.4, "B.Cu", 1)
         assert not _candidate_clears(
             context, object(), [diagonal, new_rejected], "sliding", [source])
+
+
+def test_exact_clearance_certificate_is_carried_by_the_candidate():
+    candidate = [Segment(0.0, 0.0, 1.0, 1.0, 0.2, "F.Cu", 1)]
+    calls = []
+    context = types.SimpleNamespace(
+        coord=types.SimpleNamespace(grid_step=0.1),
+        clearance_adapter=types.SimpleNamespace(
+            connector_clears=lambda segments: calls.append(segments) or True))
+
+    decision = _candidate_clearance(
+        context, object(), candidate, "canonical")
+
+    assert decision
+    assert decision.exact_segment_ids == frozenset({id(candidate[0])})
+    assert calls == [candidate]
+
+
+def test_exact_foreign_segment_distance_composes_krt_primitives():
+    foreign = Segment(0.0, 0.0, 10.0, 0.0, 0.4, "F.Cu", 2)
+    pcb = PCBData(
+        BoardInfo({}, ["F.Cu"], (-2.0, -2.0, 12.0, 3.0)),
+        {1: Net(1, "N1"), 2: Net(2, "N2")}, {}, [], [foreign], {})
+
+    crossing = _exact_foreign_segment_distance(
+        pcb, 1, 5.0, -1.0, 5.0, 1.0, "F.Cu")
+    parallel_with_rule = _exact_foreign_segment_distance(
+        pcb, 1, 0.0, 1.0, 10.0, 1.0, "F.Cu",
+        net_clearances={2: 0.3}, base_clearance=0.1)
+
+    assert math.isclose(crossing, -0.2, abs_tol=1e-12)
+    assert math.isclose(parallel_with_rule, 0.6, abs_tol=1e-12)
 
 
 def test_g4_exposes_only_the_final_user1_delta():

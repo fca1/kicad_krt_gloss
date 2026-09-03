@@ -2,6 +2,8 @@
 
 import math
 
+import numpy as np
+
 from check_drc import (board_edge_geometry, check_pad_drill_via_overlap,
                        check_pad_via_overlap, check_via_board_edge,
                        check_via_drill_overlap,
@@ -11,10 +13,57 @@ from check_drc import (board_edge_geometry, check_pad_drill_via_overlap,
                        _segment_to_rings_distance)
 from obstacle_map import point_in_polygon, point_to_polygon_edge_distance
 from routing_defaults import HOLE_TO_HOLE_CLEARANCE, NPTH_TO_TRACK_CLEARANCE
-from single_ended_routing import (_seg_foreign_hole_dist,
+from single_ended_routing import (_FOREIGN_PAD_WINDOW,
+                                  _foreign_seg_arrays,
+                                  _seg_capsule_axis_dist,
+                                  _seg_foreign_hole_dist,
                                   _seg_foreign_pad_dist,
-                                  _seg_foreign_seg_dist,
                                   _seg_foreign_via_dist)
+
+
+def _exact_foreign_segment_distance(pcb_data, net_id, x1, y1, x2, y2,
+                                    layer, *, net_clearances=None,
+                                    base_clearance=0.0,
+                                    track_clearances=None):
+    """Compose KRT's cached arrays and exact vectorized capsule distance.
+
+    KRT owns the obstacle arrays, broad phase and analytic distance primitive.
+    dgloss only folds KRT's rule excess into the returned distance, exactly as
+    KRT's sampled convenience helper does.
+    """
+    nid, fax, fay, fbx, fby, half_width = _foreign_seg_arrays(pcb_data, layer)
+    if nid.size == 0:
+        return 1e9
+
+    radius = _FOREIGN_PAD_WINDOW
+    min_x = np.minimum(fax, fbx) - half_width
+    max_x = np.maximum(fax, fbx) + half_width
+    min_y = np.minimum(fay, fby) - half_width
+    max_y = np.maximum(fay, fby) + half_width
+    near = ((max_x >= min(x1, x2) - radius) &
+            (min_x <= max(x1, x2) + radius) &
+            (max_y >= min(y1, y2) - radius) &
+            (min_y <= max(y1, y2) + radius) &
+            (nid != net_id))
+    if not near.any():
+        return 1e9
+
+    distance = (_seg_capsule_axis_dist(
+        x1, y1, x2, y2, fax[near], fay[near], fbx[near], fby[near]) -
+        half_width[near])
+    if net_clearances or track_clearances:
+        foreign_net_ids = nid[near]
+        net_rules = net_clearances or {}
+        track_rules = track_clearances or {}
+        excess = np.asarray([
+            max(0.0,
+                max(net_rules.get(int(foreign_net_id), base_clearance),
+                    track_rules.get(int(foreign_net_id), 0.0)) -
+                base_clearance)
+            for foreign_net_id in foreign_net_ids
+        ], dtype=float)
+        distance = distance - excess
+    return float(np.min(distance))
 
 
 class KrtClearanceAdapter:
@@ -127,7 +176,7 @@ class KrtClearanceAdapter:
                 self.pcb, seg.net_id, seg.start_x, seg.start_y,
                 seg.end_x, seg.end_y, seg.layer, base_clearance=effective,
                 net_clearances=self.net_clearances),
-            _seg_foreign_seg_dist(
+            _exact_foreign_segment_distance(
                 self.pcb, seg.net_id, seg.start_x, seg.start_y,
                 seg.end_x, seg.end_y, seg.layer,
                 net_clearances=self.net_clearances, base_clearance=effective,

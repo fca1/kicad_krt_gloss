@@ -8,7 +8,7 @@ from check_drc import point_to_pad_distance
 from net_queries import calculate_route_length
 from routing_utils import pos_key
 
-from .algorithm import (_candidate_clears, _candidate_segments,
+from .algorithm import (_candidate_clearance, _candidate_segments,
                         _connectivity_worse, _edge_directions,
                         _right_angle,
                         _sliding_candidate_families,
@@ -146,8 +146,9 @@ def _best_pad_connector(context, pad, chain, points, outside, net_vias,
             new_length = calculate_route_length(candidate)
             if old_length - new_length <= context.coord.grid_step + 1e-12:
                 continue
-            if not _candidate_clears(
-                    context, foreign, candidate, source, chain):
+            clearance = _candidate_clearance(
+                context, foreign, candidate, source, chain)
+            if not clearance:
                 continue
             if _touches_other_same_net(candidate, outside, net_vias,
                                        (centre, anchor)):
@@ -156,11 +157,12 @@ def _best_pad_connector(context, pad, chain, points, outside, net_vias,
                 continue
             score = (new_length, len(candidate))
             if best is None or score < best[0]:
-                best = score, candidate
+                best = score, candidate, clearance.exact_segment_ids
     if best is None:
         return None
-    candidate = best[1]
-    if not context.clearance_adapter.connector_clears(candidate):
+    candidate, exact_segment_ids = best[1], best[2]
+    if (not all(id(segment) in exact_segment_ids for segment in candidate) and
+            not context.clearance_adapter.connector_clears(candidate)):
         return None
     return candidate
 
