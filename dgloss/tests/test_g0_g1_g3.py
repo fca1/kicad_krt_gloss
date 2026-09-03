@@ -1138,15 +1138,44 @@ def test_gloss_failure_restores_exact_krt_custody():
 
 
 def test_g1_is_lazy_and_dashes_old_copper():
-    class UntouchedBoard:
-        def __getattr__(self, name):
-            raise AssertionError(f"empty visualisation touched board via {name}")
+    fake = types.SimpleNamespace(User_1=1)
 
-    assert add_changes_to_board(UntouchedBoard(), {"segments": [], "vias": []}) == 0
+    class EmptyBoard:
+        def GetLayerName(self, layer): return "User.1"
+        def GetDrawings(self): return []
+
+    with patch.dict(sys.modules, {"pcbnew": fake}):
+        assert add_changes_to_board(
+            EmptyBoard(), {"segments": [], "vias": []}) == 0
     parts = _line_parts((0.0, 0.0), (1.0, 0.0), dash=0.2, gap=0.1)
     assert len(parts) == 4
     assert parts[0] == ((0.0, 0.0), (0.2, 0.0))
     assert parts[-1][1][0] <= 1.0 + 1e-12
+
+
+def test_empty_g1_result_clears_the_previous_owned_overlay():
+    fake = types.SimpleNamespace(User_1=1, User_2=2)
+
+    class Drawing:
+        def __init__(self, layer): self.layer = layer
+        def GetLayer(self): return self.layer
+
+    class Board:
+        def __init__(self):
+            self.drawings = [Drawing(1), Drawing(2)]
+            self.modified = False
+        def GetLayerName(self, layer):
+            return "TrackGloss Changes" if layer == 1 else "Measurements"
+        def GetDrawings(self): return self.drawings
+        def RemoveNative(self, item): self.drawings.remove(item)
+        def SetModified(self): self.modified = True
+
+    board = Board()
+    with patch.dict(sys.modules, {"pcbnew": fake}):
+        assert add_changes_to_board(
+            board, {"segments": [], "vias": []}) == 0
+    assert [item.GetLayer() for item in board.drawings] == [2]
+    assert board.modified
 
 
 def test_g1_renames_a_free_layer_and_draws_changes():
@@ -1190,7 +1219,7 @@ def test_g1_renames_a_free_layer_and_draws_changes():
         count = add_changes_to_board(
             board, {"segments": [{"old": old, "new": new}], "vias": []})
     assert count == len(board.drawings) and count > 1
-    assert board.names[fake.User_1] == "TrackGloss G3"
+    assert board.names[fake.User_1] == "TrackGloss Changes"
     assert board.modified
 
 
@@ -1222,7 +1251,7 @@ def test_add_layer_user_enables_missing_user1_without_overwriting_content():
     assert add_layer_user(board, fake, "G3") == 101
     assert board.count == 1
     assert board.enabled.Contains(101) and board.visible.Contains(101)
-    assert board.names[101] == "TrackGloss G3"
+    assert board.names[101] == "TrackGloss Changes"
 
 
 def test_g4_disables_owned_intermediate_layers_without_deleting_drawings():

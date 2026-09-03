@@ -4,35 +4,15 @@ This module deliberately lives in the plugin.  The dgloss engine only emits
 plain structured changes and therefore remains importable without pcbnew.
 """
 
-import math
+from .debug_overlay import (LAYER_NAME, USER_LAYER_NAMES, choose_user_layer,
+                            line_parts as _line_parts, overlay_lines)
 
 
-LAYER_NAME = "TrackGloss Changes"
-STAGE_LAYERS = {"G3": 1, "G3.1": 2, "G3.2": 3,
-                "G3.3": 4, "G3.4": 5, "G3.5": 6, "G4": 1}
 INTERMEDIATE_LAYER_NAMES = {
     2: "TrackGloss G3.1", 3: "TrackGloss G3.2",
     4: "TrackGloss G3.3", 5: "TrackGloss G3.4",
     6: "TrackGloss G3.5",
 }
-
-
-def _line_parts(start, end, dash=0.30, gap=0.20):
-    """Return short line parts forming a visible dashed segment."""
-    x1, y1 = start
-    x2, y2 = end
-    length = math.hypot(x2 - x1, y2 - y1)
-    if length <= 1e-12:
-        return []
-    ux, uy = (x2 - x1) / length, (y2 - y1) / length
-    parts = []
-    pos = 0.0
-    while pos < length:
-        stop = min(length, pos + dash)
-        parts.append(((x1 + ux * pos, y1 + uy * pos),
-                      (x1 + ux * stop, y1 + uy * stop)))
-        pos += dash + gap
-    return parts
 
 
 def _disable_layer(layer_set, layer_id):
@@ -64,18 +44,33 @@ def disable_intermediate_layers(board, pcbnew):
         board.SetVisibleLayers(visible)
 
 
-def add_layer_user(board, pcbnew, stage="G3"):
-    """Create/enable the stage's User layer without taking over user content."""
-    index = STAGE_LAYERS.get(stage, 1)
-    layer_id = getattr(pcbnew, f"User_{index}", None)
-    if layer_id is None:
+def _occupied_user_layers(board):
+    items = list(board.GetDrawings())
+    for footprint in getattr(board, "GetFootprints", lambda: [])():
+        items.extend(getattr(footprint, "GraphicalItems", lambda: [])())
+    items.extend(getattr(board, "Zones", lambda: [])())
+    return {item.GetLayer() for item in items}
+
+
+def add_layer_user(board, pcbnew, stage="G4"):
+    """Enable the owned layer, or claim the first genuinely free User layer."""
+    del stage  # One final overlay since G4; retained for API compatibility.
+    layer_ids = {
+        name: getattr(pcbnew, f"User_{name.split('.')[1]}", None)
+        for name in USER_LAYER_NAMES}
+    layer_ids = {name: layer_id for name, layer_id in layer_ids.items()
+                 if layer_id is not None}
+    occupied_ids = _occupied_user_layers(board)
+    display_names = {
+        name: board.GetLayerName(layer_id) for name, layer_id in layer_ids.items()}
+    occupied = {name for name, layer_id in layer_ids.items()
+                if layer_id in occupied_ids}
+    selected = choose_user_layer(display_names, occupied)
+    if selected is None:
+        print("Track Gloss: no free User layer; final overlay skipped")
         return None
-    name = LAYER_NAME if stage == "G4" else f"TrackGloss {stage}"
-    occupied = {item.GetLayer() for item in board.GetDrawings()}
-    current_name = board.GetLayerName(layer_id)
-    if layer_id in occupied and current_name != name:
-        print(f"Track Gloss: User.{index} is occupied; {stage} overlay skipped")
-        return None
+    index = int(selected.split(".", 1)[1])
+    layer_id = layer_ids[selected]
 
     try:
         if board.GetUserDefinedLayerCount() < index:
@@ -89,7 +84,7 @@ def add_layer_user(board, pcbnew, stage="G3"):
         except AttributeError:
             enabled.addLayer(layer_id)
         board.SetEnabledLayers(enabled)
-    board.SetLayerName(layer_id, name)
+    board.SetLayerName(layer_id, LAYER_NAME)
     try:
         visible = board.GetVisibleLayers()
         if not visible.Contains(layer_id):
@@ -103,14 +98,28 @@ def add_layer_user(board, pcbnew, stage="G3"):
     return layer_id
 
 
-def add_changes_to_board(board, changes, stage="G3"):
-    """Render changed copper only; leave the board untouched for an empty log."""
+def add_changes_to_board(board, changes, stage="G4"):
+    """Replace the owned final overlay, including with an empty result."""
+    import pcbnew
+
     segments = changes.get("segments") or []
     vias = changes.get("vias") or []
     if not segments and not vias:
+        owned_ids = {
+            getattr(pcbnew, f"User_{name.split('.')[1]}", None)
+            for name in USER_LAYER_NAMES
+            if getattr(pcbnew, f"User_{name.split('.')[1]}", None) is not None
+            and board.GetLayerName(
+                getattr(pcbnew, f"User_{name.split('.')[1]}")) == LAYER_NAME}
+        removed = False
+        for item in list(board.GetDrawings()):
+            if item.GetLayer() in owned_ids:
+                board.RemoveNative(item)
+                removed = True
+        if removed:
+            board.SetModified()
         return 0
 
-    import pcbnew
     from kicad_parser import mm_to_iu
 
     layer_id = add_layer_user(board, pcbnew, stage=stage)
@@ -132,30 +141,7 @@ def add_changes_to_board(board, changes, stage="G3"):
         board.Add(shape)
         count += 1
 
-    # New copper first; old dashed copper keeps the former route readable.
-    for change in segments:
-        new = change.get("new")
-        if new is None:
-            continue
-        add_line((new.start_x, new.start_y), (new.end_x, new.end_y), new.width)
-    for change in segments:
-        old = change.get("old")
-        if old is None:
-            continue
-        for start, end in _line_parts(
-                (old.start_x, old.start_y), (old.end_x, old.end_y)):
-            add_line(start, end, min(old.width, 0.10))
-
-    for change in vias:
-        old, new = change["old"], change["new"]
-        radius = max(getattr(new, "size", 0.3) / 2.0, 0.15)
-        for via, dashed in ((new, False), (old, True)):
-            points = [(via.x + radius * math.cos(2 * math.pi * i / 20),
-                       via.y + radius * math.sin(2 * math.pi * i / 20))
-                      for i in range(21)]
-            for i in range(20):
-                if not dashed or i % 2 == 0:
-                    add_line(points[i], points[i + 1], 0.05)
-        add_line((old.x, old.y), (new.x, new.y), 0.05)
+    for start, end, width in overlay_lines(changes):
+        add_line(start, end, width)
     board.SetModified()
     return count

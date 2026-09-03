@@ -124,6 +124,7 @@ def apply_gloss(board, results, outcome):
     """Apply prevalidated KRT objects to the live board and render overlays."""
     import pcbnew
     from kicad_parser import mm_to_iu
+    from .debug_overlay import LAYER_NAME, USER_LAYER_NAMES
     from .gloss_visualization import (add_changes_to_board,
                                       disable_intermediate_layers)
 
@@ -205,19 +206,21 @@ def apply_gloss(board, results, outcome):
             raise RuntimeError("Partial native removal; use KiCad Undo")
         raise
 
-    disable_intermediate_layers(board, pcbnew)
-    changes_by_stage = {}
-    for result in results:
-        changes = result.get("track_gloss_changes") or {}
-        for kind in ("segments", "vias"):
-            for change in changes.get(kind) or []:
-                stage = change.get("stage", "G3")
-                changes_by_stage.setdefault(
-                    stage, {"segments": [], "vias": []})[kind].append(change)
-    for stage, changes in sorted(changes_by_stage.items()):
-        add_changes_to_board(board, changes, stage=stage)
+    # Visualisation is optional and must never affect the validated copper.
+    debug_layer = None
+    try:
+        disable_intermediate_layers(board, pcbnew)
+        add_changes_to_board(board, outcome.visual_changes, stage="G4")
+        for name in USER_LAYER_NAMES:
+            layer_id = getattr(pcbnew, f"User_{name.split('.')[1]}", None)
+            if (layer_id is not None and
+                    board.GetLayerName(layer_id) == LAYER_NAME):
+                debug_layer = name
+                break
+    except Exception as exc:
+        print(f"Track Gloss: debug overlay skipped: {exc}")
     for zone in board.Zones():
         zone.SetNeedRefill(True)
     board.BuildConnectivity()
     board.SetModified()
-    return len(remove), len(created), len(via_moves)
+    return len(remove), len(created), len(via_moves), debug_layer

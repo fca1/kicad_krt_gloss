@@ -149,27 +149,19 @@ entièrement contenue dans l'adaptateur du plugin ; `dgloss` ne dépend pas de
 `pcbnew`. Elle montre le cuivre modifié : ancien tracé pointillé, nouveau tracé
 continu, ancienne et nouvelle positions d'un via mobile.
 
-| Étape | Couche de debug cumulative |
-|---|---|
-| G3 | User.1 — `TrackGloss G3` |
-| G3.1 | User.2 — `TrackGloss G3.1` |
-| G3.2 | User.3 — `TrackGloss G3.2` |
-| G3.3 | User.4 — `TrackGloss G3.3` |
-| G3.4 | User.5 — `TrackGloss G3.4` |
-| G3.5 | User.6 — `TrackGloss G3.5` |
-
-`add_layer_user()` augmente si nécessaire le nombre de couches User, active la
-couche et la nomme. Si la couche visée contient déjà des dessins étrangers,
-elle n'est ni renommée ni effacée et l'overlay correspondant est omis. Les
+Depuis G4, une seule couche montre l'écart final. Le plugin réutilise la couche
+déjà nommée `TrackGloss Changes`; sinon, il choisit la première couche
+`User.N` libre dans l'ordre croissant. Une couche renommée ou contenant des
+objets étrangers n'est jamais prise. `add_layer_user()` active et rend visible
+la couche retenue. Les
 couches User ne sont pas des couches cuivre et ne sont pas incluses dans les
 Gerbers sauf ajout volontaire à un travail de tracé par l'utilisateur.
 
-Avec G4, seule User.1 montre l'écart entre l'entrée du gloss et le résultat
-final ; les vues intermédiaires G3 à G3.5 ne sont pas produites.
-
-Le plugin nomme cette couche `TrackGloss Changes` lorsqu'elle est libre. Si
-elle est déjà occupée, seule la visualisation est omise : le traitement du
-cuivre et son résultat ne sont pas conditionnés par la couche User.
+Le CLI ne produit pas cette visualisation par défaut. `--debug-layer auto`
+sélectionne la couche selon la même règle que le plugin ;
+`--debug-layer User.N` demande explicitement une couche libre entre User.1 et
+User.9. Si aucune couche ne convient, seule la visualisation est omise : le
+traitement du cuivre n'est jamais conditionné par la couche User.
 
 ## Comportement en cas d'échec
 

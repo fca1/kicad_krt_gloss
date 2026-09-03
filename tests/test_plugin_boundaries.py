@@ -144,6 +144,10 @@ def test_about_tab_uses_project_versions_and_attribution():
     assert '("Author:", "Frantz")' in source
     assert '("Co-author:", "ChatGPT/Codex (OpenAI)")' in source
     assert '("KRT author:", "DrAndyHaas")' in source
+    assert 'label="KRG GitHub Repository"' in source
+    assert 'url="https://github.com/fca1/kicad_krt_gloss"' in source
+    assert 'label="KRT GitHub Repository"' in source
+    assert 'url="https://github.com/drandyhaas/KiCadRoutingTools"' in source
     assert '"No net is selected: all routed nets will be glossed."' in source
 
 
@@ -179,8 +183,23 @@ def test_single_selected_net_skips_the_success_summary_dialog():
     assert "if len(net_ids) != 1:" in source
     assert source.index("if len(net_ids) != 1:") < source.index(
         'f"Scope: {scope}\\n"')
-    assert '"Differences are shown on User.1 "' in source
-    assert '(\\"TrackGloss Changes\\") when available.' in source
+    assert "f'Differences are shown on {debug_layer} '" in source
+    assert '("TrackGloss Changes").' in source
+
+
+def test_cli_exposes_optional_auto_or_explicit_debug_layer():
+    source = (ROOT / "gloss.py").read_text(encoding="utf-8")
+    assert '"--debug-layer"' in source
+    assert 'choices=("auto",)' in source
+    assert 'write_cli_debug_overlay(' in source
+
+
+def test_plugin_renders_the_complete_final_delta_once():
+    source = (ROOT / "kicad_krt_gloss" / "board_adapter.py").read_text(
+        encoding="utf-8")
+    assert 'add_changes_to_board(board, outcome.visual_changes, stage="G4")' in source
+    assert "changes_by_stage" not in source
+    assert "debug overlay skipped" in source
 
 
 def test_plugin_config_delegates_dru_rules_to_krt():

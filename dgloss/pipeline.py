@@ -24,7 +24,11 @@ from .via_mobile import move_mobile_vias, refine_mobile_vias
 class GlossOutcome:
     input_strip_segments: list = field(default_factory=list)
     input_strip_vias: list = field(default_factory=list)
+    # Complete mutation history, used to resolve chained via moves.
     changes: dict = field(default_factory=lambda: {"segments": [], "vias": []})
+    # Strict post-smooth -> final delta, intended only for visualisation.
+    visual_changes: dict = field(
+        default_factory=lambda: {"segments": [], "vias": []})
     stats: dict = field(default_factory=dict)
 
 
@@ -570,7 +574,8 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
             print(f"Track Gloss G3.5: {len(context.net_ids)} nets parcourus, "
                   f"{len(changed_net_ids)} améliorés, -{total_saved:.4f} mm, "
                   f"{elapsed_ms:.1f} ms")
-        # Since G4, visualisation is always the single final delta on User.1.
+        # Since G4, visualisation is always one final delta on the first free
+        # User layer (or the layer already owned by Track Gloss).
         # The multipass switch controls optimisation only; it must never bring
         # back the historical G3--G3.5 overlays on User.2 through User.6.
         final_visual = _final_visual_changes(
@@ -589,7 +594,8 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
                                   g4["segment_strips"]),
             input_strip_vias=(initial["via_strips"] +
                               g4["via_strips"]),
-            changes=changes.as_dict(), stats=stats)
+            changes=changes.as_dict(), visual_changes=final_visual.as_dict(),
+            stats=stats)
     except Exception as exc:
         _restore(results, baseline_count, baseline_results, pcb_data,
                  baseline_segments, baseline_vias)

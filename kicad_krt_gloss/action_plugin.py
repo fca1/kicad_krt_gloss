@@ -116,7 +116,7 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                 outcome = run_final_gloss(
                     results, pcb_data, config, gloss_config, net_ids=net_ids,
                     excluded_net_ids=native_arc_net_ids(board))
-                removed, added, moved = apply_gloss(
+                removed, added, moved, debug_layer = apply_gloss(
                     board, results, outcome)
                 pcbnew.Refresh()
                 scope = (f"{len(net_ids)} selected net(s)"
@@ -132,13 +132,17 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                 print(f"G4 passes: {stats.get('g4_passes_completed', 0)}")
                 print(f"G5 valid: {bool(stats.get('g5_valid', False))}")
             if len(net_ids) != 1:
+                overlay_note = (
+                    f'Differences are shown on {debug_layer} '
+                    '("TrackGloss Changes").'
+                    if debug_layer else
+                    "No free User layer was available for the differences.")
                 wx.MessageBox(
                     f"Scope: {scope}\n"
                     f"Saved: {outcome.stats.get('saved_mm', 0.0):.4f} mm\n"
                     f"Tracks replaced: {removed} -> {added}\n"
                     f"Vias moved: {moved}\n\n"
-                    "Differences are shown on User.1 "
-                    "(\"TrackGloss Changes\") when available.\n\n"
+                    f"{overlay_note}\n\n"
                     "The board was modified but not saved.",
                     f"KiCad KRT Gloss {__version__}",
                     wx.OK | wx.ICON_INFORMATION)

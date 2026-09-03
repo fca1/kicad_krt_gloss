@@ -122,8 +122,12 @@ class GlossSettingsDialog(wx.Dialog):
             info.Add(wx.StaticText(about, label=value), 0, wx.ALIGN_LEFT)
         about_content.Add(info, 0, wx.ALIGN_CENTER | wx.ALL, 12)
         about_content.Add(wx.adv.HyperlinkCtrl(
-            about, label="GitHub Repository",
+            about, label="KRG GitHub Repository",
             url="https://github.com/fca1/kicad_krt_gloss"),
+            0, wx.ALIGN_CENTER | wx.TOP | wx.LEFT | wx.RIGHT, 8)
+        about_content.Add(wx.adv.HyperlinkCtrl(
+            about, label="KRT GitHub Repository",
+            url="https://github.com/drandyhaas/KiCadRoutingTools"),
             0, wx.ALIGN_CENTER | wx.ALL, 8)
         license_text = wx.StaticText(about, label="Open source — MIT License")
         license_text.SetForegroundColour(wx.Colour(128, 128, 128))

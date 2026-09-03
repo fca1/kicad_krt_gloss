@@ -56,6 +56,11 @@ def build_parser():
                         help="Run and report without writing a PCB")
     parser.add_argument("--json-out", metavar="FILE",
                         help="Write the full JSON_SUMMARY to FILE")
+    parser.add_argument(
+        "--debug-layer", choices=("auto",) + tuple(
+            f"User.{index}" for index in range(1, 10)),
+        help=("Write the final before/after overlay: 'auto' selects the first "
+              "free User layer, or specify User.1 through User.9"))
 
     parser.add_argument("--layers", "-l", nargs="+", default=None)
     parser.add_argument("--grid-step", type=float, default=defaults.GRID_STEP)
@@ -205,7 +210,7 @@ def build_krt_config(args, pcb_data, net_ids):
     return config
 
 
-def make_summary(args, names, outcome, wall_ms):
+def make_summary(args, names, outcome, wall_ms, debug_layer=None):
     stats = outcome.stats
     before = float(stats.get("before_mm", 0.0))
     saved = float(stats.get("saved_mm", 0.0))
@@ -216,6 +221,7 @@ def make_summary(args, names, outcome, wall_ms):
         "input": os.path.abspath(args.input_file),
         "output": None if args.preview else os.path.abspath(args.output_file),
         "preview": bool(args.preview), "selected_nets": len(names),
+        "debug_layer": debug_layer,
         "net_names": names,
         "nets_processed": int(stats.get("nets_processed", 0)),
         "nets_excluded": int(stats.get("nets_excluded", 0)),
@@ -289,10 +295,18 @@ def main(argv=None):
     outcome = run_post_smooth_gloss(
         results, pcb_data, config, gloss_config, net_ids=net_ids)
     wall_ms = (perf_counter() - started) * 1000.0
+    debug_layer = None
     if not args.preview:
         write_output(args, pcb_data, results, outcome)
+        if args.debug_layer:
+            from kicad_krt_gloss.debug_overlay import write_cli_debug_overlay
+            try:
+                debug_layer = write_cli_debug_overlay(
+                    args.output_file, outcome.visual_changes, args.debug_layer)
+            except Exception as exc:
+                print(f"Track Gloss: {exc}; debug overlay skipped")
 
-    summary = make_summary(args, names, outcome, wall_ms)
+    summary = make_summary(args, names, outcome, wall_ms, debug_layer)
     print("\n=== TRACK GLOSS SUMMARY ===")
     print(f"Nets: {summary['nets_processed']} processed, "
           f"{summary['nets_changed']} improved")
@@ -303,6 +317,8 @@ def main(argv=None):
     print(f"Changes: {summary['segment_changes']} segment, "
           f"{summary['via_changes']} via; G4 passes: "
           f"{summary['g4_passes_completed']}; {summary['wall_ms']:.1f} ms")
+    if debug_layer:
+        print(f"Debug overlay: {debug_layer} (\"TrackGloss Changes\")")
     print("JSON_SUMMARY: " + json.dumps(summary, sort_keys=True))
     compact = {key: summary[key] for key in
                ("complete", "selected_nets", "nets_changed", "saved_mm",

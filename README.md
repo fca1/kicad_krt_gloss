@@ -28,12 +28,12 @@ its purpose. Its **Log** tab retains the latest stage statistics and final
 result; **Clear Log** removes that history. The **Gloss** and **Close** buttons
 let an all-net run complete while the dialog remains available for review.
 
-When `User.1` is free, the plugin names it **TrackGloss Changes** and displays
-the final difference: old copper is dashed, new copper is solid, and moved vias
-show their old and new positions. This is a visual aid only. If `User.1` is
-already occupied, the gloss still runs and changes the copper, but the overlay
-is not created. User layers are not included in Gerber output unless the user
-explicitly adds them to a plot job.
+The plugin reuses its existing **TrackGloss Changes** layer or selects the first
+free `User.N` layer in ascending order. It displays the final difference: old
+copper is dashed, new copper is solid, and moved vias show their old and new
+positions. It never overwrites a user-owned layer. This is a visual aid only;
+User layers are not included in Gerber output unless the user explicitly adds
+them to a plot job.
 
 ## Command line
 
@@ -44,6 +44,7 @@ placement groups as KRT:
 python gloss.py input.kicad_pcb output.kicad_pcb --nets "/Cpu/*"
 python gloss.py input.kicad_pcb --component U1 --preview
 python gloss.py input.kicad_pcb --json-out gloss-summary.json
+python gloss.py input.kicad_pcb --debug-layer auto
 ```
 
 Without a net selection, all routed nets are processed. The CLI writes the
@@ -51,6 +52,8 @@ glossed PCB and reports the length saved, changed nets, segment and via changes,
 G4 pass count, G5 validation and elapsed time. `--preview` performs no file
 write; `--json-out` writes the complete machine-readable report. The same
 summary is also printed as `JSON_SUMMARY` and `JSON_SUMMARY_MIN`.
+`--debug-layer auto` writes the same final overlay as the plugin on the first
+free User layer; `--debug-layer User.N` requests a specific free layer.
 
 ## Authors and license
 
