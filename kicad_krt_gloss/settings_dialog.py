@@ -8,6 +8,7 @@ from .version import __version__
 
 
 DEFAULTS = {
+    "selection_uses_elementary_branches": True,
     "enable_g3_1": True,
     "enable_g3_2": True,
     "enable_g3_3": True,
@@ -19,21 +20,18 @@ DEFAULTS = {
 
 
 class GlossSettingsDialog(wx.Dialog):
-    def __init__(self, parent, values, selected_count, *, on_gloss=None,
-                 initial_log=""):
+    def __init__(self, parent, values, selected_count,
+                 selected_branch_count=0, *, on_gloss=None, initial_log=""):
         super().__init__(parent, title="KiCad KRT Gloss")
         values = dict(DEFAULTS, **(values or {}))
         self._on_gloss_callback = on_gloss
         self.notebook = wx.Notebook(self)
         panel = wx.Panel(self.notebook)
         content = wx.BoxSizer(wx.VERTICAL)
-        scope = (f"{selected_count} selected net(s) will be glossed completely."
-                 if selected_count else
-                 "No net is selected: all routed nets will be glossed.")
-        content.Add(wx.StaticText(panel, label=scope), 0, wx.ALL, 10)
-
         self.controls = {}
         labels = {
+            "selection_uses_elementary_branches": (
+                "Selection — use elementary branches"),
             "enable_g3_1": "G3.1 — mobile vias",
             "enable_g3_2": "G3.2 — pad terminals",
             "enable_g3_3": "G3.3 — sliding T nodes",
@@ -43,6 +41,11 @@ class GlossSettingsDialog(wx.Dialog):
             "enable_multipasses": "G4 — multi-net convergence passes",
         }
         tooltips = {
+            "selection_uses_elementary_branches": (
+                "On: each selected straight track seeds its maximal "
+                "elementary branch, stopping at a pad, free end, or T/X "
+                "junction. Off: every complete net identified by the "
+                "selection is glossed."),
             "enable_g3_1": (
                 "Move eligible vias on the KRT grid to shorten their tracks."),
             "enable_g3_2": (
@@ -62,6 +65,16 @@ class GlossSettingsDialog(wx.Dialog):
             control.SetToolTip(tooltips[key])
             self.controls[key] = control
             content.Add(control, 0, wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
+            if key == "selection_uses_elementary_branches":
+                scope = (f"Selected nets: {selected_count}"
+                         if selected_count else
+                         "Selected nets: 0 (all routed nets)")
+                content.Add(wx.StaticText(panel, label=scope), 0,
+                            wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
+                content.Add(wx.StaticText(
+                    panel, label=f"Selected elementary branches: "
+                                 f"{selected_branch_count}"), 0,
+                    wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
 
         row = wx.BoxSizer(wx.HORIZONTAL)
         row.Add(wx.StaticText(panel, label="KRT grid step (mm):"), 0,

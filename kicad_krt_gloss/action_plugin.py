@@ -42,14 +42,26 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
         net_ids = selected_net_ids(board)
         parent = wx.GetTopLevelWindows()[0] if wx.GetTopLevelWindows() else None
         values = dict(self.__class__._settings)
-        if not net_ids:
+        if len(net_ids) != 1:
+            prepared = None
+            branch_count = 0
+            if net_ids:
+                prepared = self._prepare_selection(board, parent)
+                if prepared is None:
+                    return
+                branch_count = prepared[2]
+
             def run_from_dialog(new_values, append_log):
+                nonlocal prepared
                 self.__class__._settings = dict(new_values)
+                ready = prepared
+                prepared = None
                 self._run_gloss(board, parent, new_values, net_ids,
-                                append_log=append_log)
+                                append_log=append_log, prepared=ready)
 
             dialog = GlossSettingsDialog(
-                parent, values, 0, on_gloss=run_from_dialog,
+                parent, values, len(net_ids), branch_count,
+                on_gloss=run_from_dialog,
                 initial_log=self.__class__._last_log)
             try:
                 dialog.ShowModal()
@@ -62,7 +74,34 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
 
         self._run_gloss(board, parent, values, net_ids)
 
-    def _run_gloss(self, board, parent, values, net_ids, *, append_log=None):
+    @staticmethod
+    def _prepare_selection(board, parent):
+        """Build KRT topology once so the dialog can report the BE count."""
+        configure_krt_runtime()
+        if not ensure_krt_dependencies(parent):
+            return None
+        try:
+            wx.BeginBusyCursor()
+            from kicad_parser import build_pcb_data_from_board
+            from dgloss.branches import elementary_branch_segment_ids
+
+            pcb_data = build_pcb_data_from_board(board)
+            seed_segments = selected_seed_segments(board, pcb_data)
+            _editable_ids, branch_count = elementary_branch_segment_ids(
+                pcb_data, seed_segments)
+            return pcb_data, seed_segments, branch_count
+        except Exception:
+            wx.MessageBox(
+                "Track Gloss could not inspect the current selection.\n\n" +
+                traceback.format_exc(),
+                "KiCad KRT Gloss — Error", wx.OK | wx.ICON_ERROR)
+            return None
+        finally:
+            if wx.IsBusy():
+                wx.EndBusyCursor()
+
+    def _run_gloss(self, board, parent, values, net_ids, *, append_log=None,
+                   prepared=None):
         """Run once and retain the same concise statistics shown by KRT."""
         captured = io.StringIO()
 
@@ -101,8 +140,15 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                 from dgloss import GlossConfig, run_final_gloss
                 from .board_adapter import apply_gloss, build_krt_config
 
-                pcb_data = build_pcb_data_from_board(board)
-                seed_segments = selected_seed_segments(board, pcb_data)
+                if prepared is None:
+                    pcb_data = build_pcb_data_from_board(board)
+                    seed_segments = selected_seed_segments(board, pcb_data)
+                else:
+                    pcb_data, seed_segments, _branch_count = prepared
+                use_branches = bool(
+                    values["selection_uses_elementary_branches"])
+                if not use_branches:
+                    seed_segments = []
                 if seed_segments:
                     net_ids = sorted({segment.net_id
                                       for segment in seed_segments})

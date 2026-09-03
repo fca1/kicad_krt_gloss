@@ -42,6 +42,7 @@ suivantes sont visibles dans sa boîte de dialogue et activées par défaut :
 
 | Option | Effet |
 |---|---|
+| `Selection — use elementary branches` | Les pistes sélectionnées désignent des BE ; décochée, la sélection désigne les nets complets |
 | `Track Gloss G3.1 — mobile vias` | Autorise le déplacement local des vias mobiles |
 | `Track Gloss G3.2 — pad terminals` | Autorise l'optimisation des terminaisons de pads |
 | `Track Gloss G3.3 — sliding T nodes` | Autorise les branches de T glissantes |
@@ -59,6 +60,12 @@ Plusieurs pistes peuvent désigner plusieurs branches, y compris sur plusieurs
 nets. En présence d'au moins une piste droite, seules ces graines définissent
 la portée BE. Un pad, via, footprint ou zone sélectionné sans piste droite
 conserve la sélection historique du net complet.
+
+La boîte s'affiche si zéro net ou plusieurs nets sont sélectionnés. Avec un
+seul net sélectionné, le traitement démarre immédiatement avec les derniers
+réglages mémorisés ; le réglage initial utilise les BE. La boîte affiche en
+lecture seule le nombre de nets et de BE sélectionnés. Ces options sont propres
+au plugin : le CLI continue toujours à désigner des nets complets.
 
 ## Emploi comme bibliothèque Python
 

@@ -171,7 +171,7 @@ def test_about_tab_uses_project_versions_and_attribution():
     assert 'url="https://github.com/fca1/kicad_krt_gloss"' in source
     assert 'label="KRT GitHub Repository"' in source
     assert 'url="https://github.com/drandyhaas/KiCadRoutingTools"' in source
-    assert '"No net is selected: all routed nets will be glossed."' in source
+    assert '"Selected nets: 0 (all routed nets)"' in source
 
 
 def test_pcm_package_includes_the_about_logo():
@@ -191,13 +191,27 @@ def test_dialog_exposes_the_integrated_gloss_options_by_public_name():
     assert "For a direct KRT API call" not in source
 
 
-def test_settings_dialog_is_only_shown_without_selected_nets():
+def test_settings_dialog_is_shown_unless_exactly_one_net_is_selected():
     source = (ROOT / "kicad_krt_gloss" / "action_plugin.py").read_text(
         encoding="utf-8")
     assert "values = dict(self.__class__._settings)" in source
-    assert "if not net_ids:" in source
-    assert source.index("if not net_ids:") < source.index(
+    assert "if len(net_ids) != 1:" in source
+    assert source.index("if len(net_ids) != 1:") < source.index(
         "dialog = GlossSettingsDialog")
+
+
+def test_plugin_selection_mode_defaults_to_be_and_cli_stays_net_only():
+    dialog = (ROOT / "kicad_krt_gloss" / "settings_dialog.py").read_text(
+        encoding="utf-8")
+    action = (ROOT / "kicad_krt_gloss" / "action_plugin.py").read_text(
+        encoding="utf-8")
+    cli = (ROOT / "gloss.py").read_text(encoding="utf-8")
+    key = '"selection_uses_elementary_branches"'
+    assert dialog.index(f"{key}: True") < dialog.index('"enable_g3_1": True')
+    assert "Selected elementary branches:" in dialog
+    assert "stopping at a pad, free end, or T/X" in dialog
+    assert key in action
+    assert key not in cli
 
 
 def test_single_selected_net_skips_the_success_summary_dialog():
