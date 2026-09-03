@@ -97,7 +97,10 @@ nettoie atomiquement le coude parasite éventuellement laissé à l'ancien nœud
 ### G3.4 — vias et chaînes complètes
 
 Réemployer le moteur G3.1, en étendant l'évaluation aux deux portions complètes
-articulées par le via mobile.
+articulées par le via mobile. La grille Rust KRT sert d'abord de filtre de rejet
+strict pour écarter rapidement les raccords manifestement bloqués. Les raccords
+qui franchissent ce filtre restent soumis au contrôle géométrique exact KRT :
+le filtre ne constitue jamais une validation suffisante.
 
 ### G3.5 — coordination complète
 

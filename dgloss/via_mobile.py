@@ -13,7 +13,7 @@ from obstacle_cache import (add_net_obstacles_from_cache,
                             remove_net_obstacles_from_cache)
 from routing_utils import pos_key
 
-from .algorithm import (_connectivity_worse, _right_angle,
+from .algorithm import (_clears_krt_grid, _connectivity_worse, _right_angle,
                         _touches_other_same_net)
 from .changes import GlossChanges
 
@@ -193,6 +193,11 @@ def move_mobile_vias(context, results, *, stage="G3.1", full_chains=False,
                     continue
                 if (_creates_boundary_right_angle(legs[0], anchors[0], outside) or
                         _creates_boundary_right_angle(legs[1], anchors[1], outside)):
+                    continue
+                # The KRT grid is only a strict, inexpensive rejection filter.
+                # Survivors are still certified by KRT's exact geometry below.
+                if full_chains and not _clears_krt_grid(
+                        context, foreign, candidate):
                     continue
                 if not context.clearance_adapter.connector_clears(candidate):
                     continue

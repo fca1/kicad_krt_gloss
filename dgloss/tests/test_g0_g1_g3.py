@@ -811,6 +811,14 @@ def test_g3_4_optimizes_both_complete_portions_around_mobile_via():
     context = build_gloss_context(pcb, config)
     before = calculate_route_length(pcb.segments)
 
+    with patch("dgloss.via_mobile._clears_krt_grid", return_value=False) as grid, \
+            patch.object(context.clearance_adapter, "connector_clears") as exact:
+        _blocked_in, _blocked_out, _blocked_changes, blocked = \
+            refine_mobile_vias(context, [])
+    assert grid.call_count > 0
+    exact.assert_not_called()
+    assert blocked["vias_moved"] == 0
+
     _s1, _v1, _c1, g31 = move_mobile_vias(context, [])
     input_vias, emitted, changes, g34 = refine_mobile_vias(context, [])
 
