@@ -48,7 +48,6 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                 prepared = self._prepare_selection(board, parent)
                 if prepared is None:
                     return
-                branch_count = prepared[2]
 
             def run_from_dialog(new_values, append_log):
                 nonlocal prepared
@@ -74,7 +73,7 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
 
     @staticmethod
     def _prepare_selection(board, parent):
-        """Build KRT topology once so the dialog can report the BE count."""
+        """Prepare PCB data and selection seeds once for the dialog run."""
         configure_krt_runtime()
         if not ensure_krt_dependencies(parent):
             return None

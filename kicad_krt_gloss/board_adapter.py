@@ -10,6 +10,27 @@ def _mm(pcbnew, value):
     return float(pcbnew.ToMM(value))
 
 
+def _refill_and_rebuild(board, pcbnew):
+    """Follow KRT's refill-before-connectivity order, without its error fallback."""
+    board.SetModified()
+    try:
+        zones = list(board.Zones())
+        for zone in zones:
+            zone.SetNeedRefill(True)
+        if zones:
+            # KRT gui_utils.refill_all_zones uses this same native sequence.
+            # Do not reuse its best-effort fallback: stale fills are unsafe.
+            if pcbnew.ZONE_FILLER(board).Fill(zones) is False:
+                raise RuntimeError("KiCad zone filler reported failure")
+        board.BuildConnectivity()
+    except Exception as exc:
+        raise RuntimeError(
+            "Track Gloss copper has already been applied, but zone refill "
+            "or connectivity rebuild failed. The result is not validated; "
+            "refill zones and run KiCad DRC, or undo the changes. "
+            f"Details: {exc}") from exc
+
+
 def build_krt_config(board, pcb_data, grid_step, net_ids=None):
     """Build GridRouteConfig from live native rules plus the standalone grid."""
     import pcbnew
@@ -219,8 +240,5 @@ def apply_gloss(board, results, outcome):
                 break
     except Exception as exc:
         print(f"Track Gloss: debug overlay skipped: {exc}")
-    for zone in board.Zones():
-        zone.SetNeedRefill(True)
-    board.BuildConnectivity()
-    board.SetModified()
+    _refill_and_rebuild(board, pcbnew)
     return len(remove), len(created), len(via_moves), debug_layer

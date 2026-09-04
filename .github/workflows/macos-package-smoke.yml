@@ -1,0 +1,50 @@
+name: macOS package smoke test
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - run: python3 package_pcm.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tested-plugin-package
+          path: dist/KiCadKrtGloss-0.1.0.zip
+  smoke:
+    needs: package
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-15, macos-15-intel]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: tested-plugin-package
+          path: dist
+      - name: Install official KiCad 10.0.6 and locate its Python
+        run: bash tests/ci/install_kicad_macos.sh
+      - name: Install numerical dependencies into isolated test directory
+        run: |
+          "$KICAD_PYTHON" -m ensurepip
+          "$KICAD_PYTHON" -m pip install --target "$RUNNER_TEMP/krg-deps" numpy scipy shapely
+      - name: Test packaged plugin with real KiCad and Rust
+        env:
+          PYTHONPATH: ${{ env.KICAD_SITE }}:${{ runner.temp }}/krg-deps
+        run: |
+          mkdir -p test-output
+          "$KICAD_PYTHON" tests/ci/macos_package_smoke.py dist/KiCadKrtGloss-0.1.0.zip test-output 2>&1 | tee test-output/smoke.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: macos-smoke-${{ matrix.runner }}
+          path: test-output
+          if-no-files-found: warn

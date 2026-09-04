@@ -2,6 +2,9 @@
 
 from pathlib import Path
 import importlib.util
+import ast
+import json
+import pytest
 import shutil
 import sys
 import types
@@ -15,7 +18,7 @@ from kicad_krt_gloss.selection import (
     native_arc_net_ids, selected_net_ids, selected_seed_segments)
 from kicad_krt_gloss.board_adapter import (
     _krt_via_key, _native_segment_key, _native_via_key, _segment_key,
-    build_krt_config)
+    _refill_and_rebuild, build_krt_config)
 from kicad_krt_gloss import runtime
 
 
@@ -61,6 +64,105 @@ class Board:
 
     def GetArea(self, index):
         return self.zones[index]
+
+
+def test_plugin_run_accepts_two_item_preparation_for_multiple_selected_nets():
+    source = (ROOT / "kicad_krt_gloss" / "action_plugin.py").read_text(
+        encoding="utf-8")
+    plugin = next(node for node in ast.parse(source).body
+                  if isinstance(node, ast.ClassDef))
+    run = next(node for node in plugin.body
+               if isinstance(node, ast.FunctionDef) and node.name == "Run")
+    for net_ids in ([], [1], [1, 2]):
+        calls = []
+        prepared = (object(), [])
+        settings = {"test": True}
+
+        class Dialog:
+            def __init__(self, parent, values, count, **kwargs):
+                calls.append(("dialog", count))
+                self.on_gloss = kwargs["on_gloss"]
+
+            def ShowModal(self): self.on_gloss(settings, lambda text: None)
+            def values(self): return settings
+            def log_value(self): return ""
+            def Destroy(self): pass
+
+        class Plugin:
+            _settings = settings
+            _last_log = ""
+
+            def _prepare_selection(self, board, parent):
+                calls.append(("prepare",))
+                return prepared
+
+            def _run_gloss(self, board, parent, values, nets, **kwargs):
+                calls.append(("run", nets, kwargs.get("prepared")))
+
+        namespace = {
+            "pcbnew": types.SimpleNamespace(GetBoard=lambda: object()),
+            "wx": types.SimpleNamespace(GetTopLevelWindows=lambda: []),
+            "selected_net_ids": lambda board: net_ids,
+            "GlossSettingsDialog": Dialog,
+        }
+        exec(compile(ast.Module(body=[run], type_ignores=[]),
+                     "action_plugin.Run", "exec"), namespace)
+        namespace["Run"](Plugin())
+        assert ("dialog", len(net_ids)) in calls if len(net_ids) != 1 else (
+            not any(call[0] == "dialog" for call in calls))
+        assert ("prepare",) in calls if len(net_ids) > 1 else (
+            ("prepare",) not in calls)
+        assert ("run", net_ids, prepared if len(net_ids) > 1 else None) in calls
+
+
+@pytest.mark.parametrize("has_zones, failure", [
+    (False, None), (True, None), (True, "raise"), (True, "false")])
+def test_zone_refill_precedes_connectivity_and_failure_stops_rebuild(
+        has_zones, failure):
+    calls = []
+    zones = [types.SimpleNamespace(
+        SetNeedRefill=lambda value: calls.append(("dirty", value)))] if has_zones else []
+    board = types.SimpleNamespace(
+        SetModified=lambda: calls.append("modified"), Zones=lambda: iter(zones),
+        BuildConnectivity=lambda: calls.append("connectivity"))
+
+    def fill(items):
+        assert items == zones
+        calls.append("fill")
+        if failure == "raise":
+            raise RuntimeError("test refill failure")
+        return False if failure == "false" else None
+
+    pcbnew = types.SimpleNamespace(
+        ZONE_FILLER=lambda target: types.SimpleNamespace(Fill=fill))
+    if failure:
+        with pytest.raises(RuntimeError, match="copper has already been applied"):
+            _refill_and_rebuild(board, pcbnew)
+        assert calls == ["modified", ("dirty", True), "fill"]
+    else:
+        _refill_and_rebuild(board, pcbnew)
+        assert calls == (["modified", ("dirty", True), "fill", "connectivity"]
+                         if has_zones else ["modified", "connectivity"])
+
+
+def test_apply_uses_zone_refill_boundary():
+    source = (ROOT / "kicad_krt_gloss" / "board_adapter.py").read_text(
+        encoding="utf-8")
+    apply_source = source[source.index("def apply_gloss("):]
+    assert "_refill_and_rebuild(board, pcbnew)" in apply_source
+    assert "board.BuildConnectivity()" not in apply_source
+
+
+def test_pcm_presentation_keeps_authorship_and_plain_krt_link():
+    metadata = json.loads((ROOT / "kicad_krt_gloss" / "metadata.json").read_text(
+        encoding="utf-8"))
+    assert metadata["author"]["name"] == "Frantz with ChatGPT/Codex (OpenAI)"
+    assert metadata["maintainer"]["name"] == "Frantz"
+    assert metadata["author"]["contact"]["github"] == (
+        "https://github.com/fca1/kicad_krt_gloss")
+    assert metadata["description_full"].endswith(
+        "\n\nVery based on KiCad Routing Tools (KRT) by DrAndyHaas\n"
+        "https://github.com/drandyhaas/KiCadRoutingTools")
 
 
 def test_selection_filters_every_supported_item_to_unique_complete_net_ids():
