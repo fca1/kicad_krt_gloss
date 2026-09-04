@@ -24,6 +24,9 @@ jobs:
         runner: [macos-15, macos-15-intel]
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 25
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -42,6 +45,7 @@ jobs:
         run: |
           mkdir -p test-output
           "$KICAD_PYTHON" tests/ci/macos_package_smoke.py dist/KiCadKrtGloss-0.1.0.zip test-output 2>&1 | tee test-output/smoke.log
+          test -f test-output/summary.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -5,6 +5,7 @@ from pathlib import Path
 import platform
 import sys
 import time
+import types
 import zipfile
 
 import pcbnew
@@ -17,7 +18,12 @@ with zipfile.ZipFile(archive) as package:
     package.extractall(output / "package")
 sys.path.insert(0, str(output / "package"))
 app = wx.App(False)
-plugin = importlib.import_module("plugins")  # Runs real ActionPlugin registration.
+# Registration requires an open pcbnew editor (PgmOrNull), not a Python process.
+# Load the unmodified packaged modules without executing its registration hook.
+plugin = types.ModuleType("plugins")
+plugin.__path__ = [str(output / "package" / "plugins")]
+sys.modules["plugins"] = plugin
+from plugins.action_plugin import KiCadKrtGlossPlugin
 from plugins.runtime import configure_krt_runtime
 configure_krt_runtime()
 import grid_router
@@ -28,13 +34,13 @@ from dgloss import GlossConfig, run_final_gloss
 
 print("ENVIRONMENT", sys.version, platform.machine(), pcbnew.GetBuildVersion(), flush=True)
 print("RUST", grid_router.__file__, flush=True)
-assert str(output / "package") in plugin.__file__
+assert str(output / "package") in sys.modules[KiCadKrtGlossPlugin.__module__].__file__
 assert pcbnew.GetBuildVersion().startswith("10.0")
 dialog = GlossSettingsDialog(None, dict(DEFAULTS), 0)
 assert dialog.values()["budget_seconds"] == 20.0
 dialog.Destroy()
 app.ProcessPendingEvents()
-print("PASS: plugin registration and dialog construction", flush=True)
+print("PASS: plugin module import and dialog construction (registration requires editor)", flush=True)
 
 board = pcbnew.BOARD()
 net = pcbnew.NETINFO_ITEM(board, "SMOKE")
@@ -95,6 +101,6 @@ assert reloaded is not None
 assert len(list(reloaded.GetTracks())) == len(list(board.GetTracks()))
 summary = dict(architecture=platform.machine(), kicad=pcbnew.GetBuildVersion(),
     before_mm=before, after_mm=after, elapsed_seconds=time.perf_counter()-started,
-    applied=applied, status="passed", limitations="Automated smoke test, not manual GUI acceptance or full DRC")
+    applied=applied, status="passed", limitations="No editor registration, manual GUI acceptance or full DRC")
 (output / "summary.json").write_text(json.dumps(summary, indent=2))
 print("PASS", json.dumps(summary), flush=True)
