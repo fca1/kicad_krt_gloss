@@ -77,15 +77,16 @@ piste en plusieurs segments. Toute géométrie produite reste octolinéaire et
 est validée contre l'ensemble des obstacles par les contrôles KRT.
 
 L'option `build_new_segments` autorise l'augmentation du nombre de segments.
-Elle vaut `false` par défaut : le centering choisit alors le meilleur
-recentrage réalisable sans créer de segment supplémentaire. L'impossibilité
-d'atteindre le centre exact ne constitue pas un motif de rejet.
+Elle est cochée par défaut dans l'interface Centering. Lorsqu'elle est
+désactivée, le centering choisit le meilleur recentrage réalisable sans créer
+de segment supplémentaire. L'impossibilité d'atteindre le centre exact ne
+constitue pas un motif de rejet.
 
 L'option `build_multi_door_path` autorise une même transformation à traiter
-plusieurs portes successives. Elle vaut `false` par défaut et reste
-indépendante de `build_new_segments` : la première choisit le nombre de portes
-couvertes, la seconde autorise ou interdit l'augmentation du nombre de
-segments nécessaire pour les relier.
+plusieurs portes successives. Elle est cochée par défaut dans l'interface
+Centering et reste indépendante de `build_new_segments` : la première choisit
+le nombre de portes couvertes, la seconde autorise ou interdit l'augmentation
+du nombre de segments nécessaire pour les relier.
 
 Lorsque le centering est activé, les portes compatibles de toute la branche
 élémentaire sont traitées avant de considérer la longueur ou le nombre de

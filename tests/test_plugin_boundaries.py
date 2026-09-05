@@ -289,6 +289,9 @@ def test_dialog_keeps_a_post_run_log_with_krt_style_controls():
     assert 'label="Refresh"' not in source
     assert "on_refresh_centering" not in source
     assert "panel, min=0.0, max=5.0" in source
+    assert '"centering_build_multi_door_path": True' in source
+    assert '"centering_build_new_segments": True' in source
+    assert "No eligible door for the selected nets" in source
 
     action = (ROOT / "kicad_krt_gloss" / "action_plugin.py").read_text(
         encoding="utf-8")

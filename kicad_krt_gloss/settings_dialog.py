@@ -19,8 +19,8 @@ DEFAULTS = {
     "grid_step": 0.1,
     "budget_seconds": 20.0,
     "centering_proximity_mm": 1.0,
-    "centering_build_multi_door_path": False,
-    "centering_build_new_segments": False,
+    "centering_build_multi_door_path": True,
+    "centering_build_new_segments": True,
 }
 
 
@@ -276,6 +276,9 @@ class GlossSettingsDialog(wx.Dialog):
         self.centering_button.Bind(wx.EVT_BUTTON, self._on_centering)
         content.Add(self.centering_button, 0,
                     wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
+        self.centering_status = wx.StaticText(panel, label="Ready.")
+        content.Add(self.centering_status, 0,
+                    wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
         panel.SetSizer(content)
         self.notebook.AddPage(panel, "Centering")
 
@@ -308,8 +311,23 @@ class GlossSettingsDialog(wx.Dialog):
         self.centering_button.Disable()
         self.gloss_button.Disable()
         try:
-            self._on_centering_callback(
+            result = self._on_centering_callback(
                 self.values(), selected_nets, self.append_log)
+            if isinstance(result, dict):
+                doors = int(result.get("doors_centered", 0))
+                proximity = float(result.get(
+                    "centering_proximity_mm",
+                    self.centering_proximity_mm.GetValue()))
+                if doors:
+                    self.centering_status.SetLabel(
+                        f"{doors} door(s) centered at Proxi {proximity:.2f} mm.")
+                else:
+                    self.centering_status.SetLabel(
+                        "No eligible door for the selected nets at "
+                        f"Proxi {proximity:.2f} mm.")
+            elif result is False:
+                self.centering_status.SetLabel(
+                    "Centering failed; see the Log tab.")
         finally:
             self.gloss_button.Enable()
             self.centering_button.Enable()

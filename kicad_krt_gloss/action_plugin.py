@@ -319,7 +319,11 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                 print(f"G5 valid: {bool(stats.get('g5_valid', False))}")
                 if debug_layer:
                     print(f"Differences: {debug_layer} (TrackGloss Changes)")
-            return True
+            return {
+                "doors_centered": stats.get("doors_centered", 0),
+                "centering_proximity_mm": values[
+                    "centering_proximity_mm"],
+            }
         except Exception:
             detail = traceback.format_exc()
             captured.write(detail)
