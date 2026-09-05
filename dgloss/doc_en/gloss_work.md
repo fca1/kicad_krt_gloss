@@ -1,8 +1,8 @@
 # Track Gloss — executable work specification
 
 This document translates the functional specification in
-[`gloss_krt.md`](gloss_krt.md) into architecture, stages, and technical
-responsibilities. `gloss_krt.md` remains authoritative: any discrepancy must
+[`gloss_rules.md`](gloss_rules.md) into architecture, stages, and technical
+responsibilities. `gloss_rules.md` remains authoritative: any discrepancy must
 be corrected here rather than by weakening the specification.
 
 ## Implementation principles

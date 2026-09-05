@@ -9,26 +9,23 @@ treatment.
 The mandatory order of objectives is:
 
 1. respect the input data and every applicable rule;
-2. reduce the total copper length;
-3. at equal length, reduce the segment count;
-4. keep an exclusively octilinear output: 0, 45, or 90 degrees;
-5. create no micro-segment, jog, or unnecessary detour.
+2. at equivalent geometry, reduce the segment count;
+3. keep an exclusively octilinear output: 0, 45, or 90 degrees;
+4. create no micro-segment, jog, or unnecessary detour.
 
-## Scope
+## Definition
 
-- The gloss may process one net, several nets, or one or more explicitly
-  designated elementary branches.
+- A seed is a KRT segment explicitly designated as the starting point of a
+  transformation.
 - An elementary branch is the maximal unbranched path containing its seed. It
   ends at a pad, free end, or T/X junction. It continues through a width or
   layer change and through a via that is not itself a branch point.
-- Outside the scope, the remainder of the net is preserved and participates in
-  the same topology and obstacle checks as copper from other nets.
-- A connection is considered from fixed pad to fixed pad and remains continuous
-  through its vias.
-- Only copper belonging to the connection under examination may be changed;
-  every other copper item remains an obstacle.
-- A width change alone does not terminate or split a connection.
-- A track receives no implicit protection from its apparent purpose.
+- A fixed, locked, or protected element keeps its position, geometry, and
+  attributes. It may serve as an anchor or obstacle, but no gloss stage may
+  move, replace, or modify it. Mobility is allowed only when a rule explicitly
+  provides for it and all its conditions are met.
+
+## Exclusion
 
 Before any transformation, the following nets are excluded in full from the
 modifiable scope:
@@ -42,14 +39,17 @@ modifiable scope:
 These exclusions remain obstacles for other nets. Explicit selection does not
 override their protection.
 
-## Rules and safety
+## Scope
 
-- Effective rules, widths, clearances, obstacles, keepouts, holes, relevant
-  zones, and board edges remain authoritative.
-- Every transformation preserves connectivity, electrical topology, required
-  attributes, and the absence of new DRC violations.
-- A transformation that is not fully certified is never applied.
-- A gloss-specific failure restores the received routing without loss.
+- The gloss processes one or more explicitly designated elementary branches.
+- Outside the scope, the remainder of the net is preserved and participates in
+  the same topology and obstacle checks as copper from other nets.
+- A connection is considered from fixed pad to fixed pad and remains continuous
+  through its vias.
+- Only copper belonging to the connection under examination may be changed;
+  every other copper item remains an obstacle.
+- A width change alone does not terminate or split a connection.
+- A track receives no implicit protection from its apparent purpose.
 
 ## Fixed points and topology
 

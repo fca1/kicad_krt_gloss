@@ -1,8 +1,8 @@
 # Track Gloss — synthèse de travail exécutable
 
 Ce document traduit la spécification fonctionnelle
-[`gloss_krt.md`](gloss_krt.md) en architecture, étapes et responsabilités
-techniques. `gloss_krt.md` reste l'autorité : en cas d'écart, ce document doit
+[`gloss_rules.md`](gloss_rules.md) en architecture, étapes et responsabilités
+techniques. `gloss_rules.md` reste l'autorité : en cas d'écart, ce document doit
 être corrigé et non la spécification assouplie.
 
 ## Principes d'implémentation

@@ -34,7 +34,7 @@ def test_gloss_reference_documents_have_french_and_english_versions():
     english = sorted(path.name for path in DOC_EN.glob("*.md"))
     assert french == english == [
         "gloss_dsheet.md",
-        "gloss_krt.md",
         "gloss_krt_python_api.md",
+        "gloss_rules.md",
         "gloss_work.md",
     ]

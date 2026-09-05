@@ -9,28 +9,25 @@ autrement que par ce traitement final.
 L'ordre impératif des objectifs est :
 
 1. respecter les données d'entrée et toutes les règles applicables ;
-2. réduire la longueur totale du cuivre ;
-3. à longueur équivalente, réduire le nombre de segments ;
-4. conserver une sortie exclusivement octolinéaire : 0°, 45° ou 90° ;
-5. ne produire ni micro-segment, ni décrochement, ni détour inutile.
+2. à géométrie équivalente, réduire le nombre de segments ;
+3. conserver une sortie exclusivement octolinéaire : 0°, 45° ou 90° ;
+4. ne produire ni micro-segment, ni décrochement, ni détour inutile.
 
-## Portée
+## Définition
 
-- Le gloss peut traiter un seul net, plusieurs nets ou une ou plusieurs
-  branches élémentaires explicitement désignées.
+- Une graine est un segment KRT explicitement désigné comme point de départ
+  d'une transformation.
 - Une branche élémentaire est le chemin maximal non ramifié contenant sa
   graine. Elle s'arrête à un pad, une extrémité libre ou une jonction T/X.
   Elle reste continue à travers un changement de largeur, un changement de
   couche et un via qui ne constitue pas lui-même une ramification.
-- Hors portée, le reste du net est conservé et participe aux mêmes contrôles
-  de topologie et d'obstacles que le cuivre des autres nets.
-- Une connexion est considérée de pad fixe à pad fixe et reste continue à
-  travers ses vias.
-- Seul le cuivre appartenant à la connexion examinée peut être modifié ; tout
-  autre cuivre demeure un obstacle.
-- Un changement de largeur ne constitue pas à lui seul une terminaison ou une
-  coupure de connexion.
-- Aucune apparence supposée ne confère une protection implicite à une piste.
+- Un élément fixe, verrouillé ou protégé conserve sa position, sa géométrie et
+  ses attributs. Il peut servir d'ancre ou d'obstacle, mais aucune étape du
+  gloss ne peut le déplacer, le remplacer ou le modifier. Une mobilité n'est
+  autorisée que lorsqu'une règle la prévoit explicitement et que toutes ses
+  conditions sont satisfaites.
+
+## Exclusion
 
 Avant toute transformation, les nets suivants sont exclus intégralement de la
 portée modifiable :
@@ -44,22 +41,19 @@ portée modifiable :
 Ces exclusions restent des obstacles pour les autres nets. Une sélection
 explicite ne lève pas leur protection.
 
-## Règles et sécurité
+## Portée
 
-**MO3 — Éléments fixes et protégés.** Tout élément qualifié de fixe,
-verrouillé ou protégé conserve sa position, sa géométrie et ses attributs. Il
-peut servir d'ancre ou d'obstacle, mais aucune étape du gloss ne peut le
-déplacer, le remplacer ou le modifier. Une mobilité n'est autorisée que
-lorsqu'une règle la prévoit explicitement et que toutes ses conditions sont
-satisfaites.
-
-- Les règles effectives, les largeurs, les clearances, les obstacles, les
-  keepouts, les trous, les zones pertinentes et les bords de carte restent
-  autoritaires.
-- Toute transformation conserve la connectivité, la topologie électrique, les
-  attributs imposés et l'absence de nouvelle faute DRC.
-- Une transformation non entièrement certifiée n'est jamais appliquée.
-- Un échec propre au gloss restitue sans perte le routage reçu en entrée.
+- Le gloss traite une ou plusieurs branches élémentaires explicitement
+  désignées.
+- Hors portée, le reste du net est conservé et participe aux mêmes contrôles
+  de topologie et d'obstacles que le cuivre des autres nets.
+- Une connexion est considérée de pad fixe à pad fixe et reste continue à
+  travers ses vias.
+- Seul le cuivre appartenant à la connexion examinée peut être modifié ; tout
+  autre cuivre demeure un obstacle.
+- Un changement de largeur ne constitue pas à lui seul une terminaison ou une
+  coupure de connexion.
+- Aucune apparence supposée ne confère une protection implicite à une piste.
 
 ## Points imposés et topologie
 
