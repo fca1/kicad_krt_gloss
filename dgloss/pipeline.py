@@ -14,6 +14,7 @@ from .branches import elementary_branch_segment_ids
 from .changes import GlossChanges, release_result_custody
 from .config import GlossConfig
 from .context import build_gloss_context, resolve_gloss_scope
+from .interpad import center_interpad_routes
 from .pad_terminals import optimize_pad_terminals
 from .passes import run_multinet_passes
 from .sliding_nodes import slide_t_nodes
@@ -26,10 +27,11 @@ class GlossOutcome:
     input_strip_segments: list = field(default_factory=list)
     input_strip_vias: list = field(default_factory=list)
     # Complete mutation history, used to resolve chained via moves.
-    changes: dict = field(default_factory=lambda: {"segments": [], "vias": []})
+    changes: dict = field(default_factory=lambda: {
+        "segments": [], "vias": [], "doors": []})
     # Strict post-smooth -> final delta, intended only for visualisation.
     visual_changes: dict = field(
-        default_factory=lambda: {"segments": [], "vias": []})
+        default_factory=lambda: {"segments": [], "vias": [], "doors": []})
     stats: dict = field(default_factory=dict)
 
 
@@ -321,14 +323,14 @@ def _run_g3_5_pass(results, context, selected, net_ids, deadline, *, emit_log,
 
 def _final_visual_changes(baseline_segments, baseline_vias, pcb_data,
                           history):
-    """Describe only the post-smooth to final G4 delta, without intermediates."""
+    """Describe only the post-smooth to final delta, without intermediates."""
     final_segment_ids = {id(segment) for segment in pcb_data.segments}
     baseline_segment_ids = {id(segment) for segment in baseline_segments}
     segments = [
-        {"old": segment, "stage": "G4"}
+        {"old": segment, "stage": "Final"}
         for segment in baseline_segments if id(segment) not in final_segment_ids]
     segments.extend(
-        {"new": segment, "stage": "G4"}
+        {"new": segment, "stage": "Final"}
         for segment in pcb_data.segments
         if id(segment) not in baseline_segment_ids)
 
@@ -340,11 +342,12 @@ def _final_visual_changes(baseline_segments, baseline_vias, pcb_data,
         root = roots.pop(id(old), old)
         roots[id(new)] = root
     final_via_ids = {id(via) for via in pcb_data.vias}
-    vias = [{"old": old, "new": via, "stage": "G4"}
+    vias = [{"old": old, "new": via, "stage": "Final"}
             for via in pcb_data.vias
             if id(via) in roots and id(via) in final_via_ids
             for old in [roots[id(via)]]]
-    return GlossChanges(segments=segments, vias=vias)
+    return GlossChanges(segments=segments, vias=vias,
+                        doors=list(history.doors))
 
 
 def _validate_final(context, before_grades, before_length, changes):
@@ -584,7 +587,36 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
             changes=g4["transformations"], saved_mm=g4["saved_mm"],
             elapsed_ms=g4["algorithm_ms"], label="multi-net transformations")
 
+        # G3--G4 still obey their strict copper-length contract.  G3.6 is
+        # deliberately outside that contract: centering across the selected
+        # doors may add copper or segments, then G5 certifies the result.
         _validate_final(context, before_grades, board_before_length, changes)
+
+        run, expired = available(selected.enable_g3_6)
+        centering_strips, centering_added, centering_changes, centering = \
+            center_interpad_routes(
+                context, results, deadline=deadline,
+                net_ids=list(context.net_ids),
+                clearance_factor=selected.centering_clearance_factor,
+                build_new_segments=selected.centering_build_new_segments,
+                build_multi_door_path=(
+                    selected.centering_build_multi_door_path)) \
+            if run else ([], [], GlossChanges(), {
+                "branches_centered": 0, "doors_centered": 0,
+                "segments_added": 0, "length_delta_mm": 0.0,
+                "net_ids_changed": set(), "algorithm_ms": 0.0,
+                "candidates_tested": 0,
+            })
+        _append_result(results, "track_gloss_g3_6", centering_added, [],
+                       centering_changes)
+        changes.segments.extend(centering_changes.segments)
+        changes.doors.extend(centering_changes.doors)
+        gloss_stats.record(
+            "G3.6", enabled=selected.enable_g3_6,
+            skipped_budget=expired and selected.enable_g3_6,
+            changes=centering["doors_centered"], saved_mm=0.0,
+            elapsed_ms=centering["algorithm_ms"], label="doors centered")
+
         after_length = calculate_route_length([
             segment for segment in pcb_data.segments
             if segment.net_id in scope_net_ids])
@@ -598,6 +630,7 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
             label="final objects certified")
         changed_net_ids = set(initial["changed_net_ids"])
         changed_net_ids.update(g4["net_ids_changed"])
+        changed_net_ids.update(centering["net_ids_changed"])
         elapsed_ms = (perf_counter() - started) * 1000.0
         gloss_stats.budget_expired = (gloss_stats.budget_expired or
                                       perf_counter() >= deadline)
@@ -614,6 +647,12 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
             "branch_scoped": context.branch_scoped,
             "segment_changes": len(changes.segments),
             "via_changes": len(changes.vias),
+            "doors_centered": centering["doors_centered"],
+            "centering_branches_changed": centering["branches_centered"],
+            "centering_segments_added": centering["segments_added"],
+            "centering_length_delta_mm": centering["length_delta_mm"],
+            "centering_candidates_tested": centering["candidates_tested"],
+            "centering_algorithm_ms": centering["algorithm_ms"],
             "before_mm": round(before_length, 4),
             "after_mm": round(after_length, 4),
             "total_ms": round(elapsed_ms, 3),
@@ -662,10 +701,12 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
             "connectivity_regressions": 0,
         })
         if _emit_log:
-            print(f"Track Gloss G3.5: {len(context.net_ids)} nets processed, "
-                  f"{len(changed_net_ids)} improved, -{total_saved:.4f} mm, "
+            copper_delta = (f"-{total_saved:.4f}" if total_saved >= 0.0 else
+                            f"+{-total_saved:.4f}")
+            print(f"Track Gloss final: {len(context.net_ids)} nets processed, "
+                  f"{len(changed_net_ids)} changed, {copper_delta} mm, "
                   f"{elapsed_ms:.1f} ms")
-        # Since G4, visualisation is always one final delta on the first free
+        # Visualisation is always one final delta on the first free
         # User layer (or the layer already owned by Track Gloss).
         # The multipass switch controls optimisation only; it must never bring
         # back the historical G3--G3.5 overlays on User.2 through User.6.
@@ -676,13 +717,14 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
         if final_visual:
             results.append({
                 "new_segments": [], "new_vias": [],
-                "cleanup": "track_gloss_g4_visualization",
+                "cleanup": "track_gloss_final_visualization",
                 "track_gloss_changes": final_visual.as_dict(),
             })
         return GlossOutcome(
             input_strip_segments=(krt_strips +
                                   initial["segment_strips"] +
-                                  g4["segment_strips"]),
+                                  g4["segment_strips"] +
+                                  centering_strips),
             input_strip_vias=(initial["via_strips"] +
                               g4["via_strips"]),
             changes=changes.as_dict(), visual_changes=final_visual.as_dict(),

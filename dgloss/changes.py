@@ -7,12 +7,14 @@ from dataclasses import dataclass, field
 class GlossChanges:
     segments: list = field(default_factory=list)
     vias: list = field(default_factory=list)
+    doors: list = field(default_factory=list)
 
     def __bool__(self):
-        return bool(self.segments or self.vias)
+        return bool(self.segments or self.vias or self.doors)
 
     def as_dict(self):
-        return {"segments": self.segments, "vias": self.vias}
+        return {"segments": self.segments, "vias": self.vias,
+                "doors": self.doors}
 
 
 def release_result_custody(results, segments=(), vias=()):

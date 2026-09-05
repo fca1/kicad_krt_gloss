@@ -50,6 +50,45 @@ centering poursuit un objectif distinct : il peut conserver ou augmenter
 légèrement la longueur afin d'améliorer le passage entre les obstacles. Il
 n'est donc pas soumis au gain minimal exigé par les phases de réduction.
 
+## Centering
+
+**M01 — Porte de centering.** Un obstacle isolé ne provoque aucune
+transformation. Deux obstacles forment une porte lorsqu'ils encadrent le
+segment, que la droite reliant leurs limites cuivre croise ce segment, qu'au
+moins l'un d'eux se trouve dans sa portée et que leur distance cuivre est
+strictement inférieure à la somme de leurs portées. Pour un obstacle `i`, la
+portée est `E × (demi-largeur de piste + clearance effective i)`. Avec deux
+portées identiques, la limite entre obstacles vaut donc `2 × portée`. Le
+facteur `E` vaut `3` par défaut et peut être choisi par l'utilisateur.
+
+Le centering place la piste sur l'axe admissible de la porte, pondéré par les
+clearances effectives. Plusieurs portes peuvent conduire à décomposer la
+piste en plusieurs segments. Toute géométrie produite reste octolinéaire et
+est validée contre l'ensemble des obstacles par les contrôles KRT.
+
+L'option `build_new_segments` autorise l'augmentation du nombre de segments.
+Elle vaut `false` par défaut : le centering choisit alors le meilleur
+recentrage réalisable sans créer de segment supplémentaire. L'impossibilité
+d'atteindre le centre exact ne constitue pas un motif de rejet.
+
+L'option `build_multi_door_path` autorise une même transformation à traiter
+plusieurs portes successives. Elle vaut `false` par défaut et reste
+indépendante de `build_new_segments` : la première choisit le nombre de portes
+couvertes, la seconde autorise ou interdit l'augmentation du nombre de
+segments nécessaire pour les relier.
+
+Lorsque le centering est activé, les portes compatibles de toute la branche
+élémentaire sont traitées avant de considérer la longueur ou le nombre de
+segments. Ces deux mesures ne constituent ni un motif de rejet ni un critère
+de classement entre des solutions couvrant des ensembles de portes différents.
+
+Pour chaque porte, le franchissement utilise l'orientation octolinéaire qui
+maximise la plus faible marge aux deux obstacles. Lorsque la porte est normale
+au segment et que son orientation actuelle atteint cette marge, l'orientation
+du segment est conservée. Une orientation différente peut être construite si
+`build_new_segments` vaut `true`; elle est ensuite raccordée aux portes
+précédente et suivante par la construction multiporte.
+
 ## Portée
 
 - Le gloss traite une ou plusieurs branches élémentaires explicitement

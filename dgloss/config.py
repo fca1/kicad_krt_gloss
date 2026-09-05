@@ -5,7 +5,7 @@ from dataclasses import asdict, dataclass
 
 @dataclass(frozen=True)
 class GlossConfig:
-    """Feature switches for the final gloss, all enabled by default."""
+    """Internal feature switches for the final gloss."""
 
     enable_g3_1: bool = True
     enable_g3_2: bool = True
@@ -14,6 +14,13 @@ class GlossConfig:
     budget_seconds: float = 20.0
     enable_noncollinear_t_rails: bool = True
     enable_multipasses: bool = True
+    # G3.6 remains opt-in until its integrated validation is complete.  These
+    # settings are intentionally engine/API-only; the KiCad UI does not expose
+    # them yet.
+    enable_g3_6: bool = False
+    centering_clearance_factor: float = 3.0
+    centering_build_new_segments: bool = False
+    centering_build_multi_door_path: bool = False
 
     @classmethod
     def from_value(cls, value=None):
