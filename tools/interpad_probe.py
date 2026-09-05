@@ -37,6 +37,7 @@ def main():
     parser.add_argument("--net")
     parser.add_argument("--max-pad-distance", type=float, default=5.0)
     parser.add_argument("--repeat", type=int, default=1)
+    parser.add_argument("--limit", type=int, default=None)
     args = parser.parse_args()
 
     parsed_at = perf_counter()
@@ -58,6 +59,7 @@ def main():
     detection_times = [item.elapsed_ms for item in scans]
     doors = sorted(scan.doors, key=lambda door: (-abs(door.offset),
                                                   -door.admissible_width))
+    reported_doors = doors if args.limit is None else doors[:max(0, args.limit)]
     result = {
         "board": str(args.board.resolve()),
         "parse_ms": round(parse_ms, 3),
@@ -72,6 +74,7 @@ def main():
         "geometric_gates": scan.geometric_gates,
         "unique_crossings": scan.unique_crossings,
         "valid_doors": len(doors),
+        "reported_doors": len(reported_doors),
         "doors": [{
             "net_id": door.segment.net_id,
             "net": pcb.nets[door.segment.net_id].name,
@@ -87,7 +90,7 @@ def main():
             "admissible_width_mm": round(door.admissible_width, 6),
             "current_width_mm": door.segment.width,
             "clearances_mm": [door.clearance_a, door.clearance_b],
-        } for door in doors],
+        } for door in reported_doors],
     }
     print(json.dumps(result, indent=2, ensure_ascii=False))
 

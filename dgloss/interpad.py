@@ -39,7 +39,16 @@ class InterpadScan:
     unique_crossings: int
 
 
-def _intersection(a, b, c, d, eps=1e-9):
+@dataclass(frozen=True)
+class InterpadCandidate:
+    source_segments: tuple
+    segments: tuple
+    translation: tuple
+    before_length: float
+    after_length: float
+
+
+def _intersection(a, b, c, d, eps=1e-9, allow_ab_ends=False):
     """Return (point, parameter on AB, parameter on CD), or ``None``."""
     abx, aby = b[0] - a[0], b[1] - a[1]
     cdx, cdy = d[0] - c[0], d[1] - c[1]
@@ -49,7 +58,9 @@ def _intersection(a, b, c, d, eps=1e-9):
     acx, acy = c[0] - a[0], c[1] - a[1]
     t = (acx * cdy - acy * cdx) / denominator
     u = (acx * aby - acy * abx) / denominator
-    if eps < t < 1.0 - eps and eps < u < 1.0 - eps:
+    t_inside = (-eps <= t <= 1.0 + eps if allow_ab_ends else
+                eps < t < 1.0 - eps)
+    if t_inside and eps < u < 1.0 - eps:
         return ((a[0] + t * abx, a[1] + t * aby), t, u)
     return None
 
@@ -81,6 +92,116 @@ def _pair_clearance(config, track_net, pad, layer):
     if hasattr(config, "layer_clearance"):
         value = config.layer_clearance(layer, value)
     return max(value, getattr(pad, "local_clearance", 0.0) or 0.0)
+
+
+def _cross(a, b):
+    return a[0] * b[1] - a[1] * b[0]
+
+
+def _point(segment, start):
+    return ((segment.start_x, segment.start_y) if start else
+            (segment.end_x, segment.end_y))
+
+
+def _other_end(segment, shared):
+    start = (segment.start_x, segment.start_y)
+    end = (segment.end_x, segment.end_y)
+    return end if math.dist(start, shared) <= 1e-7 else start
+
+
+def _octolinear(a, b, tolerance=1e-7):
+    dx, dy = abs(b[0] - a[0]), abs(b[1] - a[1])
+    return dx <= tolerance or dy <= tolerance or abs(dx - dy) <= tolerance
+
+
+def center_with_sliding_neighbors(pcb_data, door):
+    """Center one segment by sliding its ends on its two neighbours.
+
+    This is the smallest complete M01 construction.  It is deliberately
+    conservative: the crossed segment and both neighbours must form one
+    simple, same-layer octolinear chain.  The returned objects are new KRT
+    ``Segment`` instances; the PCBData is never mutated.
+    """
+    source = door.segment
+    a = (source.start_x, source.start_y)
+    b = (source.end_x, source.end_y)
+    direction = (b[0] - a[0], b[1] - a[1])
+    if not _octolinear(a, b) or math.hypot(*direction) <= 1e-9:
+        return None
+
+    def neighbours(point):
+        found = []
+        for segment in pcb_data.segments:
+            if segment is source or segment.net_id != source.net_id or \
+                    segment.layer != source.layer or \
+                    getattr(segment, "graphic", False) or \
+                    getattr(segment, "locked", False):
+                continue
+            if (math.dist((segment.start_x, segment.start_y), point) <= 1e-7 or
+                    math.dist((segment.end_x, segment.end_y), point) <= 1e-7):
+                found.append(segment)
+        return found
+
+    at_a, at_b = neighbours(a), neighbours(b)
+    if len(at_a) != 1 or len(at_b) != 1 or at_a[0] is at_b[0]:
+        return None
+    first, last = at_a[0], at_b[0]
+    outer_a, outer_b = _other_end(first, a), _other_end(last, b)
+    rail_a = (a[0] - outer_a[0], a[1] - outer_a[1])
+    rail_b = (b[0] - outer_b[0], b[1] - outer_b[1])
+    if math.hypot(*rail_a) <= 1e-9 or math.hypot(*rail_b) <= 1e-9 or \
+            not (_octolinear(outer_a, a) and _octolinear(outer_b, b)):
+        return None
+
+    # The new source line is parallel to the old one and passes through the
+    # weighted door axis.  Its intersections with the two unchanged neighbour
+    # lines are the new sliding joints.
+    def line_intersection(point_a, vector_a, point_b, vector_b):
+        denominator = _cross(vector_a, vector_b)
+        if abs(denominator) <= 1e-9:
+            return None
+        delta = (point_b[0] - point_a[0], point_b[1] - point_a[1])
+        scale = _cross(delta, vector_b) / denominator
+        return (point_a[0] + scale * vector_a[0],
+                point_a[1] + scale * vector_a[1])
+
+    new_a = line_intersection(door.axis, direction, outer_a, rail_a)
+    new_b = line_intersection(door.axis, direction, outer_b, rail_b)
+    if new_a is None or new_b is None:
+        return None
+    translation = (door.axis[0] - door.crossing[0],
+                   door.axis[1] - door.crossing[1])
+    if ((new_b[0] - new_a[0]) * direction[0] +
+            (new_b[1] - new_a[1]) * direction[1] <= 1e-9):
+        return None
+
+    # A rail may disappear at its outer anchor, but it may not reverse past it.
+    for outer, old, new in ((outer_a, a, new_a), (outer_b, b, new_b)):
+        old_vector = (old[0] - outer[0], old[1] - outer[1])
+        new_vector = (new[0] - outer[0], new[1] - outer[1])
+        if old_vector[0] * new_vector[0] + old_vector[1] * new_vector[1] < -1e-8:
+            return None
+
+    def make(start, end, template):
+        if math.dist(start, end) <= 1e-7:
+            return None
+        return Segment(start[0], start[1], end[0], end[1], template.width,
+                       template.layer, template.net_id)
+
+    built = [make(outer_a, new_a, first),
+             make(new_a, new_b, source),
+             make(new_b, outer_b, last)]
+    built = tuple(segment for segment in built if segment is not None)
+    if not built or not all(_octolinear(
+            (segment.start_x, segment.start_y),
+            (segment.end_x, segment.end_y)) for segment in built):
+        return None
+
+    from net_queries import calculate_route_length
+    old = (first, source, last)
+    return InterpadCandidate(
+        old, built, translation, calculate_route_length(old),
+        calculate_route_length(built))
 
 
 def find_interpad_doors(pcb_data, config, *, net_id=None,
@@ -154,7 +275,8 @@ def find_interpad_doors(pcb_data, config, *, net_id=None,
         for segment, _segment_net in index.get_nearby_segments(gate):
             hit = _intersection(
                 (segment.start_x, segment.start_y),
-                (segment.end_x, segment.end_y), edge_a, edge_b)
+                (segment.end_x, segment.end_y), edge_a, edge_b,
+                allow_ab_ends=True)
             if hit is not None:
                 crossings.append((segment, hit))
         if len(crossings) != 1:
