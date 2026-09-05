@@ -15,7 +15,8 @@ be corrected here rather than by weakening the specification.
   obstacle checks.
 - Work at the actual KRT grid resolution, with no arbitrary micron search or
   independent resolution.
-- Accept only a gain strictly greater than the useful grid step.
+- For length-reduction phases, accept only a gain strictly greater than the
+  useful grid step; centering is evaluated afterward by its own objective.
 
 ## Post-smooth integration
 
@@ -135,11 +136,13 @@ Then complete the lexicographic segment-count objective: rerun G3 in
 KRT `merge_collinear_segments()` to merge strict alignments without moving
 copper.
 
-A common final certification checks non-increasing length, connectivity of all
-nets, octilinear geometry, and that no segment created by a geometric
-transformation is shorter than the real grid step. A geometry-preserving KRT
-re-emission is not treated as new copper. On failure, restore the exact KRT
-result.
+A common final certification checks connectivity of all nets, octilinear
+geometry, and that no segment created by a geometric transformation is shorter
+than the real grid step. Length-reduction phases enforce a gain strictly
+greater than the useful grid step; centering runs afterward and is evaluated by
+its obstacle-passage objective, so it may preserve or slightly increase length.
+A geometry-preserving KRT re-emission is not treated as new copper. On failure,
+restore the exact KRT result.
 
 G3.5 aggregates `GlossStats`, keeps the KRT smooth gain separate from the
 dgloss gain, and produces one cumulative debug view without duplicated copper.

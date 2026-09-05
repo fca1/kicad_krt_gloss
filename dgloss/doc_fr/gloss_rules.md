@@ -2,16 +2,18 @@
 
 ## Finalité
 
-Track Gloss est un traitement final d'un routage existant. Il cherche une
-géométrie plus courte sans effectuer d'autoroutage et sans modifier le dessin
-autrement que par ce traitement final.
+Track Gloss est un traitement final d'un routage existant. Il améliore sa
+géométrie sans effectuer d'autoroutage et sans modifier le dessin autrement
+que par ce traitement final.
 
 L'ordre impératif des objectifs est :
 
 1. respecter les données d'entrée et toutes les règles applicables ;
-2. à géométrie équivalente, réduire le nombre de segments ;
-3. conserver une sortie exclusivement octolinéaire : 0°, 45° ou 90° ;
-4. ne produire ni micro-segment, ni décrochement, ni détour inutile.
+2. pendant les phases de réduction, réduire la longueur avec un gain
+   strictement supérieur au pas utile de la grille ;
+3. à longueur équivalente, réduire le nombre de segments ;
+4. conserver une sortie exclusivement octolinéaire : 0°, 45° ou 90° ;
+5. ne produire ni micro-segment, ni décrochement, ni détour inutile.
 
 ## Définition
 
@@ -40,6 +42,13 @@ portée modifiable :
 
 Ces exclusions restent des obstacles pour les autres nets. Une sélection
 explicite ne lève pas leur protection.
+
+## Séquencement
+
+Les phases de réduction de longueur sont exécutées avant le centering. Le
+centering poursuit un objectif distinct : il peut conserver ou augmenter
+légèrement la longueur afin d'améliorer le passage entre les obstacles. Il
+n'est donc pas soumis au gain minimal exigé par les phases de réduction.
 
 ## Portée
 

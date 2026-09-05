@@ -2,16 +2,18 @@
 
 ## Purpose
 
-Track Gloss is a final treatment of an existing route. It seeks shorter
+Track Gloss is a final treatment of an existing route. It improves route
 geometry without autorouting and without changing the design beyond this final
 treatment.
 
 The mandatory order of objectives is:
 
 1. respect the input data and every applicable rule;
-2. at equivalent geometry, reduce the segment count;
-3. keep an exclusively octilinear output: 0, 45, or 90 degrees;
-4. create no micro-segment, jog, or unnecessary detour.
+2. during length-reduction phases, reduce length with a gain strictly greater
+   than the useful grid step;
+3. at equal length, reduce the segment count;
+4. keep an exclusively octilinear output: 0, 45, or 90 degrees;
+5. create no micro-segment, jog, or unnecessary detour.
 
 ## Definition
 
@@ -39,6 +41,13 @@ modifiable scope:
 
 These exclusions remain obstacles for other nets. Explicit selection does not
 override their protection.
+
+## Sequencing
+
+Length-reduction phases run before centering. Centering has a distinct
+objective: it may preserve or slightly increase length to improve passage
+between obstacles. It is therefore not subject to the minimum-gain condition
+required by length-reduction phases.
 
 ## Scope
 
