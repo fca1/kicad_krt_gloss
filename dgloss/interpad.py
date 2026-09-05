@@ -114,15 +114,38 @@ def _octolinear(a, b, tolerance=1e-7):
     return dx <= tolerance or dy <= tolerance or abs(dx - dy) <= tolerance
 
 
-def center_with_sliding_neighbors(pcb_data, door):
-    """Center one segment by sliding its ends on its two neighbours.
+def _line_intersection(point_a, vector_a, point_b, vector_b):
+    denominator = _cross(vector_a, vector_b)
+    if abs(denominator) <= 1e-9:
+        return None
+    delta = (point_b[0] - point_a[0], point_b[1] - point_a[1])
+    scale = _cross(delta, vector_b) / denominator
+    return (point_a[0] + scale * vector_a[0],
+            point_a[1] + scale * vector_a[1])
 
-    This is the smallest complete M01 construction.  It is deliberately
-    conservative: the crossed segment and both neighbours must form one
-    simple, same-layer octolinear chain.  The returned objects are new KRT
-    ``Segment`` instances; the PCBData is never mutated.
+
+def _native_pad_at(pcb_data, net_id, layer, point):
+    """Return the fixed native pad terminal at ``point``, if any."""
+    copper_layers = list(getattr(pcb_data.board_info, "copper_layers", ()))
+    for pad in pcb_data.pads_by_net.get(net_id, ()):
+        if layer not in pad_copper_layers(pad, copper_layers):
+            continue
+        if math.dist((pad.global_x, pad.global_y), point) <= 1e-7:
+            return pad
+    return None
+
+
+def center_with_sliding_neighbors(pcb_data, door):
+    """Center one segment using its sliding rails and fixed pad terminals.
+
+    This is the smallest complete M01 construction. It accepts either two
+    sliding neighbours, or one fixed native pad and one sliding neighbour.
+    The chain must remain simple, same-layer and octolinear. The returned
+    objects are new KRT ``Segment`` instances; the PCBData is never mutated.
     """
     source = door.segment
+    if getattr(source, "locked", False):
+        return None
     a = (source.start_x, source.start_y)
     b = (source.end_x, source.end_y)
     direction = (b[0] - a[0], b[1] - a[1])
@@ -142,45 +165,8 @@ def center_with_sliding_neighbors(pcb_data, door):
                 found.append(segment)
         return found
 
-    at_a, at_b = neighbours(a), neighbours(b)
-    if len(at_a) != 1 or len(at_b) != 1 or at_a[0] is at_b[0]:
-        return None
-    first, last = at_a[0], at_b[0]
-    outer_a, outer_b = _other_end(first, a), _other_end(last, b)
-    rail_a = (a[0] - outer_a[0], a[1] - outer_a[1])
-    rail_b = (b[0] - outer_b[0], b[1] - outer_b[1])
-    if math.hypot(*rail_a) <= 1e-9 or math.hypot(*rail_b) <= 1e-9 or \
-            not (_octolinear(outer_a, a) and _octolinear(outer_b, b)):
-        return None
-
-    # The new source line is parallel to the old one and passes through the
-    # weighted door axis.  Its intersections with the two unchanged neighbour
-    # lines are the new sliding joints.
-    def line_intersection(point_a, vector_a, point_b, vector_b):
-        denominator = _cross(vector_a, vector_b)
-        if abs(denominator) <= 1e-9:
-            return None
-        delta = (point_b[0] - point_a[0], point_b[1] - point_a[1])
-        scale = _cross(delta, vector_b) / denominator
-        return (point_a[0] + scale * vector_a[0],
-                point_a[1] + scale * vector_a[1])
-
-    new_a = line_intersection(door.axis, direction, outer_a, rail_a)
-    new_b = line_intersection(door.axis, direction, outer_b, rail_b)
-    if new_a is None or new_b is None:
-        return None
     translation = (door.axis[0] - door.crossing[0],
                    door.axis[1] - door.crossing[1])
-    if ((new_b[0] - new_a[0]) * direction[0] +
-            (new_b[1] - new_a[1]) * direction[1] <= 1e-9):
-        return None
-
-    # A rail may disappear at its outer anchor, but it may not reverse past it.
-    for outer, old, new in ((outer_a, a, new_a), (outer_b, b, new_b)):
-        old_vector = (old[0] - outer[0], old[1] - outer[1])
-        new_vector = (new[0] - outer[0], new[1] - outer[1])
-        if old_vector[0] * new_vector[0] + old_vector[1] * new_vector[1] < -1e-8:
-            return None
 
     def make(start, end, template):
         if math.dist(start, end) <= 1e-7:
@@ -188,9 +174,109 @@ def center_with_sliding_neighbors(pcb_data, door):
         return Segment(start[0], start[1], end[0], end[1], template.width,
                        template.layer, template.net_id)
 
-    built = [make(outer_a, new_a, first),
-             make(new_a, new_b, source),
-             make(new_b, outer_b, last)]
+    at_a, at_b = neighbours(a), neighbours(b)
+    if len(at_a) == len(at_b) == 1 and at_a[0] is not at_b[0]:
+        first, last = at_a[0], at_b[0]
+        outer_a, outer_b = _other_end(first, a), _other_end(last, b)
+        rail_a = (a[0] - outer_a[0], a[1] - outer_a[1])
+        rail_b = (b[0] - outer_b[0], b[1] - outer_b[1])
+        if math.hypot(*rail_a) <= 1e-9 or math.hypot(*rail_b) <= 1e-9 or \
+                not (_octolinear(outer_a, a) and
+                     _octolinear(outer_b, b)):
+            return None
+
+        # The new source line is parallel to the old one and passes through
+        # the weighted door axis. Its intersections with both neighbour lines
+        # are the new sliding joints.
+        new_a = _line_intersection(
+            door.axis, direction, outer_a, rail_a)
+        new_b = _line_intersection(
+            door.axis, direction, outer_b, rail_b)
+        if new_a is None or new_b is None:
+            return None
+        if ((new_b[0] - new_a[0]) * direction[0] +
+                (new_b[1] - new_a[1]) * direction[1] <= 1e-9):
+            return None
+
+        # A rail may disappear at its outer anchor, but it may not reverse.
+        for outer, old, new in ((outer_a, a, new_a),
+                                (outer_b, b, new_b)):
+            old_vector = (old[0] - outer[0], old[1] - outer[1])
+            new_vector = (new[0] - outer[0], new[1] - outer[1])
+            if (old_vector[0] * new_vector[0] +
+                    old_vector[1] * new_vector[1] < -1e-8):
+                return None
+
+        built = [make(outer_a, new_a, first),
+                 make(new_a, new_b, source),
+                 make(new_b, outer_b, last)]
+        old = (first, source, last)
+    else:
+        # A track which starts at a fixed pad and has one sliding neighbour
+        # needs one new octolinear connection at the pad. This is the smallest
+        # useful form exposed by test_centering1: fixed pad, centered parallel,
+        # then the existing neighbour rail.
+        cases = []
+        if (not at_a and len(at_b) == 1 and
+                _native_pad_at(pcb_data, source.net_id, source.layer, a)):
+            cases.append((a, b, at_b[0]))
+        if (not at_b and len(at_a) == 1 and
+                _native_pad_at(pcb_data, source.net_id, source.layer, b)):
+            cases.append((b, a, at_a[0]))
+        if len(cases) != 1:
+            return None
+
+        fixed, joint, neighbour = cases[0]
+        outer = _other_end(neighbour, joint)
+        source_vector = (joint[0] - fixed[0], joint[1] - fixed[1])
+        rail = (joint[0] - outer[0], joint[1] - outer[1])
+        if not _octolinear(outer, joint) or math.hypot(*rail) <= 1e-9:
+            return None
+        new_joint = _line_intersection(
+            door.axis, source_vector, outer, rail)
+        if new_joint is None:
+            return None
+        old_rail = (joint[0] - outer[0], joint[1] - outer[1])
+        new_rail = (new_joint[0] - outer[0], new_joint[1] - outer[1])
+        if old_rail[0] * new_rail[0] + old_rail[1] * new_rail[1] < -1e-8:
+            return None
+
+        alternatives = []
+        for connector_direction in ((1.0, 0.0), (0.0, 1.0),
+                                    (1.0, 1.0), (1.0, -1.0)):
+            new_fixed = _line_intersection(
+                fixed, connector_direction, door.axis, source_vector)
+            if new_fixed is None:
+                continue
+            centered = (new_joint[0] - new_fixed[0],
+                        new_joint[1] - new_fixed[1])
+            if centered[0] * source_vector[0] + \
+                    centered[1] * source_vector[1] <= 1e-9:
+                continue
+            candidate_segments = [
+                make(fixed, new_fixed, source),
+                make(new_fixed, new_joint, source),
+                make(new_joint, outer, neighbour),
+            ]
+            candidate_segments = tuple(
+                segment for segment in candidate_segments
+                if segment is not None)
+            if (not candidate_segments or
+                    not all(_octolinear(
+                        (segment.start_x, segment.start_y),
+                        (segment.end_x, segment.end_y))
+                            for segment in candidate_segments)):
+                continue
+            from net_queries import calculate_route_length
+            alternatives.append((calculate_route_length(candidate_segments),
+                                 candidate_segments))
+        if not alternatives:
+            return None
+        _length, selected = min(
+            alternatives, key=lambda item: (item[0], len(item[1])))
+        built = list(selected)
+        old = (source, neighbour)
+
     built = tuple(segment for segment in built if segment is not None)
     if not built or not all(_octolinear(
             (segment.start_x, segment.start_y),
@@ -198,7 +284,6 @@ def center_with_sliding_neighbors(pcb_data, door):
         return None
 
     from net_queries import calculate_route_length
-    old = (first, source, last)
     return InterpadCandidate(
         old, built, translation, calculate_route_length(old),
         calculate_route_length(built))

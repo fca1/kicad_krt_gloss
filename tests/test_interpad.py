@@ -12,6 +12,7 @@ from kicad_parser import Pad, Segment
 from routing_config import GridRouteConfig
 
 from dgloss.interpad import center_with_sliding_neighbors, find_interpad_doors
+from kicad_krt_gloss.debug_overlay import door_lines
 
 
 def _pad(ref, x, y, net_id, size=1.0):
@@ -82,3 +83,44 @@ def test_centers_a_diagonal_by_sliding_on_parallel_rails():
             candidate.segments[1].start_y) == (0.0, 1.5)
     assert (candidate.segments[1].end_x,
             candidate.segments[1].end_y) == (1.0, 0.5)
+
+
+def test_centers_from_a_fixed_pad_with_one_sliding_neighbour():
+    diagonal = Segment(4.0, 0.0, 2.0, 2.0, 0.2, "F.Cu", 1)
+    last = Segment(2.0, 2.0, 0.0, 2.0, 0.2, "F.Cu", 1)
+    fixed_pad = _pad("P", 4.0, 0.0, 1)
+    pcb = SimpleNamespace(
+        segments=[diagonal, last], pads_by_net={1: [fixed_pad]},
+        board_info=SimpleNamespace(copper_layers=["F.Cu"]))
+    door = SimpleNamespace(segment=diagonal, axis=(3.0, 0.8),
+                           crossing=(3.0, 1.0))
+
+    candidate = center_with_sliding_neighbors(pcb, door)
+
+    assert candidate is not None
+    assert len(candidate.source_segments) == 2
+    assert len(candidate.segments) == 3
+    assert (candidate.segments[0].start_x,
+            candidate.segments[0].start_y) == (4.0, 0.0)
+    assert all(segment.layer == "F.Cu" and segment.net_id == 1
+               for segment in candidate.segments)
+
+
+def test_fixed_source_segment_cannot_be_centered():
+    diagonal = Segment(4.0, 0.0, 2.0, 2.0, 0.2, "F.Cu", 1,
+                       locked=True)
+    last = Segment(2.0, 2.0, 0.0, 2.0, 0.2, "F.Cu", 1)
+    pcb = SimpleNamespace(
+        segments=[diagonal, last], pads_by_net={1: [_pad("P", 4.0, 0.0, 1)]},
+        board_info=SimpleNamespace(copper_layers=["F.Cu"]))
+    door = SimpleNamespace(segment=diagonal, axis=(3.0, 0.8),
+                           crossing=(3.0, 1.0))
+
+    assert center_with_sliding_neighbors(pcb, door) is None
+
+
+def test_applied_door_emits_one_debug_marker():
+    door = SimpleNamespace(edge_a=(1.0, 2.0), edge_b=(3.0, 4.0))
+
+    assert list(door_lines({"doors": [door]})) == [
+        ((1.0, 2.0), (3.0, 4.0), 0.12)]

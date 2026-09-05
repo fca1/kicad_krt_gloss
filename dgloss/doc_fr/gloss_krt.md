@@ -46,6 +46,13 @@ explicite ne lève pas leur protection.
 
 ## Règles et sécurité
 
+**MO3 — Éléments fixes et protégés.** Tout élément qualifié de fixe,
+verrouillé ou protégé conserve sa position, sa géométrie et ses attributs. Il
+peut servir d'ancre ou d'obstacle, mais aucune étape du gloss ne peut le
+déplacer, le remplacer ou le modifier. Une mobilité n'est autorisée que
+lorsqu'une règle la prévoit explicitement et que toutes ses conditions sont
+satisfaites.
+
 - Les règles effectives, les largeurs, les clearances, les obstacles, les
   keepouts, les trous, les zones pertinentes et les bords de carte restent
   autoritaires.
