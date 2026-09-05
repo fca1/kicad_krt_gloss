@@ -280,6 +280,8 @@ def test_dialog_keeps_a_post_run_log_with_krt_style_controls():
     source = (ROOT / "kicad_krt_gloss" / "settings_dialog.py").read_text(
         encoding="utf-8")
     assert 'label="Clear Log"' in source
+    assert 'label="Copy Log"' in source
+    assert "wx.TheClipboard.SetData" in source
     assert 'label="Gloss"' in source
     assert 'label="Close"' in source
     assert "wx.TE_READONLY" in source
@@ -298,6 +300,7 @@ def test_dialog_keeps_a_post_run_log_with_krt_style_controls():
     assert '_last_log = ""' in action
     assert "initial_log=self.__class__._last_log" in action
     assert 'print("\\n=== Track Gloss result ===")' in action
+    assert 'stats.get(\'krt_after_mm\'' in action
 
 
 def test_about_tab_uses_project_versions_and_attribution():
@@ -400,7 +403,8 @@ def test_cli_exposes_optional_auto_or_explicit_debug_layer():
 def test_plugin_renders_the_complete_final_delta_once():
     source = (ROOT / "kicad_krt_gloss" / "board_adapter.py").read_text(
         encoding="utf-8")
-    assert 'add_changes_to_board(board, outcome.visual_changes, stage="G4")' in source
+    assert "overlay_count = add_changes_to_board(" in source
+    assert "if overlay_count:" in source
     assert "changes_by_stage" not in source
     assert "debug overlay skipped" in source
 

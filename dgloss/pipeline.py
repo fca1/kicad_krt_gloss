@@ -70,6 +70,28 @@ def _g5_grade(pcb_data, net_id):
         return_graph=True)
 
 
+def _route_signature(pcb_data, net_id):
+    """Comparable routed-copper geometry for one net, without object IDs."""
+    segments = []
+    for segment in pcb_data.segments:
+        if segment.net_id != net_id:
+            continue
+        start = (segment.start_x, segment.start_y)
+        end = (segment.end_x, segment.end_y)
+        segments.append((segment.layer, min(start, end), max(start, end),
+                         segment.width, bool(getattr(segment, "graphic", False)),
+                         bool(getattr(segment, "locked", False))))
+    vias = []
+    for via in pcb_data.vias:
+        if via.net_id != net_id:
+            continue
+        vias.append((via.x, via.y, via.size, via.drill,
+                     tuple(via.layers), bool(getattr(via, "free", False)),
+                     bool(getattr(via, "locked", False)),
+                     tuple(sorted((getattr(via, "tenting_attrs", {}) or {}).items()))))
+    return tuple(sorted(segments)), tuple(sorted(vias))
+
+
 def _terminal_partition(grade):
     """Normalize KRT terminal components so graph ids can be compared."""
     graph = grade.get("graph") or {}
@@ -449,6 +471,12 @@ def run_final_gloss(results, pcb_data, config, gloss_config=None, *,
                     "selected seeds do not belong to the requested nets")
         active_net_ids, excluded, exclusion_reasons = resolve_gloss_scope(
             pcb_data, net_ids, excluded_net_ids)
+        input_before_length = calculate_route_length([
+            segment for segment in pcb_data.segments
+            if segment.net_id in active_net_ids])
+        input_signatures = {
+            net_id: _route_signature(pcb_data, net_id)
+            for net_id in active_net_ids}
         editable_ids = None
         branch_count = 0
         if seed_segments:
@@ -475,6 +503,12 @@ def run_final_gloss(results, pcb_data, config, gloss_config=None, *,
                     config=config, skip_net_ids=excluded,
                     min_gain=config.grid_step)
         krt_ms = (perf_counter() - started) * 1000.0
+        krt_after_length = calculate_route_length([
+            segment for segment in pcb_data.segments
+            if segment.net_id in active_net_ids])
+        krt_saved = input_before_length - krt_after_length
+        print(f"Track Gloss KRT smooth: {_nets} nets changed, "
+              f"-{krt_saved:.4f} mm, {krt_ms:.1f} ms")
         return run_post_smooth_gloss(
             results, pcb_data, config, gloss_config=gloss_config,
             net_ids=active_net_ids, krt_strips=strips, krt_stats=krt_stats,
@@ -482,7 +516,12 @@ def run_final_gloss(results, pcb_data, config, gloss_config=None, *,
             krt_smooth_complete=True,
             _resolved_scope=(active_net_ids, excluded, exclusion_reasons),
             _editable_segment_ids=editable_ids,
-            _branch_count=branch_count)
+            _branch_count=branch_count,
+            _input_before_length=input_before_length,
+            _input_signatures=input_signatures,
+            _visual_baseline_segments=original_segments,
+            _visual_baseline_vias=original_vias,
+            _total_started=started)
     except Exception as exc:
         _restore(results, original_count, original_results, pcb_data,
                  original_segments, original_vias)
@@ -600,10 +639,19 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
                           krt_ms=0.0, excluded_net_ids=None, _emit_log=True,
                           _resolved_scope=None,
                           krt_smooth_complete=False, seed_segments=None,
-                          _editable_segment_ids=None, _branch_count=0):
+                          _editable_segment_ids=None, _branch_count=0,
+                          _input_before_length=None, _input_signatures=None,
+                          _visual_baseline_segments=None,
+                          _visual_baseline_vias=None, _total_started=None):
     """G0 API; callers may certify that final KRT smooth already completed."""
     baseline_segments = list(pcb_data.segments)
     baseline_vias = list(pcb_data.vias)
+    visual_baseline_segments = (
+        baseline_segments if _visual_baseline_segments is None else
+        list(_visual_baseline_segments))
+    visual_baseline_vias = (
+        baseline_vias if _visual_baseline_vias is None else
+        list(_visual_baseline_vias))
     baseline_count = len(results)
     baseline_results = _result_snapshot(results)
     krt_strips = list(krt_strips or [])
@@ -735,10 +783,20 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
         changed_net_ids = set(initial["changed_net_ids"])
         changed_net_ids.update(g4["net_ids_changed"])
         changed_net_ids.update(centering["net_ids_changed"])
-        elapsed_ms = (perf_counter() - started) * 1000.0
+        if _input_signatures is not None:
+            changed_net_ids = {
+                net_id for net_id in scope_net_ids
+                if _input_signatures.get(net_id) !=
+                _route_signature(pcb_data, net_id)}
+        elapsed_ms = (perf_counter() - (
+            started if _total_started is None else _total_started)) * 1000.0
         gloss_stats.budget_expired = (gloss_stats.budget_expired or
                                       perf_counter() >= deadline)
-        total_saved = round(before_length - after_length, 4)
+        input_before_length = (before_length if _input_before_length is None
+                               else float(_input_before_length))
+        krt_saved = input_before_length - before_length
+        post_krt_saved = before_length - after_length
+        total_saved = round(input_before_length - after_length, 4)
         stats = dict(g3)
         stats.update({
             "config": selected.as_dict(), "gloss": gloss_stats.as_dict(),
@@ -757,11 +815,13 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
             "centering_length_delta_mm": centering["length_delta_mm"],
             "centering_candidates_tested": centering["candidates_tested"],
             "centering_algorithm_ms": centering["algorithm_ms"],
-            "before_mm": round(before_length, 4),
+            "before_mm": round(input_before_length, 4),
+            "krt_after_mm": round(before_length, 4),
             "after_mm": round(after_length, 4),
             "total_ms": round(elapsed_ms, 3),
             "krt_baseline_ms": round(krt_ms, 3),
-            "krt_baseline_saved_mm": krt_stats.get("saved_mm", 0.0),
+            "krt_baseline_saved_mm": round(krt_saved, 4),
+            "post_krt_saved_mm": round(post_krt_saved, 4),
             "vias_moved": via["vias_moved"],
             "via_algorithm_ms": via["algorithm_ms"],
             "pads_changed": pad["pads_changed"],
@@ -815,7 +875,7 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
         # The multipass switch controls optimisation only; it must never bring
         # back the historical G3--G3.5 overlays on User.2 through User.6.
         final_visual = _final_visual_changes(
-            baseline_segments, baseline_vias, pcb_data, changes)
+            visual_baseline_segments, visual_baseline_vias, pcb_data, changes)
         for result in results[baseline_count:]:
             result.pop("track_gloss_changes", None)
         if final_visual:

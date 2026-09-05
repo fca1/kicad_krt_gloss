@@ -200,6 +200,12 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                 print(f"Length: {stats.get('before_mm', 0.0):.4f} -> "
                       f"{stats.get('after_mm', 0.0):.4f} mm")
                 print(f"Saved: {stats.get('saved_mm', 0.0):.4f} mm")
+                print("KRT smooth: "
+                      f"{stats.get('before_mm', 0.0):.4f} -> "
+                      f"{stats.get('krt_after_mm', 0.0):.4f} mm "
+                      f"(-{stats.get('krt_baseline_saved_mm', 0.0):.4f} mm)")
+                print("Post-KRT stages: "
+                      f"-{stats.get('post_krt_saved_mm', 0.0):.4f} mm")
                 print(f"Tracks replaced: {removed} -> {added}")
                 print(f"Vias moved: {moved}")
                 print(f"G4 passes: {stats.get('g4_passes_completed', 0)}")

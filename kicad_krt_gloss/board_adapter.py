@@ -231,13 +231,15 @@ def apply_gloss(board, results, outcome):
     debug_layer = None
     try:
         disable_intermediate_layers(board, pcbnew)
-        add_changes_to_board(board, outcome.visual_changes, stage="G4")
-        for name in USER_LAYER_NAMES:
-            layer_id = getattr(pcbnew, f"User_{name.split('.')[1]}", None)
-            if (layer_id is not None and
-                    board.GetLayerName(layer_id) == LAYER_NAME):
-                debug_layer = name
-                break
+        overlay_count = add_changes_to_board(
+            board, outcome.visual_changes, stage="G4")
+        if overlay_count:
+            for name in USER_LAYER_NAMES:
+                layer_id = getattr(pcbnew, f"User_{name.split('.')[1]}", None)
+                if (layer_id is not None and
+                        board.GetLayerName(layer_id) == LAYER_NAME):
+                    debug_layer = name
+                    break
     except Exception as exc:
         print(f"Track Gloss: debug overlay skipped: {exc}")
     _refill_and_rebuild(board, pcbnew)

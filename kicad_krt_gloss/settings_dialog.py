@@ -127,11 +127,17 @@ class GlossSettingsDialog(wx.Dialog):
             10, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL,
             wx.FONTWEIGHT_NORMAL))
         log_content.Add(self.log_text, 1, wx.EXPAND | wx.ALL, 5)
+        log_buttons = wx.BoxSizer(wx.HORIZONTAL)
+        log_buttons.AddStretchSpacer()
+        copy_log = wx.Button(log_panel, label="Copy Log")
+        copy_log.SetToolTip("Copy all Track Gloss log output to the clipboard.")
+        copy_log.Bind(wx.EVT_BUTTON, self._on_copy_log)
         clear_log = wx.Button(log_panel, label="Clear Log")
         clear_log.SetToolTip("Clear all Track Gloss log output.")
         clear_log.Bind(wx.EVT_BUTTON, self._on_clear_log)
-        log_content.Add(clear_log, 0,
-                        wx.ALIGN_RIGHT | wx.RIGHT | wx.BOTTOM, 5)
+        log_buttons.Add(copy_log, 0, wx.RIGHT, 5)
+        log_buttons.Add(clear_log, 0)
+        log_content.Add(log_buttons, 0, wx.EXPAND | wx.RIGHT | wx.BOTTOM, 5)
         log_panel.SetSizer(log_content)
         self.notebook.AddPage(log_panel, "Log")
 
@@ -284,6 +290,17 @@ class GlossSettingsDialog(wx.Dialog):
 
     def _on_clear_log(self, _event):
         self.log_text.Clear()
+
+    def _on_copy_log(self, _event):
+        if not wx.TheClipboard.Open():
+            wx.MessageBox("The clipboard is unavailable.", "Copy Log",
+                          wx.OK | wx.ICON_WARNING)
+            return
+        try:
+            wx.TheClipboard.SetData(wx.TextDataObject(self.log_text.GetValue()))
+            wx.TheClipboard.Flush()
+        finally:
+            wx.TheClipboard.Close()
 
     def _on_gloss(self, _event):
         if self._on_gloss_callback is None:

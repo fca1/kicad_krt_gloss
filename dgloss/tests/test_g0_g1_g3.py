@@ -546,10 +546,22 @@ def test_a_later_gloss_completely_removes_a_longer_centering_path():
                 sorted(segment_key(segment) for segment in routed))
 
     initial = snapshot()
-    run_final_gloss([], pcb, config, gloss, net_ids=[1])
+    first_gloss = run_final_gloss([], pcb, config, gloss, net_ids=[1])
     reduced = snapshot()
     assert reduced[0] < initial[0] - config.grid_step
     assert reduced[1] == 1
+    assert math.isclose(first_gloss.stats["before_mm"], initial[0],
+                        abs_tol=1e-4)
+    assert math.isclose(first_gloss.stats["krt_after_mm"], reduced[0],
+                        abs_tol=1e-4)
+    assert math.isclose(first_gloss.stats["after_mm"], reduced[0],
+                        abs_tol=1e-4)
+    assert math.isclose(first_gloss.stats["saved_mm"],
+                        initial[0] - reduced[0], abs_tol=1e-4)
+    assert math.isclose(first_gloss.stats["post_krt_saved_mm"], 0.0,
+                        abs_tol=1e-7)
+    assert first_gloss.stats["nets_changed"] == 1
+    assert first_gloss.visual_changes["segments"]
 
     centered_outcome = run_centering(
         [], pcb, config, net_ids=[1], proximity_mm=5.0,

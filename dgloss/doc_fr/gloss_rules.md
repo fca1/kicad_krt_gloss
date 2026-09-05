@@ -59,6 +59,12 @@ nombre de segments. L'ordre choisi par l'utilisateur détermine donc l'état
 final : le centering privilégie les portes, puis un gloss ultérieur privilégie
 de nouveau la réduction.
 
+Les mesures publiées pour une action Gloss couvrent toute l'action, depuis le
+cuivre reçu en entrée jusqu'au cuivre final. La longueur initiale, le nombre de
+nets modifiés et le gain total incluent donc le lissage KRT préliminaire. Le
+rapport peut détailler séparément le gain du lissage KRT et celui des phases
+suivantes, mais ce détail ne remplace jamais le total complet.
+
 ## Centering
 
 **M01 — Porte de centering.** Un obstacle isolé ne provoque aucune
