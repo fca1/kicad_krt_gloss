@@ -7,7 +7,7 @@ défini dans [`gloss_krt.md`](gloss_krt.md) et sa réalisation dans
 ## État du composant
 
 - Branche de développement : `main`
-- Version du plugin : `0.1.0`
+- Version du plugin : `0.1.1`
 - Étape intégrée : G5
 - Portée plugin : branches élémentaires des pistes droites sélectionnées ; les
   autres objets sélectionnent des nets complets ; sans sélection, tous les

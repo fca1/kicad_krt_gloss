@@ -21,11 +21,11 @@ from dgloss.krt_clearance import (KrtClearanceAdapter,
 from dgloss.config import GlossConfig
 from dgloss.changes import GlossChanges
 from dgloss.comparison import compare_smoothers, format_comparison_table
-from dgloss.algorithm import (_Chain, _adaptive_sliding_candidates,
+from dgloss.algorithm import (_Chain, _adaptive_chamfer_candidates,
                               _best_chain_replacement,
                               _candidate_clearance,
                               _candidate_clears,
-                              _sliding_candidate_families)
+                              _chamfer_candidate_families)
 from dgloss.pipeline import (_certify_g5_copper, _g5_grade, _grade,
                              _validate_final, run_final_gloss,
                              run_post_smooth_gloss)
@@ -267,6 +267,16 @@ def test_via_clearance_enforces_same_net_hole_spacing():
     assert not KrtClearanceAdapter(pcb, config).via_clears(candidate)
 
 
+def test_via_clearance_uses_the_board_hole_to_hole_rule():
+    pcb, config, _first, _second = _parallel_board()
+    config.hole_to_hole_clearance = 0.3
+    existing = Via(5.0, 5.0, 0.3, 0.2, ["F.Cu", "B.Cu"], 2)
+    candidate = Via(5.45, 5.0, 0.3, 0.2, ["F.Cu", "B.Cu"], 1)
+    pcb.vias = [existing]
+
+    assert not KrtClearanceAdapter(pcb, config).via_clears(candidate)
+
+
 def test_via_clearance_honours_foreign_pad_local_clearance():
     pcb, config, _first, _second = _parallel_board()
     pad = pcb.pads_by_net[2][0]
@@ -368,7 +378,7 @@ def test_g3_krt_adapter_allows_own_terminal_pad():
     assert context.clearance_adapter.connector_clears([connector])
 
 
-def test_g3_slides_ordinary_diagonal_when_canonical_bends_are_blocked():
+def test_g3_uses_legacy_chamfer_when_canonical_bends_are_blocked():
     pcb, config, original = _blocked_canonical_board()
     before = calculate_route_length(original)
     results = []
@@ -382,9 +392,9 @@ def test_g3_slides_ordinary_diagonal_when_canonical_bends_are_blocked():
     assert after < before - config.grid_step
     assert len(result) == 3 and diagonals
     assert abs(diagonals[0].end_x - diagonals[0].start_x) > 1.0
-    slide = result[0].end_x - result[0].start_x
-    assert math.isclose(slide / config.grid_step,
-                        round(slide / config.grid_step), abs_tol=1e-9)
+    chamfer_step = result[0].end_x - result[0].start_x
+    assert math.isclose(chamfer_step / config.grid_step,
+                        round(chamfer_step / config.grid_step), abs_tol=1e-9)
     assert outcome.stats["nets_changed"] == 1
     assert outcome.stats["nets_processed"] == 1
     assert outcome.stats["segment_changes"] > 0
@@ -400,7 +410,7 @@ def test_g3_slides_ordinary_diagonal_when_canonical_bends_are_blocked():
 
 def test_a11_style_grid_rejection_uses_exact_krt_only_for_retained_copper():
     source = Segment(2.0, 1.0, 2.0, 6.0, 0.4, "B.Cu", 1)
-    diagonal = Segment(0.0, 0.0, 2.0, 2.0, 0.4, "B.Cu", 1)
+    first_leg = Segment(0.0, 0.0, 2.0, 2.0, 0.4, "B.Cu", 1)
     retained = Segment(2.0, 2.0, 2.0, 6.0, 0.4, "B.Cu", 1)
     adapter = types.SimpleNamespace(connector_clears=lambda _segments: True)
     context = types.SimpleNamespace(
@@ -408,15 +418,15 @@ def test_a11_style_grid_rejection_uses_exact_krt_only_for_retained_copper():
         clearance_adapter=adapter)
 
     def grid_check(_context, _obstacles, segments):
-        return segments[0] is diagonal
+        return segments[0] is first_leg
 
     with patch("dgloss.algorithm._clears_krt_grid", side_effect=grid_check):
         assert _candidate_clears(
-            context, object(), [diagonal, retained], "sliding", [source])
+            context, object(), [first_leg, retained], "chamfer", [source])
 
         new_rejected = Segment(3.0, 2.0, 3.0, 6.0, 0.4, "B.Cu", 1)
         assert not _candidate_clears(
-            context, object(), [diagonal, new_rejected], "sliding", [source])
+            context, object(), [first_leg, new_rejected], "chamfer", [source])
 
 
 def test_exact_clearance_certificate_is_carried_by_the_candidate():
@@ -477,7 +487,7 @@ def test_pad_candidates_are_exact_checked_in_gain_order_until_one_passes():
 
     with patch("dgloss.pad_terminals._candidate_segments",
                return_value=iter((best_rejected, accepted, worse_unused))), \
-            patch("dgloss.pad_terminals._sliding_candidate_families",
+            patch("dgloss.pad_terminals._chamfer_candidate_families",
                   return_value=[]):
         result = _best_pad_connector(
             context, pad, chain, [(0.0, 0.0), (0.0, 5.0), (5.0, 5.0)],
@@ -711,8 +721,8 @@ def test_g5_rejects_changed_mobile_via_attributes():
         raise AssertionError("G5 accepted changed via attributes")
 
 
-def test_g3_sliding_candidates_never_join_axes_at_90_degrees():
-    families = list(_sliding_candidate_families(
+def test_g3_chamfer_candidates_never_join_axes_at_90_degrees():
+    families = list(_chamfer_candidate_families(
         (1.0, 1.0), (6.0, 8.0), "F.Cu", 0.2, 1, 0.1))
     assert len(families) == 2
     for family in families:
@@ -726,7 +736,7 @@ def test_g3_sliding_candidates_never_join_axes_at_90_degrees():
                                         abs_tol=1e-9)
 
 
-def test_g3_adaptive_slide_uses_five_grid_cells_then_refines_one_cell():
+def test_g3_adaptive_chamfer_uses_five_grid_cells_then_refines_one_cell():
     context = types.SimpleNamespace(
         coord=types.SimpleNamespace(grid_step=0.1),
         clearance_adapter=types.SimpleNamespace(
@@ -736,12 +746,12 @@ def test_g3_adaptive_slide_uses_five_grid_cells_then_refines_one_cell():
         return [Segment(float(index), 0.0, float(index + 1), 0.0,
                         width, layer, net_id)]
 
-    with patch("dgloss.algorithm._last_positive_sliding_index",
+    with patch("dgloss.algorithm._last_positive_chamfer_index",
                return_value=16), \
-            patch("dgloss.algorithm._sliding_candidate_at",
+            patch("dgloss.algorithm._chamfer_candidate_at",
                   side_effect=indexed_candidate), \
             patch("dgloss.algorithm._clears_krt_grid", return_value=False):
-        candidates = list(_adaptive_sliding_candidates(
+        candidates = list(_adaptive_chamfer_candidates(
             context, object(), (0.0, 0.0), (10.0, 10.0),
             "F.Cu", 0.2, 1, 20.0))
 
@@ -766,7 +776,7 @@ def test_g3_rejects_new_90_degree_corner_at_candidate_boundary():
 
     with patch("dgloss.algorithm._candidate_segments",
                side_effect=only_bad_boundary_candidate), \
-            patch("dgloss.algorithm._adaptive_sliding_candidates",
+            patch("dgloss.algorithm._adaptive_chamfer_candidates",
                   return_value=[]), \
             patch("dgloss.algorithm._candidate_clears", return_value=True):
         replacement = _best_chain_replacement(
@@ -797,7 +807,7 @@ def test_g3_lazy_exact_keeps_micro_guard_before_krt_clearance():
 
     with patch("dgloss.algorithm._candidate_segments",
                return_value=iter((micro, valid))), \
-            patch("dgloss.algorithm._adaptive_sliding_candidates",
+            patch("dgloss.algorithm._adaptive_chamfer_candidates",
                   return_value=[]):
         replacement = _best_chain_replacement(
             context, chain, 1, None, segments, [])
@@ -828,7 +838,7 @@ def test_g3_lazy_exact_advances_to_next_family_candidate_after_rejection():
 
     with patch("dgloss.algorithm._candidate_segments",
                return_value=iter((rejected, accepted))), \
-            patch("dgloss.algorithm._adaptive_sliding_candidates",
+            patch("dgloss.algorithm._adaptive_chamfer_candidates",
                   return_value=[]):
         replacement = _best_chain_replacement(
             context, chain, 1, None, segments, [])

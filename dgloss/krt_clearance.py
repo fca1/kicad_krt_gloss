@@ -199,6 +199,9 @@ class KrtClearanceAdapter:
         """Validate a moved via by composing KRT's exact DRC primitives."""
         own = max(self.clearance,
                   (self.net_clearances or {}).get(via.net_id, self.clearance))
+        hole_to_hole = (getattr(
+            self.config, "hole_to_hole_clearance", None) or
+            HOLE_TO_HOLE_CLEARANCE)
 
         for seg in self.pcb.segments:
             if seg.net_id == via.net_id:
@@ -215,7 +218,7 @@ class KrtClearanceAdapter:
                 # KRT/KiCad permit same-net copper overlap, but drill spacing is
                 # a manufacturing rule independent of electrical net identity.
                 if check_via_drill_overlap(
-                        via, other, HOLE_TO_HOLE_CLEARANCE, 0.0)[0]:
+                        via, other, hole_to_hole, 0.0)[0]:
                     return False
                 continue
             pair = max(own, (self.net_clearances or {}).get(other.net_id,
@@ -224,12 +227,12 @@ class KrtClearanceAdapter:
             if check_via_via_overlap(via, other, pair, 0.0)[0]:
                 return False
             if check_via_drill_overlap(
-                    via, other, HOLE_TO_HOLE_CLEARANCE, 0.0)[0]:
+                    via, other, hole_to_hole, 0.0)[0]:
                 return False
         for pad_net, pads in self.pcb.pads_by_net.items():
             for pad in pads:
                 if getattr(pad, "drill", 0.0) and check_pad_drill_via_overlap(
-                        pad, via, HOLE_TO_HOLE_CLEARANCE, 0.0)[0]:
+                        pad, via, hole_to_hole, 0.0)[0]:
                     return False
                 if pad_net == via.net_id:
                     continue

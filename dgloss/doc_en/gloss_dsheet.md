@@ -7,7 +7,7 @@ This guide explains how to use and observe Track Gloss. Requirements are in
 ## Component status
 
 - Development branch: `main`
-- Plugin version: `0.1.0`
+- Plugin version: `0.1.1`
 - Integrated stage: G5
 - Plugin scope: elementary branches seeded by selected straight tracks; other
   selected objects choose complete nets; no selection means all routed nets

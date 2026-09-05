@@ -2,6 +2,7 @@
 
 from collections import defaultdict
 from dataclasses import dataclass
+import math
 from time import perf_counter
 
 from check_connected import check_net_connectivity
@@ -13,6 +14,7 @@ from pcb_modification import _octolinear_bends
 from routing_utils import pos_key
 from single_ended_routing import _segment_fits_wide
 from .changes import GlossChanges, release_result_custody
+from .segment_sliding import slide_interval, slide_segment
 
 
 @dataclass
@@ -136,8 +138,12 @@ def _segments_for_points(points, layer, width, net_id):
             if pos_key(*points[i]) != pos_key(*points[i + 1])]
 
 
-def _sliding_candidate_families(a, b, layer, width, net_id, grid_step):
-    """Monotone axis/diagonal/axis paths, longest diagonal first on KRT's step."""
+def _chamfer_candidate_families(a, b, layer, width, net_id, grid_step):
+    """Legacy fixed-endpoint octolinear chamfer families.
+
+    The x/y/d labels below describe directions in one board coordinate frame;
+    they are not the relational, orientation-neutral segment-slide rule.
+    """
     diagonal_max = min(abs(b[0] - a[0]), abs(b[1] - a[1]))
     if diagonal_max <= grid_step + 1e-9:
         return
@@ -150,15 +156,15 @@ def _sliding_candidate_families(a, b, layer, width, net_id, grid_step):
         def family(order=order):
             index = 1
             while index * grid_step < diagonal_max - 1e-9:
-                yield _sliding_candidate_at(
+                yield _chamfer_candidate_at(
                     a, b, layer, width, net_id, grid_step, index, order)
                 index += 1
         yield family()
 
 
-def _sliding_candidate_at(a, b, layer, width, net_id, grid_step, index,
+def _chamfer_candidate_at(a, b, layer, width, net_id, grid_step, index,
                           order):
-    """Build one sliding candidate directly at an integer KRT-grid index."""
+    """Build one legacy chamfer candidate at an integer KRT-grid index."""
     ax, ay = a
     bx, by = b
     dx, dy = bx - ax, by - ay
@@ -184,7 +190,7 @@ def _sliding_candidate_at(a, b, layer, width, net_id, grid_step, index,
     return _segments_for_points(points, layer, width, net_id)
 
 
-def _last_positive_sliding_index(a, b, layer, width, net_id, grid_step,
+def _last_positive_chamfer_index(a, b, layer, width, net_id, grid_step,
                                  order, old_length):
     """Find the least-gain useful position without materializing the family."""
     diagonal_max = min(abs(b[0] - a[0]), abs(b[1] - a[1]))
@@ -193,7 +199,7 @@ def _last_positive_sliding_index(a, b, layer, width, net_id, grid_step,
         return 0
 
     def improves(index):
-        candidate = _sliding_candidate_at(
+        candidate = _chamfer_candidate_at(
             a, b, layer, width, net_id, grid_step, index, order)
         return (bool(candidate) and
                 calculate_route_length(candidate) < old_length - 1e-12)
@@ -212,9 +218,9 @@ def _last_positive_sliding_index(a, b, layer, width, net_id, grid_step,
     return low
 
 
-def _adaptive_sliding_candidates(context, obstacles, a, b, layer, width,
+def _adaptive_chamfer_candidates(context, obstacles, a, b, layer, width,
                                  net_id, old_length):
-    """Search the first locally reachable slide, five KRT cells at a time.
+    """Search the first locally reachable chamfer, five KRT cells at a time.
 
     The search starts next to the existing geometry and moves toward the
     shortest connector. A grid rejection gets KRT's exact confirmation; a
@@ -225,7 +231,7 @@ def _adaptive_sliding_candidates(context, obstacles, a, b, layer, width,
     orders = (("x", "d", "y"), ("y", "d", "x"))
 
     def candidate(index, order):
-        return _sliding_candidate_at(
+        return _chamfer_candidate_at(
             a, b, layer, width, net_id, context.coord.grid_step, index, order)
 
     def clears(segments):
@@ -238,7 +244,7 @@ def _adaptive_sliding_candidates(context, obstacles, a, b, layer, width,
         return context.clearance_adapter.connector_clears(segments)
 
     for order in orders:
-        last = _last_positive_sliding_index(
+        last = _last_positive_chamfer_index(
             a, b, layer, width, net_id, context.coord.grid_step, order,
             old_length)
         if not last:
@@ -267,6 +273,48 @@ def _adaptive_sliding_candidates(context, obstacles, a, b, layer, width,
                     break
             break
         yield candidate(best, order)
+
+
+def _reachable_segment_slides(context, source, outside, net_vias, anchors,
+                              deadline=None, max_steps=2000):
+    """Yield the best locally reachable slide in each signed direction.
+
+    Geometry is provided by :mod:`segment_sliding`; this function is only G3's
+    shortening and reachability policy.  Each direction is walked outward from
+    the incumbent and stops at its first same-net or exact-KRT obstruction, so
+    it cannot jump into a disconnected clearance basin.
+    """
+    interval = slide_interval(
+        *source, minimum_length=context.coord.grid_step)
+    if interval is None:
+        return
+    old_length = calculate_route_length(source)
+    step = context.coord.grid_step
+    span_limit = max(old_length, step)
+
+    for sign in (-1, 1):
+        bound = interval.maximum if sign > 0 else -interval.minimum
+        if math.isinf(bound):
+            bound = span_limit
+        bound = min(bound, span_limit)
+        count = min(max_steps, max(0, int((bound + 1e-9) // step)))
+        best = None
+        for index in range(1, count + 1):
+            if deadline is not None and perf_counter() >= deadline:
+                break
+            candidate = slide_segment(
+                *source, sign * index * step, minimum_length=step)
+            if candidate is None:
+                break
+            segments = list(candidate.segments)
+            if (_touches_other_same_net(
+                    segments, outside, net_vias, anchors) or
+                    not context.clearance_adapter.connector_clears(segments)):
+                break
+            if old_length - candidate.after_length > step + 1e-12:
+                best = segments
+        if best is not None:
+            yield best
 
 
 def _clears_krt_grid(context, obstacles, segments):
@@ -303,7 +351,7 @@ def _candidate_clearance(context, obstacles, segments, source,
     """G3 speed policy, explicitly split by candidate provenance.
 
     KRT's own canonical connectors use KRT's exact smooth predicate through the
-    thin adapter.  The much larger dgloss sliding family is searched on KRT's
+    thin adapter.  The much larger legacy chamfer family is searched on KRT's
     Rust grid.  A grid rejection is confirmed by KRT's exact predicate only
     when every rejected segment is copper retained from the replaced source;
     genuinely new copper must always pass the grid.  An exact certificate is
@@ -481,9 +529,15 @@ def _best_chain_replacement(context, chain, net_id, foreign_obstacles,
                     chain.points[i], chain.points[j], chain.layer,
                     chain.width, net_id)))
             if objective == "shorter":
-                families.append(("sliding_exact", _adaptive_sliding_candidates(
+                families.append(("chamfer_exact", _adaptive_chamfer_candidates(
                     context, foreign_obstacles, chain.points[i], chain.points[j],
                     chain.layer, chain.width, net_id, old_length)))
+                if j == i + 3:
+                    slides = _reachable_segment_slides(
+                        context, tuple(chain.segments[i:j]), outside, net_vias,
+                        (chain.points[i], chain.points[j]), deadline=deadline)
+                    for candidate in slides:
+                        families.append(("segment_slide_exact", iter((candidate,))))
             for _source, family in families:
                 if deadline is not None and perf_counter() >= deadline:
                     break

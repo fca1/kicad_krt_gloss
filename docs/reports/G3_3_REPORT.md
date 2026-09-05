@@ -20,7 +20,8 @@ Version du plugin : `0.21.3`
 | `picofx_pump.kicad_pcb` | 1 | 1,1573 mm | 0 |
 | `ember_he.kicad_pcb` | 8 | 7,6457 mm | 0 |
 
-Sur `picofx_pump`, le segment diagonal du net `+5V` est remplacé par un
-segment horizontal qui rejoint le rail vertical à 90°. Le rail reste intact.
-Le cas valide donc explicitement qu'un raccord perpendiculaire peut être la
-solution minimale d'un T glissant.
+Sur `picofx_pump`, un segment incident du net `+5V` — diagonal dans le repère de
+la carte de ce cas précis — est remplacé par un segment qui rejoint le rail à
+90°. Le rail reste intact. Son orientation par rapport aux axes de la carte ne
+fait pas partie de la règle ; le cas valide uniquement qu'un raccord
+perpendiculaire peut être la solution minimale d'un T glissant.

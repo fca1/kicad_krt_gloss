@@ -15,7 +15,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: tested-plugin-package
-          path: dist/KiCadKrtGloss-0.1.0.zip
+          path: dist/KiCadKrtGloss-0.1.1.zip
   smoke:
     needs: package
     strategy:
@@ -44,7 +44,7 @@ jobs:
           PYTHONPATH: ${{ env.KICAD_SITE }}:${{ runner.temp }}/krg-deps
         run: |
           mkdir -p test-output
-          "$KICAD_PYTHON" tests/ci/macos_package_smoke.py dist/KiCadKrtGloss-0.1.0.zip test-output 2>&1 | tee test-output/smoke.log
+          "$KICAD_PYTHON" tests/ci/macos_package_smoke.py dist/KiCadKrtGloss-0.1.1.zip test-output 2>&1 | tee test-output/smoke.log
           test -f test-output/summary.json
       - uses: actions/upload-artifact@v4
         if: always()

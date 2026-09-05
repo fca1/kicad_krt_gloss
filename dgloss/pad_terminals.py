@@ -11,7 +11,7 @@ from routing_utils import pos_key
 from .algorithm import (_candidate_clearance, _candidate_segments,
                         _connectivity_worse, _edge_directions,
                         _right_angle,
-                        _sliding_candidate_families,
+                        _chamfer_candidate_families,
                         _touches_other_same_net)
 from .changes import GlossChanges, release_result_custody
 
@@ -132,8 +132,8 @@ def _best_pad_connector(context, pad, chain, points, outside, net_vias,
     old_length = calculate_route_length(chain)
     families = [("canonical", _candidate_segments(
         centre, anchor, chain[0].layer, chain[0].width, chain[0].net_id))]
-    families.extend(("sliding", family) for family in
-                    _sliding_candidate_families(
+    families.extend(("chamfer", family) for family in
+                    _chamfer_candidate_families(
                         centre, anchor, chain[0].layer, chain[0].width,
                         chain[0].net_id, context.coord.grid_step))
     candidates = []

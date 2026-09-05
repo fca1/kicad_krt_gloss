@@ -16,7 +16,7 @@ import zipfile
 ROOT = Path(__file__).resolve().parent
 PLUGIN = ROOT / "kicad_krt_gloss"
 KRT = ROOT / "KRT"
-VERSION = "0.1.0"
+VERSION = "0.1.1"
 KRT_VERSION = (KRT / "VERSION").read_text(encoding="utf-8").strip()
 BINARIES = (
     "grid_router-linux-x86_64.so",

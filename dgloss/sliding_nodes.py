@@ -14,7 +14,7 @@ from routing_utils import pos_key
 
 from .algorithm import (_connectivity_worse,
                         _candidate_clearance, _candidate_segments,
-                        _segments_for_points, _sliding_candidate_families,
+                        _segments_for_points, _chamfer_candidate_families,
                         _touches_other_same_net)
 from .changes import GlossChanges, release_result_custody
 from .pad_terminals import _new_boundary_right_angle, _pad_on_layer
@@ -155,8 +155,8 @@ def _candidate_meets_only_rail_end(candidate, point, rails):
 def _connector_families(a, b, segment, grid_step):
     yield "canonical", _candidate_segments(
         a, b, segment.layer, segment.width, segment.net_id)
-    yield from (("sliding", family) for family in
-                _sliding_candidate_families(
+    yield from (("chamfer", family) for family in
+                _chamfer_candidate_families(
                     a, b, segment.layer, segment.width, segment.net_id,
                     grid_step))
 

@@ -94,13 +94,26 @@ must not be used as a gloss foundation.
 
 ### G3 — ordinary-chain reduction
 
-Reduce length net by net, with fixed vias, by walking simple chains. A diagonal
-connection may slide along adjacent segments at the KRT grid step. Search starts
-from existing geometry in jumps of five KRT cells. At the first obstacle
-confirmed by exact KRT checking, it returns to the last interval and refines
-cell by cell. A family is abandoned when its first jump is genuinely blocked.
-The selected candidate is compared with the existing chain, checked by KRT,
-and connectivity-checked before application.
+Reduce length net by net, with fixed vias, by walking simple chains. Any inner
+segment may slide parallel to itself while both endpoints follow the supporting
+lines of its adjacent segments. The rule is defined by relations among the three
+segments and never distinguishes a horizontal, vertical, or diagonal direction.
+The outer segments may be parallel, including opposite traversal directions;
+the slide remains an available geometric transformation even when shortening
+policy assigns it no gain.
+
+The no-reversal conditions of all three segments bound the slide interval,
+which is then sampled at the KRT grid step. Rotating or reflecting the geometry
+must produce the corresponding transformed candidates, modulo grid
+quantization. At the first obstacle confirmed by exact KRT checking, search
+returns to the last interval and refines it. The selected candidate is compared
+with the existing chain, checked by KRT, and connectivity-checked before
+application. Geometry does not decide whether a slide is useful: shortening,
+centering, or a future transformation belongs to the calling policy.
+
+The historical octolinear reconstruction between two fixed points (segments in
+three successive directions) is a chamfer family, not the definition of segment
+sliding.
 
 ### G3.1 — local mobile vias
 

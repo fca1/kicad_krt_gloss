@@ -106,13 +106,27 @@ doivent pas servir de base au gloss.
 ### G3 — réduction des chaînes ordinaires
 
 Réduire la longueur net par net, vias fixes, en parcourant les chaînes simples.
-Les raccordements d'une diagonale peuvent glisser sur les segments adjacents,
-au pas de la grille KRT. La recherche part de la géométrie existante par bonds
-de cinq cellules KRT. Au premier obstacle confirmé par le contrôle exact KRT,
-elle revient dans le dernier intervalle et l'affine cellule par cellule. La
-famille est abandonnée si son premier bond est réellement bloqué. Le candidat
-retenu est comparé à la chaîne existante, contrôlé par KRT puis soumis au
-contrôle de connectivité avant application.
+Tout segment intérieur peut glisser parallèlement à lui-même : ses deux
+extrémités suivent les droites supports de ses segments adjacents. La règle est
+définie par les relations entre les trois segments et ne distingue jamais une
+direction horizontale, verticale ou diagonale. Les segments extérieurs peuvent
+être parallèles, y compris lorsqu'ils sont parcourus en sens opposés ; le
+glissement reste une transformation géométrique disponible même si la politique
+de raccourcissement ne lui attribue aucun gain.
+
+L'intervalle de glissement est borné par le non-retournement des trois segments,
+puis échantillonné au pas de la grille KRT. Une rotation ou une symétrie de la
+géométrie doit produire les mêmes candidats transformés, à la quantification de
+grille près. Au premier obstacle confirmé par le contrôle exact KRT, la recherche
+revient dans le dernier intervalle et l'affine. Le candidat retenu est comparé à
+la chaîne existante, contrôlé par KRT puis soumis au contrôle de connectivité
+avant application. La construction géométrique ne décide pas si le glissement
+est utile : raccourcissement, centrage ou transformation future relèvent de la
+politique appelante.
+
+La recomposition octolinéaire historique entre deux points fixes (segments dans
+trois directions successives) est une famille de chanfreins et non la définition
+du glissement de segment.
 
 ### G3.1 — vias mobiles locaux
 
