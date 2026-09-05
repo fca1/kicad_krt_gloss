@@ -82,3 +82,16 @@ n'était pas valide : une piste du net `Net-(A1-A4)` aboutit à l'intérieur de 
 porte. Le premier détecteur ne comptait que les intersections internes aux
 segments et ignorait cette extrémité. Le détecteur compte maintenant aussi une
 piste dont une extrémité se trouve dans la porte, et un test protège ce cas.
+
+## Régression Gloss → Centering → Gloss
+
+Un cas synthétique protège le séquencement défini dans les règles générales.
+Le premier Gloss réduit une chaîne de trois segments (`23.313708 mm`) à son
+segment direct (`20.000000 mm`). Un Centering multiporte avec `Proxi = 5 mm`
+construit ensuite cinq segments (`22.403698 mm`). Le second Gloss doit supprimer
+entièrement cette construction et retrouver le même segment direct, les mêmes
+coordonnées et la longueur de `20.000000 mm`.
+
+Ce contrôle compare la géométrie et le nombre de segments en plus des longueurs,
+afin qu'une autre piste de même longueur ne puisse pas masquer la conservation
+partielle du centering.

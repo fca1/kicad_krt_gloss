@@ -50,6 +50,15 @@ centering poursuit un objectif distinct : il peut conserver ou augmenter
 légèrement la longueur afin d'améliorer le passage entre les obstacles. Il
 n'est donc pas soumis au gain minimal exigé par les phases de réduction.
 
+Un centering antérieur ne constitue pas une contrainte à conserver pour un
+nouvel appel au gloss. Si la géométrie centrée peut être remplacée par une
+géométrie valide plus courte, le gloss doit supprimer entièrement la
+déformation introduite par le centering. Lorsque la situation initiale réduite
+reste valide, le résultat doit retrouver cette géométrie, sa longueur et son
+nombre de segments. L'ordre choisi par l'utilisateur détermine donc l'état
+final : le centering privilégie les portes, puis un gloss ultérieur privilégie
+de nouveau la réduction.
+
 ## Centering
 
 **M01 — Porte de centering.** Un obstacle isolé ne provoque aucune

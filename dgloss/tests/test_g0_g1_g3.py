@@ -28,7 +28,7 @@ from dgloss.algorithm import (_Chain, _adaptive_chamfer_candidates,
                               _chamfer_candidate_families)
 from dgloss.pipeline import (_certify_g5_copper, _g5_grade, _grade,
                              _validate_final, run_final_gloss,
-                             run_post_smooth_gloss)
+                             run_post_smooth_gloss, run_centering)
 from dgloss.pad_terminals import _best_pad_connector, optimize_pad_terminals
 from dgloss.sliding_nodes import slide_t_nodes
 from dgloss.via_mobile import move_mobile_vias, refine_mobile_vias
@@ -41,8 +41,8 @@ from routing_config import GridRouteConfig
 from routing_utils import pos_key
 
 
-def _pad(ref, x, y, net_id, layer="F.Cu"):
-    return Pad(ref, "1", x, y, 0.0, 0.0, 0.5, 0.5, "rect", [layer],
+def _pad(ref, x, y, net_id, layer="F.Cu", size=0.5):
+    return Pad(ref, "1", x, y, 0.0, 0.0, size, size, "rect", [layer],
                net_id, f"N{net_id}")
 
 
@@ -510,6 +510,60 @@ def test_g4_exposes_only_the_final_user1_delta():
     assert all(change.get("stage") == "Final"
                for kind in ("segments", "vias")
                for change in visible[0]["track_gloss_changes"][kind])
+
+
+def test_a_later_gloss_completely_removes_a_longer_centering_path():
+    segments = [
+        Segment(0.0, 4.0, 4.0, 0.0, 0.2, "F.Cu", 1),
+        Segment(4.0, 0.0, 16.0, 0.0, 0.2, "F.Cu", 1),
+        Segment(16.0, 0.0, 20.0, 4.0, 0.2, "F.Cu", 1),
+    ]
+    pads = {
+        1: [_pad("S", 0.0, 4.0, 1), _pad("E", 20.0, 4.0, 1)],
+        2: [_pad("A1", 7.0, 1.0, 2, size=1.0),
+            _pad("A2", 7.0, 5.0, 2, size=1.0)],
+        3: [_pad("B1", 13.0, 3.0, 3, size=1.0),
+            _pad("B2", 13.0, 7.0, 3, size=1.0)],
+    }
+    pcb = PCBData(
+        BoardInfo({}, ["F.Cu"], (-2.0, -2.0, 22.0, 9.0)),
+        {1: Net(1, "TARGET"), 2: Net(2, "OA"), 3: Net(3, "OB")},
+        {}, [], segments, pads)
+    config = GridRouteConfig(
+        track_width=0.2, clearance=0.2, grid_step=0.1,
+        layers=["F.Cu"], board_edge_clearance=0.0)
+    gloss = GlossConfig(enable_multipasses=False)
+
+    def snapshot():
+        routed = [segment for segment in pcb.segments if segment.net_id == 1]
+
+        def segment_key(segment):
+            start = (round(segment.start_x, 7), round(segment.start_y, 7))
+            end = (round(segment.end_x, 7), round(segment.end_y, 7))
+            return min(start, end), max(start, end)
+
+        return (calculate_route_length(routed), len(routed),
+                sorted(segment_key(segment) for segment in routed))
+
+    initial = snapshot()
+    run_final_gloss([], pcb, config, gloss, net_ids=[1])
+    reduced = snapshot()
+    assert reduced[0] < initial[0] - config.grid_step
+    assert reduced[1] == 1
+
+    centered_outcome = run_centering(
+        [], pcb, config, net_ids=[1], proximity_mm=5.0,
+        build_new_segments=True, build_multi_door_path=True,
+        _emit_log=False)
+    centered = snapshot()
+    assert centered_outcome.stats["doors_centered"] > 0
+    assert centered[0] > reduced[0] + config.grid_step
+    assert centered[1] > reduced[1]
+
+    run_final_gloss([], pcb, config, gloss, net_ids=[1])
+    reglossed = snapshot()
+    assert math.isclose(reglossed[0], reduced[0], abs_tol=1e-7)
+    assert reglossed[1:] == reduced[1:]
 
 
 def test_g3_5_uses_krt_to_merge_equal_length_collinear_segments():
