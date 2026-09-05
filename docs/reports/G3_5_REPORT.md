@@ -24,7 +24,7 @@ géométriquement conservatrice : elle reste tracée et comptée, sans être pri
 
 ## Matrice de conformité
 
-| Règle de `gloss_krt.md` | Couverture G3.5 | Preuve principale |
+| Règle de `gloss_rules.md` | Couverture G3.5 | Preuve principale |
 |---|---|---|
 | Règles et données d'entrée prioritaires | Contexte et contrôles KRT | `build_gloss_context`, `KrtClearanceAdapter` |
 | Réduction de longueur | Couverte | G3 à G3.4, validation longueur non croissante |

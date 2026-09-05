@@ -1,8 +1,8 @@
 # Track Gloss — synthèse de travail exécutable
 
 Ce document traduit la spécification fonctionnelle
-[`gloss_krt.md`](gloss_krt.md) en architecture, étapes et responsabilités
-techniques. `gloss_krt.md` reste l'autorité : en cas d'écart, ce document doit
+[`gloss_rules.md`](gloss_rules.md) en architecture, étapes et responsabilités
+techniques. `gloss_rules.md` reste l'autorité : en cas d'écart, ce document doit
 être corrigé et non la spécification assouplie.
 
 ## Principes d'implémentation
@@ -16,7 +16,9 @@ techniques. `gloss_krt.md` reste l'autorité : en cas d'écart, ce document doit
   règles et les contrôles d'obstacles déjà validés par KRT.
 - Travailler à la résolution réelle de la grille KRT. Aucune recherche
   arbitraire au micron et aucune résolution indépendante ne sont introduites.
-- Accepter uniquement un gain strictement supérieur au pas de grille utile.
+- Pour les phases de réduction, accepter uniquement un gain strictement
+  supérieur au pas de grille utile ; le centering est évalué après selon son
+  objectif propre.
 
 ## Liaison post-smooth
 
@@ -164,9 +166,12 @@ segments », avec les seuls raccords canoniques KRT, puis
 `merge_collinear_segments()` de KRT fusionne les alignements stricts sans
 déplacer le cuivre.
 
-Une certification finale commune vérifie : longueur non croissante,
-connectivité de tous les nets, géométrie octolinéaire et aucun segment créé par
-une transformation géométrique plus court que le pas réel de la grille. Une
+Une certification finale commune vérifie la connectivité de tous les nets, la
+géométrie octolinéaire et l'absence de segment créé par une transformation
+géométrique plus court que le pas réel de la grille. Les phases de réduction
+respectent le gain strictement supérieur au pas utile de la grille ; le
+centering, exécuté ensuite, est évalué selon son objectif de passage entre les
+obstacles et peut conserver ou augmenter légèrement la longueur. Une
 réémission géométriquement conservatrice de KRT n'est pas assimilée à une
 création de cuivre. À l'échec, restaurer exactement le résultat KRT.
 

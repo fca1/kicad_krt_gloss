@@ -1,7 +1,7 @@
 # Track Gloss — fiche d'emploi
 
 Cette fiche décrit comment employer et observer Track Gloss. Le besoin est
-défini dans [`gloss_krt.md`](gloss_krt.md) et sa réalisation dans
+défini dans [`gloss_rules.md`](gloss_rules.md) et sa réalisation dans
 [`gloss_work.md`](gloss_work.md).
 
 ## État du composant

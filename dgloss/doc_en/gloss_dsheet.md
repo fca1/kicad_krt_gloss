@@ -1,7 +1,7 @@
 # Track Gloss — user and integration guide
 
 This guide explains how to use and observe Track Gloss. Requirements are in
-[`gloss_krt.md`](gloss_krt.md); implementation is described in
+[`gloss_rules.md`](gloss_rules.md); implementation is described in
 [`gloss_work.md`](gloss_work.md).
 
 ## Component status
