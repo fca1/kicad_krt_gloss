@@ -21,11 +21,11 @@ L'ordre impératif des objectifs est :
   graine. Elle s'arrête à un pad, une extrémité libre ou une jonction T/X.
   Elle reste continue à travers un changement de largeur, un changement de
   couche et un via qui ne constitue pas lui-même une ramification.
-- Un élément fixe, verrouillé ou protégé conserve sa position, sa géométrie et
-  ses attributs. Il peut servir d'ancre ou d'obstacle, mais aucune étape du
-  gloss ne peut le déplacer, le remplacer ou le modifier. Une mobilité n'est
-  autorisée que lorsqu'une règle la prévoit explicitement et que toutes ses
-  conditions sont satisfaites.
+- **MO3 — Éléments fixes et protégés.** Un élément fixe, verrouillé ou protégé
+  conserve sa position, sa géométrie et ses attributs. Il peut servir d'ancre
+  ou d'obstacle, mais aucune étape du gloss ne peut le déplacer, le remplacer
+  ou le modifier. Une mobilité n'est autorisée que lorsqu'une règle la prévoit
+  explicitement et que toutes ses conditions sont satisfaites.
 
 ## Exclusion
 

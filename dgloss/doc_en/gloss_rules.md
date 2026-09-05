@@ -20,10 +20,11 @@ The mandatory order of objectives is:
 - An elementary branch is the maximal unbranched path containing its seed. It
   ends at a pad, free end, or T/X junction. It continues through a width or
   layer change and through a via that is not itself a branch point.
-- A fixed, locked, or protected element keeps its position, geometry, and
-  attributes. It may serve as an anchor or obstacle, but no gloss stage may
-  move, replace, or modify it. Mobility is allowed only when a rule explicitly
-  provides for it and all its conditions are met.
+- **MO3 — Fixed and protected elements.** A fixed, locked, or protected element
+  keeps its position, geometry, and attributes. It may serve as an anchor or
+  obstacle, but no gloss stage may move, replace, or modify it. Mobility is
+  allowed only when a rule explicitly provides for it and all its conditions
+  are met.
 
 ## Exclusion
 
