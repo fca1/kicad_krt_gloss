@@ -491,6 +491,102 @@ def run_final_gloss(results, pcb_data, config, gloss_config=None, *,
                                    "gloss_errors": 1})
 
 
+def run_centering(results, pcb_data, config, *, net_ids,
+                  clearance_factor=3.0, build_new_segments=False,
+                  build_multi_door_path=False, budget_seconds=20.0,
+                  excluded_net_ids=None, _emit_log=True):
+    """Run the independent G3.6 action without the ordinary gloss stages."""
+    baseline_segments = list(pcb_data.segments)
+    baseline_vias = list(pcb_data.vias)
+    baseline_count = len(results)
+    baseline_results = _result_snapshot(results)
+    started = perf_counter()
+    deadline = started + max(0.0, float(budget_seconds))
+    try:
+        scope_net_ids, excluded, exclusion_reasons = resolve_gloss_scope(
+            pcb_data, net_ids, excluded_net_ids)
+        context = build_gloss_context(
+            pcb_data, config, net_ids=scope_net_ids,
+            excluded_net_ids=excluded, exclusion_reasons=exclusion_reasons)
+        before_length = calculate_route_length([
+            segment for segment in pcb_data.segments
+            if segment.net_id in scope_net_ids])
+        before_grades = {net_id: _g5_grade(pcb_data, net_id)
+                         for net_id in scope_net_ids}
+        strips, added, changes, centering = center_interpad_routes(
+            context, results, deadline=deadline, net_ids=scope_net_ids,
+            clearance_factor=float(clearance_factor),
+            build_new_segments=bool(build_new_segments),
+            build_multi_door_path=bool(build_multi_door_path))
+        _append_result(results, "track_gloss_g3_6", added, [], changes)
+        certified_started = perf_counter()
+        g5 = _certify_g5_copper(context, before_grades, changes)
+        g5_ms = (perf_counter() - certified_started) * 1000.0
+        after_length = calculate_route_length([
+            segment for segment in pcb_data.segments
+            if segment.net_id in scope_net_ids])
+        final_visual = _final_visual_changes(
+            baseline_segments, baseline_vias, pcb_data, changes)
+        for result in results[baseline_count:]:
+            result.pop("track_gloss_changes", None)
+        if final_visual:
+            results.append({
+                "new_segments": [], "new_vias": [],
+                "cleanup": "track_gloss_centering_visualization",
+                "track_gloss_changes": final_visual.as_dict(),
+            })
+        elapsed_ms = (perf_counter() - started) * 1000.0
+        stats = {
+            "config": {
+                "centering_clearance_factor": float(clearance_factor),
+                "centering_build_new_segments": bool(build_new_segments),
+                "centering_build_multi_door_path": bool(
+                    build_multi_door_path),
+                "budget_seconds": float(budget_seconds),
+            },
+            "nets_processed": len(scope_net_ids),
+            "nets_excluded": len(excluded),
+            "excluded_net_ids": sorted(excluded),
+            "exclusion_reasons": dict(exclusion_reasons),
+            "nets_changed": len(centering["net_ids_changed"]),
+            "before_mm": round(before_length, 4),
+            "after_mm": round(after_length, 4),
+            "saved_mm": round(before_length - after_length, 4),
+            "doors_centered": centering["doors_centered"],
+            "centering_branches_changed": centering["branches_centered"],
+            "centering_segments_added": centering["segments_added"],
+            "centering_length_delta_mm": centering["length_delta_mm"],
+            "centering_candidates_tested": centering["candidates_tested"],
+            "centering_algorithm_ms": centering["algorithm_ms"],
+            "g5_segments_certified": g5["segments_certified"],
+            "g5_segments_geometry_preserved": (
+                g5["segments_geometry_preserved"]),
+            "g5_vias_certified": g5["vias_certified"],
+            "g5_algorithm_ms": round(g5_ms, 3),
+            "g5_valid": True,
+            "total_ms": round(elapsed_ms, 3),
+            "budget_expired": perf_counter() >= deadline,
+        }
+        if _emit_log:
+            print("Track Gloss Centering: "
+                  f"{stats['nets_processed']} nets processed, "
+                  f"{stats['doors_centered']} doors centered, "
+                  f"{stats['centering_length_delta_mm']:+.4f} mm, "
+                  f"{elapsed_ms:.1f} ms")
+        return GlossOutcome(
+            input_strip_segments=strips, changes=changes.as_dict(),
+            visual_changes=final_visual.as_dict(), stats=stats)
+    except Exception as exc:
+        _restore(results, baseline_count, baseline_results, pcb_data,
+                 baseline_segments, baseline_vias)
+        if _emit_log:
+            print(f"Track Gloss Centering skipped; input preserved: {exc}")
+        return GlossOutcome(stats={
+            "nets_changed": 0, "doors_centered": 0,
+            "centering_errors": 1,
+        })
+
+
 def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
                           net_ids=None, krt_strips=None, krt_stats=None,
                           krt_ms=0.0, excluded_net_ids=None, _emit_log=True,

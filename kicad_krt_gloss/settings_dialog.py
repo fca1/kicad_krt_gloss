@@ -1,4 +1,4 @@
-"""Small standalone configuration dialog; no routing controls are duplicated."""
+"""Standalone Gloss settings and independent Centering action."""
 
 import os
 import wx
@@ -17,15 +17,20 @@ DEFAULTS = {
     "enable_multipasses": True,
     "grid_step": 0.1,
     "budget_seconds": 20.0,
+    "centering_clearance_factor": 3.0,
+    "centering_build_multi_door_path": False,
+    "centering_build_new_segments": False,
 }
 
 
 class GlossSettingsDialog(wx.Dialog):
     def __init__(self, parent, values, selected_count, *, on_gloss=None,
-                 initial_log=""):
+                 on_centering=None, pcb_data=None, centering_nets=(),
+                 preselected_centering_nets=(), initial_log=""):
         super().__init__(parent, title="KiCad KRT Gloss")
         values = dict(DEFAULTS, **(values or {}))
         self._on_gloss_callback = on_gloss
+        self._on_centering_callback = on_centering
         self.notebook = wx.Notebook(self)
         panel = wx.Panel(self.notebook)
         content = wx.BoxSizer(wx.VERTICAL)
@@ -106,6 +111,9 @@ class GlossSettingsDialog(wx.Dialog):
                     wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
         panel.SetSizer(content)
         self.notebook.AddPage(panel, "General")
+
+        self._create_centering_tab(
+            pcb_data, centering_nets, preselected_centering_nets, values)
 
         log_panel = wx.Panel(self.notebook)
         log_content = wx.BoxSizer(wx.VERTICAL)
@@ -190,6 +198,84 @@ class GlossSettingsDialog(wx.Dialog):
         self.SetSizerAndFit(outer)
         self.SetMinSize(self.GetSize())
 
+    def _create_centering_tab(self, pcb_data, centering_nets,
+                              preselected_nets, values):
+        """Build the special G3.6 page around KRT's net-selection panel."""
+        panel = wx.Panel(self.notebook)
+        content = wx.BoxSizer(wx.VERTICAL)
+        columns = wx.BoxSizer(wx.HORIZONTAL)
+
+        net_box = wx.StaticBox(panel, label="Net Selection")
+        net_sizer = wx.StaticBoxSizer(net_box, wx.VERTICAL)
+        from kicad_routing_plugin.fanout_gui import NetSelectionPanel
+        self.centering_net_panel = NetSelectionPanel(
+            panel, pcb_data,
+            instructions="Select modifiable nets to center...",
+            show_hide_checkbox=False,
+            show_hide_differential=False,
+            show_component_filter=True,
+            show_component_dropdown=True,
+            min_pads_for_dropdown=3,
+        )
+        self.centering_net_panel.all_nets = list(centering_nets)
+        self.centering_net_panel.refresh(sync_from_visible=False)
+        self.centering_net_panel.set_selected_nets(preselected_nets)
+        net_sizer.Add(self.centering_net_panel, 1, wx.EXPAND)
+        columns.Add(net_sizer, 2, wx.EXPAND | wx.ALL, 8)
+
+        options = wx.BoxSizer(wx.VERTICAL)
+        icon_path = os.path.join(
+            os.path.dirname(__file__), "centering_illustration.png")
+        if os.path.exists(icon_path):
+            image = wx.Image(icon_path, wx.BITMAP_TYPE_PNG)
+            options.Add(wx.StaticBitmap(panel, bitmap=wx.Bitmap(image)), 0,
+                        wx.ALIGN_CENTER | wx.ALL, 10)
+
+        parameters_box = wx.StaticBox(panel, label="Centering Parameters")
+        parameters = wx.StaticBoxSizer(parameters_box, wx.VERTICAL)
+        factor_row = wx.BoxSizer(wx.HORIZONTAL)
+        factor_row.Add(wx.StaticText(panel, label="Clearance factor E:"), 0,
+                       wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 8)
+        self.centering_clearance_factor = wx.SpinCtrlDouble(
+            panel, min=0.1, max=100.0,
+            initial=float(values["centering_clearance_factor"]), inc=0.1)
+        self.centering_clearance_factor.SetDigits(2)
+        self.centering_clearance_factor.SetToolTip(
+            "Obstacle reach multiplier. The default value is E = 3.")
+        factor_row.Add(self.centering_clearance_factor, 1)
+        parameters.Add(factor_row, 0, wx.EXPAND | wx.ALL, 8)
+
+        self.centering_build_multi_door_path = wx.CheckBox(
+            panel, label="Build multi-door path")
+        self.centering_build_multi_door_path.SetValue(bool(
+            values["centering_build_multi_door_path"]))
+        self.centering_build_multi_door_path.SetToolTip(
+            "Allow one transformation to center a branch across several doors.")
+        parameters.Add(self.centering_build_multi_door_path, 0,
+                       wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
+
+        self.centering_build_new_segments = wx.CheckBox(
+            panel, label="Build new segments")
+        self.centering_build_new_segments.SetValue(bool(
+            values["centering_build_new_segments"]))
+        self.centering_build_new_segments.SetToolTip(
+            "Allow centering to increase the number of track segments.")
+        parameters.Add(self.centering_build_new_segments, 0,
+                       wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
+        options.Add(parameters, 0, wx.EXPAND | wx.ALL, 8)
+        options.AddStretchSpacer()
+        columns.Add(options, 1, wx.EXPAND | wx.TOP | wx.RIGHT | wx.BOTTOM, 8)
+        content.Add(columns, 1, wx.EXPAND)
+
+        self.centering_button = wx.Button(panel, label="Centering")
+        self.centering_button.SetToolTip(
+            "Run only the G3.6 centering action on the checked nets.")
+        self.centering_button.Bind(wx.EVT_BUTTON, self._on_centering)
+        content.Add(self.centering_button, 0,
+                    wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
+        panel.SetSizer(content)
+        self.notebook.AddPage(panel, "Centering")
+
     def _on_clear_log(self, _event):
         self.log_text.Clear()
 
@@ -202,7 +288,28 @@ class GlossSettingsDialog(wx.Dialog):
             self._on_gloss_callback(self.values(), self.append_log)
         finally:
             self.gloss_button.Enable()
-            self.notebook.SetSelection(1)
+            for index in range(self.notebook.GetPageCount()):
+                if self.notebook.GetPageText(index) == "Log":
+                    self.notebook.SetSelection(index)
+                    break
+
+    def _on_centering(self, _event):
+        selected_nets = self.centering_net_panel.get_selected_nets()
+        if not selected_nets:
+            wx.MessageBox(
+                "Select at least one modifiable net.",
+                "Centering", wx.OK | wx.ICON_INFORMATION)
+            return
+        if self._on_centering_callback is None:
+            return
+        self.centering_button.Disable()
+        self.gloss_button.Disable()
+        try:
+            self._on_centering_callback(
+                self.values(), selected_nets, self.append_log)
+        finally:
+            self.gloss_button.Enable()
+            self.centering_button.Enable()
 
     def append_log(self, text):
         self.log_text.AppendText(str(text))
@@ -230,4 +337,11 @@ class GlossSettingsDialog(wx.Dialog):
         return {key: control.GetValue()
                 for key, control in self.controls.items()} | {
                     "grid_step": self.grid_step.GetValue(),
-                    "budget_seconds": self.budget_seconds.GetValue()}
+                    "budget_seconds": self.budget_seconds.GetValue(),
+                    "centering_clearance_factor": (
+                        self.centering_clearance_factor.GetValue()),
+                    "centering_build_multi_door_path": (
+                        self.centering_build_multi_door_path.GetValue()),
+                    "centering_build_new_segments": (
+                        self.centering_build_new_segments.GetValue()),
+                }

@@ -56,7 +56,7 @@ def build(output_dir):
         for name in ("__init__.py", "action_plugin.py", "board_adapter.py",
                      "debug_overlay.py", "gloss_visualization.py", "runtime.py", "selection.py",
                      "settings_dialog.py", "version.py", "icon_24.png", "icon_64.png",
-                     "icon_24_dark.png"):
+                     "icon_24_dark.png", "centering_illustration.png"):
             shutil.copy2(PLUGIN / name, plugins / name)
         package_documents = (
             (ROOT / "docs" / "AUTHORS.md", "AUTHORS.md"),
@@ -71,8 +71,12 @@ def build(output_dir):
         runtime = plugins / "KRT"
         _copytree(KRT / "py_router", runtime / "py_router")
         (runtime / "kicad_routing_plugin").mkdir(parents=True)
+        shutil.copy2(KRT / "kicad_routing_plugin" / "__init__.py",
+                     runtime / "kicad_routing_plugin" / "__init__.py")
         shutil.copy2(KRT / "kicad_routing_plugin" / "deps_check.py",
                      runtime / "kicad_routing_plugin" / "deps_check.py")
+        shutil.copy2(KRT / "kicad_routing_plugin" / "fanout_gui.py",
+                     runtime / "kicad_routing_plugin" / "fanout_gui.py")
         shutil.copy2(KRT / "requirements.txt", runtime / "requirements.txt")
         shutil.copy2(KRT / "LICENSE", runtime / "LICENSE")
         shutil.copy2(KRT / "VERSION", runtime / "VERSION")
