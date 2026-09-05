@@ -1,6 +1,7 @@
 """Standalone Gloss settings and independent Centering action."""
 
 import os
+from types import SimpleNamespace
 import wx
 import wx.adv
 
@@ -17,7 +18,7 @@ DEFAULTS = {
     "enable_multipasses": True,
     "grid_step": 0.1,
     "budget_seconds": 20.0,
-    "centering_clearance_factor": 3.0,
+    "centering_proximity_mm": 1.0,
     "centering_build_multi_door_path": False,
     "centering_build_new_segments": False,
 }
@@ -208,6 +209,8 @@ class GlossSettingsDialog(wx.Dialog):
         net_box = wx.StaticBox(panel, label="Net Selection")
         net_sizer = wx.StaticBoxSizer(net_box, wx.VERTICAL)
         from kicad_routing_plugin.fanout_gui import NetSelectionPanel
+        if pcb_data is None:
+            pcb_data = SimpleNamespace(nets={}, pads_by_net={}, footprints={})
         self.centering_net_panel = NetSelectionPanel(
             panel, pcb_data,
             instructions="Select modifiable nets to center...",
@@ -233,17 +236,17 @@ class GlossSettingsDialog(wx.Dialog):
 
         parameters_box = wx.StaticBox(panel, label="Centering Parameters")
         parameters = wx.StaticBoxSizer(parameters_box, wx.VERTICAL)
-        factor_row = wx.BoxSizer(wx.HORIZONTAL)
-        factor_row.Add(wx.StaticText(panel, label="Clearance factor E:"), 0,
-                       wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 8)
-        self.centering_clearance_factor = wx.SpinCtrlDouble(
-            panel, min=0.1, max=100.0,
-            initial=float(values["centering_clearance_factor"]), inc=0.1)
-        self.centering_clearance_factor.SetDigits(2)
-        self.centering_clearance_factor.SetToolTip(
-            "Obstacle reach multiplier. The default value is E = 3.")
-        factor_row.Add(self.centering_clearance_factor, 1)
-        parameters.Add(factor_row, 0, wx.EXPAND | wx.ALL, 8)
+        proximity_row = wx.BoxSizer(wx.HORIZONTAL)
+        proximity_row.Add(wx.StaticText(panel, label="Proxi (mm):"), 0,
+                          wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 8)
+        self.centering_proximity_mm = wx.SpinCtrlDouble(
+            panel, min=0.0, max=5.0,
+            initial=float(values["centering_proximity_mm"]), inc=0.1)
+        self.centering_proximity_mm.SetDigits(2)
+        self.centering_proximity_mm.SetToolTip(
+            "Maximum absolute proximity to obstacles, in millimetres.")
+        proximity_row.Add(self.centering_proximity_mm, 1)
+        parameters.Add(proximity_row, 0, wx.EXPAND | wx.ALL, 8)
 
         self.centering_build_multi_door_path = wx.CheckBox(
             panel, label="Build multi-door path")
@@ -338,8 +341,8 @@ class GlossSettingsDialog(wx.Dialog):
                 for key, control in self.controls.items()} | {
                     "grid_step": self.grid_step.GetValue(),
                     "budget_seconds": self.budget_seconds.GetValue(),
-                    "centering_clearance_factor": (
-                        self.centering_clearance_factor.GetValue()),
+                    "centering_proximity_mm": (
+                        self.centering_proximity_mm.GetValue()),
                     "centering_build_multi_door_path": (
                         self.centering_build_multi_door_path.GetValue()),
                     "centering_build_new_segments": (

@@ -492,9 +492,9 @@ def run_final_gloss(results, pcb_data, config, gloss_config=None, *,
 
 
 def run_centering(results, pcb_data, config, *, net_ids,
-                  clearance_factor=3.0, build_new_segments=False,
+                  proximity_mm=1.0, build_new_segments=False,
                   build_multi_door_path=False, budget_seconds=20.0,
-                  excluded_net_ids=None, _emit_log=True):
+                  excluded_net_ids=None, seed_segments=None, _emit_log=True):
     """Run the independent G3.6 action without the ordinary gloss stages."""
     baseline_segments = list(pcb_data.segments)
     baseline_vias = list(pcb_data.vias)
@@ -505,9 +505,15 @@ def run_centering(results, pcb_data, config, *, net_ids,
     try:
         scope_net_ids, excluded, exclusion_reasons = resolve_gloss_scope(
             pcb_data, net_ids, excluded_net_ids)
+        editable_segment_ids = None
+        branch_count = 0
+        if seed_segments:
+            editable_segment_ids, branch_count = \
+                elementary_branch_segment_ids(pcb_data, seed_segments)
         context = build_gloss_context(
             pcb_data, config, net_ids=scope_net_ids,
-            excluded_net_ids=excluded, exclusion_reasons=exclusion_reasons)
+            excluded_net_ids=excluded, exclusion_reasons=exclusion_reasons,
+            editable_segment_ids=editable_segment_ids)
         before_length = calculate_route_length([
             segment for segment in pcb_data.segments
             if segment.net_id in scope_net_ids])
@@ -515,7 +521,7 @@ def run_centering(results, pcb_data, config, *, net_ids,
                          for net_id in scope_net_ids}
         strips, added, changes, centering = center_interpad_routes(
             context, results, deadline=deadline, net_ids=scope_net_ids,
-            clearance_factor=float(clearance_factor),
+            proximity_mm=float(proximity_mm),
             build_new_segments=bool(build_new_segments),
             build_multi_door_path=bool(build_multi_door_path))
         _append_result(results, "track_gloss_g3_6", added, [], changes)
@@ -538,7 +544,7 @@ def run_centering(results, pcb_data, config, *, net_ids,
         elapsed_ms = (perf_counter() - started) * 1000.0
         stats = {
             "config": {
-                "centering_clearance_factor": float(clearance_factor),
+                "centering_proximity_mm": float(proximity_mm),
                 "centering_build_new_segments": bool(build_new_segments),
                 "centering_build_multi_door_path": bool(
                     build_multi_door_path),
@@ -549,6 +555,8 @@ def run_centering(results, pcb_data, config, *, net_ids,
             "excluded_net_ids": sorted(excluded),
             "exclusion_reasons": dict(exclusion_reasons),
             "nets_changed": len(centering["net_ids_changed"]),
+            "elementary_branches": int(branch_count),
+            "branch_scoped": context.branch_scoped,
             "before_mm": round(before_length, 4),
             "after_mm": round(after_length, 4),
             "saved_mm": round(before_length - after_length, 4),
@@ -693,7 +701,7 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
             center_interpad_routes(
                 context, results, deadline=deadline,
                 net_ids=list(context.net_ids),
-                clearance_factor=selected.centering_clearance_factor,
+                proximity_mm=selected.centering_proximity_mm,
                 build_new_segments=selected.centering_build_new_segments,
                 build_multi_door_path=(
                     selected.centering_build_multi_door_path)) \

@@ -1,6 +1,7 @@
 """Locate the KRT submodule without importing its ActionPlugin."""
 
 from pathlib import Path
+import hashlib
 import importlib.util
 import os
 import platform
@@ -39,9 +40,13 @@ def _resolve_rust_binary(root):
         raise RuntimeError("No packaged KRT Rust binary matches this platform")
     # Python imports extension modules by their canonical module filename. Keep
     # the KRT submodule immutable by materializing that name in our own cache.
+    # Windows keeps an imported extension module locked until KiCad exits.
+    # A content-addressed directory lets a plugin update load a new binary
+    # without trying to overwrite the previous, still-loaded grid_router.pyd.
+    digest = hashlib.sha256(source.read_bytes()).hexdigest()[:16]
     cache = (Path(tempfile.gettempdir()) / "kicad_krt_gloss" /
              f"{sys.version_info.major}.{sys.version_info.minor}" /
-             f"{sys.platform}-{machine}")
+             f"{sys.platform}-{machine}" / digest)
     cache.mkdir(parents=True, exist_ok=True)
     destination = cache / canonical
     if (not destination.exists() or

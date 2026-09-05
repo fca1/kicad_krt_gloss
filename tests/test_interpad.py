@@ -2,6 +2,8 @@ from pathlib import Path
 import sys
 from types import SimpleNamespace
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[1]
 for path in (ROOT, ROOT / "KRT", ROOT / "KRT" / "py_router",
@@ -39,7 +41,7 @@ def test_finds_one_weighted_door():
     config = GridRouteConfig(
         clearance=0.2, layers=["F.Cu"], net_clearances={3: 0.4})
 
-    scan = find_interpad_doors(pcb, config)
+    scan = find_interpad_doors(pcb, config, proximity_mm=1.1)
 
     assert len(scan.doors) == 1
     door = scan.doors[0]
@@ -47,8 +49,8 @@ def test_finds_one_weighted_door():
     assert round(door.admissible_width, 6) == 1.4
     assert round(door.axis[0], 6) == 1.4
     assert round(door.offset, 6) == 0.2
-    assert door.distance_a < door.reach_a
-    assert door.copper_gap < door.reach_a + door.reach_b
+    assert door.distance_a < door.proximity_mm
+    assert door.copper_gap < 2.0 * door.proximity_mm
 
 
 def test_rejects_obstacle_pair_outside_centering_reach():
@@ -59,17 +61,32 @@ def test_rejects_obstacle_pair_outside_centering_reach():
                      3: [_pad("B", 4.0, 0.0, 3)]},
         board_info=SimpleNamespace(copper_layers=["F.Cu"]),
         nets={1: SimpleNamespace(name="TARGET")})
+    config = GridRouteConfig(clearance=0.2, layers=["F.Cu"])
+
+    assert find_interpad_doors(pcb, config, proximity_mm=1.0).doors == ()
+    assert len(find_interpad_doors(
+        pcb, config, proximity_mm=2.0).doors) == 1
+
+
+def test_zero_proximity_returns_no_net_candidate():
+    segment = Segment(1.2, -2.0, 1.2, 2.0, 0.2, "F.Cu", 1)
+    pcb = _pcb([segment])
+    config = GridRouteConfig(clearance=0.2, layers=["F.Cu"])
+
+    assert find_interpad_doors(pcb, config, proximity_mm=0).doors == ()
+
+
+def test_proximity_is_limited_to_five_millimetres():
+    config = GridRouteConfig(clearance=0.2, layers=["F.Cu"])
+
+    with pytest.raises(ValueError, match="between 0 and 5 mm"):
+        find_interpad_doors(_pcb([]), config, proximity_mm=5.1)
 
 
 def _segment_is_octolinear(segment):
     dx = abs(segment.end_x - segment.start_x)
     dy = abs(segment.end_y - segment.start_y)
     return dx <= 1e-7 or dy <= 1e-7 or abs(dx - dy) <= 1e-7
-    config = GridRouteConfig(clearance=0.2, layers=["F.Cu"])
-
-    assert find_interpad_doors(pcb, config, clearance_factor=3).doors == ()
-    assert len(find_interpad_doors(
-        pcb, config, clearance_factor=10).doors) == 1
 
 
 def test_rejects_a_gate_crossed_by_two_tracks():

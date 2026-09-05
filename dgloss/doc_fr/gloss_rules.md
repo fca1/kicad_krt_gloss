@@ -55,11 +55,12 @@ n'est donc pas soumis au gain minimal exigé par les phases de réduction.
 **M01 — Porte de centering.** Un obstacle isolé ne provoque aucune
 transformation. Deux obstacles forment une porte lorsqu'ils encadrent le
 segment, que la droite reliant leurs limites cuivre croise ce segment, qu'au
-moins l'un d'eux se trouve dans sa portée et que leur distance cuivre est
-strictement inférieure à la somme de leurs portées. Pour un obstacle `i`, la
-portée est `E × (demi-largeur de piste + clearance effective i)`. Avec deux
-portées identiques, la limite entre obstacles vaut donc `2 × portée`. Le
-facteur `E` vaut `3` par défaut et peut être choisi par l'utilisateur.
+moins l'un d'eux se trouve à une distance strictement inférieure à `Proxi` et
+que leur distance cuivre est strictement inférieure à `2 × Proxi`. `Proxi`
+est une distance absolue exprimée en millimètres. Elle vaut `1 mm` par défaut,
+peut être choisie par l'utilisateur entre `0 mm` et `5 mm`; la valeur `0 mm`
+ne sélectionne aucune porte lors de l'action de centering. La netlist présente
+les nets modifiables indépendamment de la valeur de `Proxi`.
 
 Le centering place la piste sur l'axe admissible de la porte, pondéré par les
 clearances effectives. Plusieurs portes peuvent conduire à décomposer la

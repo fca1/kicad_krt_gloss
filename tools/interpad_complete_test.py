@@ -43,8 +43,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("board", type=Path)
     parser.add_argument("--net", required=True)
-    parser.add_argument("--clearance-factor", type=float, default=3.0,
-                        help="maximum copper gap as a multiple of track width plus both effective clearances")
+    parser.add_argument("--proximity-mm", type=float, default=1.0,
+                        help="absolute obstacle proximity in millimetres")
     parser.add_argument("--build-new-segments", action="store_true",
                         help="allow centering to increase the segment count")
     parser.add_argument("--build-multi-door-path", action="store_true",
@@ -67,7 +67,7 @@ def main():
 
     scan = find_interpad_doors(
         pcb, config, net_id=net_id,
-        clearance_factor=args.clearance_factor)
+        proximity_mm=args.proximity_mm)
     ranked_doors = sorted(scan.doors, key=lambda item: abs(item.offset),
                           reverse=True)
     current = [segment for segment in pcb.segments if segment.net_id == net_id]
@@ -168,7 +168,7 @@ def main():
         "board": str(args.board.resolve()),
         "rules_board": str(rules_board.resolve()),
         "net": args.net,
-        "clearance_factor_E": args.clearance_factor,
+        "proximity_mm": args.proximity_mm,
         "build_new_segments": args.build_new_segments,
         "build_multi_door_path": args.build_multi_door_path,
         "centering_scope": ("branch" if len({id(door.segment)
@@ -178,8 +178,7 @@ def main():
         "doors": [{
             "pads": [f"{door.pad_a.component_ref}.{door.pad_a.pad_number}",
                      f"{door.pad_b.component_ref}.{door.pad_b.pad_number}"],
-            "obstacle_reaches_mm": [round(door.reach_a, 6),
-                                      round(door.reach_b, 6)],
+            "proximity_mm": round(door.proximity_mm, 6),
             "obstacle_distances_to_segment_mm": [
                 round(door.distance_a, 6), round(door.distance_b, 6)],
             "axis": list(door.axis),

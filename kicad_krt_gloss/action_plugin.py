@@ -46,7 +46,7 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
             prepared = self._prepare_selection(board, parent)
             if prepared is None:
                 return
-            centering_nets = self._centering_net_rows(board, prepared[0])
+            centering_nets = self._modifiable_net_rows(board, prepared[0])
             preselected_names = {
                 prepared[0].nets[net_id].name for net_id in net_ids
                 if net_id in prepared[0].nets}
@@ -86,7 +86,7 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
         self._run_gloss(board, parent, values, net_ids)
 
     @staticmethod
-    def _centering_net_rows(board, pcb_data):
+    def _modifiable_net_rows(board, pcb_data):
         """Return only nets the shared Gloss scope considers mutable."""
         from dgloss.context import resolve_gloss_scope
 
@@ -281,6 +281,7 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
 
                 if prepared is None:
                     pcb_data = build_pcb_data_from_board(board)
+                    _seed_segments = selected_seed_segments(board, pcb_data)
                 else:
                     pcb_data, _seed_segments = prepared
                 names_to_ids = {net.name: net_id
@@ -295,13 +296,16 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                 results = []
                 outcome = run_centering(
                     results, pcb_data, config, net_ids=net_ids,
-                    clearance_factor=values["centering_clearance_factor"],
+                    proximity_mm=values["centering_proximity_mm"],
                     build_new_segments=values[
                         "centering_build_new_segments"],
                     build_multi_door_path=values[
                         "centering_build_multi_door_path"],
                     budget_seconds=values["budget_seconds"],
-                    excluded_net_ids=native_arc_net_ids(board))
+                    excluded_net_ids=native_arc_net_ids(board),
+                    seed_segments=(
+                        _seed_segments if values[
+                            "selection_uses_elementary_branches"] else None))
                 removed, added, moved, debug_layer = apply_gloss(
                     board, results, outcome)
                 pcbnew.Refresh()

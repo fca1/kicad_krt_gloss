@@ -35,8 +35,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("board", type=Path)
     parser.add_argument("--net")
-    parser.add_argument("--clearance-factor", type=float, default=3.0,
-                        help="maximum copper gap as a multiple of track width plus both effective clearances")
+    parser.add_argument("--proximity-mm", type=float, default=1.0,
+                        help="absolute obstacle proximity in millimetres")
     parser.add_argument("--repeat", type=int, default=1)
     parser.add_argument("--limit", type=int, default=None)
     args = parser.parse_args()
@@ -55,7 +55,7 @@ def main():
         raise SystemExit("--repeat must be positive")
     scans = [find_interpad_doors(
         pcb, config, net_id=net_id,
-        clearance_factor=args.clearance_factor) for _ in range(args.repeat)]
+        proximity_mm=args.proximity_mm) for _ in range(args.repeat)]
     scan = scans[-1]
     detection_times = [item.elapsed_ms for item in scans]
     doors = sorted(scan.doors, key=lambda door: (-abs(door.offset),
@@ -76,7 +76,7 @@ def main():
         "unique_crossings": scan.unique_crossings,
         "valid_doors": len(doors),
         "reported_doors": len(reported_doors),
-        "clearance_factor_E": args.clearance_factor,
+        "proximity_mm": args.proximity_mm,
         "doors": [{
             "net_id": door.segment.net_id,
             "net": pcb.nets[door.segment.net_id].name,
@@ -92,8 +92,7 @@ def main():
             "admissible_width_mm": round(door.admissible_width, 6),
             "current_width_mm": door.segment.width,
             "clearances_mm": [door.clearance_a, door.clearance_b],
-            "obstacle_reaches_mm": [round(door.reach_a, 6),
-                                      round(door.reach_b, 6)],
+            "proximity_mm": round(door.proximity_mm, 6),
             "obstacle_distances_to_segment_mm": [
                 round(door.distance_a, 6), round(door.distance_b, 6)],
         } for door in reported_doors],

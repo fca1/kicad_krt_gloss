@@ -402,9 +402,9 @@ def test_g3_uses_legacy_chamfer_when_canonical_bends_are_blocked():
     visible = [result for result in results
                if result.get("track_gloss_changes")]
     assert len(visible) == 1
-    assert visible[0]["cleanup"] == "track_gloss_g4_visualization"
+    assert visible[0]["cleanup"] == "track_gloss_final_visualization"
     assert visible[0]["new_segments"] == []
-    assert all(change.get("stage") == "G4" for kind in ("segments", "vias")
+    assert all(change.get("stage") == "Final" for kind in ("segments", "vias")
                for change in visible[0]["track_gloss_changes"][kind])
 
 
@@ -506,8 +506,8 @@ def test_g4_exposes_only_the_final_user1_delta():
     visible = [result for result in results
                if result.get("track_gloss_changes")]
     assert len(visible) == 1
-    assert visible[0]["cleanup"] == "track_gloss_g4_visualization"
-    assert all(change.get("stage") == "G4"
+    assert visible[0]["cleanup"] == "track_gloss_final_visualization"
+    assert all(change.get("stage") == "Final"
                for kind in ("segments", "vias")
                for change in visible[0]["track_gloss_changes"][kind])
 

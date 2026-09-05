@@ -18,7 +18,7 @@ class GlossConfig:
     # settings are intentionally engine/API-only; the KiCad UI does not expose
     # them yet.
     enable_g3_6: bool = False
-    centering_clearance_factor: float = 3.0
+    centering_proximity_mm: float = 1.0
     centering_build_new_segments: bool = False
     centering_build_multi_door_path: bool = False
 

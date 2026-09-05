@@ -31,8 +31,7 @@ class InterpadDoor:
     edge_b: tuple
     clearance_a: float
     clearance_b: float
-    reach_a: float
-    reach_b: float
+    proximity_mm: float
     distance_a: float
     distance_b: float
     copper_gap: float
@@ -754,36 +753,34 @@ def center_across_branch_doors(pcb_data, doors, *,
 
 
 def find_interpad_doors(pcb_data, config, *, net_id=None,
-                        clearance_factor=3.0, deadline=None):
+                        proximity_mm=1.0, deadline=None,
+                        allowed_segment_ids=None):
     """Find simple two-pad gates crossed by exactly one track segment.
 
     The measured interval is the space between the real KRT pad boundaries.
     Its axis is the midpoint after applying the clearance independently on
     each side.  A gate is returned only when the sole crossing segment still
-    fits at its current width.  Each obstacle reach is
-    ``clearance_factor * (half track width + effective clearance)``.  At least
-    one obstacle must be inside its reach, the copper gap must be smaller than
-    the sum of both reaches, and the gate must cross the track.  The function
-    is read-only.
+    fits at its current width. At least one obstacle must be strictly closer
+    to the segment than ``proximity_mm`` and the copper gap must be strictly
+    smaller than ``2 * proximity_mm``. The gate must cross the track. The
+    function is read-only; zero proximity deliberately returns no doors.
     """
-    if clearance_factor <= 0:
-        raise ValueError("clearance_factor must be positive")
+    if not 0.0 <= proximity_mm <= 5.0:
+        raise ValueError("proximity_mm must be between 0 and 5 mm")
     started = perf_counter()
+    if proximity_mm == 0:
+        return InterpadScan((), (perf_counter() - started) * 1000.0,
+                            0, 0, 0)
     copper_layers = list(pcb_data.board_info.copper_layers or config.layers)
     segments = [segment for segment in pcb_data.segments
                 if not getattr(segment, "graphic", False)]
     max_track_width = max((segment.width for segment in segments), default=0.0)
-    max_clearance = max([config.clearance] + list(
-        (getattr(config, "net_clearances", None) or {}).values()) + [
-        getattr(pad, "local_clearance", 0.0) or 0.0
-        for net_pads in pcb_data.pads_by_net.values() for pad in net_pads])
     max_pad_radius = max((max(pad.size_x, pad.size_y) / 2.0
                           for net_pads in pcb_data.pads_by_net.values()
                           for pad in net_pads), default=0.0)
     # This only sizes KRT's broad-phase cells.  The semantic cutoff below is
     # pair-specific and uses the actual segment and effective clearances.
-    cell_size = max(1.0, clearance_factor *
-                    (max_track_width + 2.0 * max_clearance) +
+    cell_size = max(1.0, 2.0 * proximity_mm + max_track_width +
                     max_pad_radius)
     index = SpatialIndex(cell_size=cell_size)
     for segment in segments:
@@ -804,8 +801,10 @@ def find_interpad_doors(pcb_data, config, *, net_id=None,
     # been selected.  The complete segment index remains necessary to prove
     # that no second track crosses a nominated gate.
     candidate_pairs = {}
-    seeds = segments if net_id is None else [segment for segment in segments
-                                             if segment.net_id == net_id]
+    seeds = [segment for segment in segments
+             if (net_id is None or segment.net_id == net_id) and
+             (allowed_segment_ids is None or
+              id(segment) in allowed_segment_ids)]
     for seed in seeds:
         if deadline is not None and perf_counter() >= deadline:
             break
@@ -840,7 +839,6 @@ def find_interpad_doors(pcb_data, config, *, net_id=None,
         if copper_gap <= 1e-6:
             continue
         geometric_gates += 1
-
         gate = Segment(edge_a[0], edge_a[1], edge_b[0], edge_b[1],
                        0.0, layer, 0)
         crossings = []
@@ -856,17 +854,18 @@ def find_interpad_doors(pcb_data, config, *, net_id=None,
         segment, (crossing, _track_t, _gate_t) = crossings[0]
         if net_id is not None and segment.net_id != net_id:
             continue
+        if (allowed_segment_ids is not None and
+                id(segment) not in allowed_segment_ids):
+            continue
         unique_crossings += 1
         clearance_a = _pair_clearance(config, segment.net_id, pad_a, layer)
         clearance_b = _pair_clearance(config, segment.net_id, pad_b, layer)
-        reach_a = clearance_factor * (segment.width / 2.0 + clearance_a)
-        reach_b = clearance_factor * (segment.width / 2.0 + clearance_b)
         distance_a = math.dist(edge_a, crossing)
         distance_b = math.dist(edge_b, crossing)
-        if (distance_a + 1e-9 >= reach_a and
-                distance_b + 1e-9 >= reach_b):
+        if (distance_a + 1e-9 >= proximity_mm and
+                distance_b + 1e-9 >= proximity_mm):
             continue
-        if copper_gap + 1e-9 >= reach_a + reach_b:
+        if copper_gap + 1e-9 >= 2.0 * proximity_mm:
             continue
         admissible_width = copper_gap - clearance_a - clearance_b
         if admissible_width + 1e-9 < segment.width:
@@ -883,7 +882,7 @@ def find_interpad_doors(pcb_data, config, *, net_id=None,
                  (axis[1] - crossing[1]) * uy
         doors.append(InterpadDoor(
             pad_a, pad_b, segment, layer, crossing, axis, edge_a, edge_b,
-            clearance_a, clearance_b, reach_a, reach_b, distance_a,
+            clearance_a, clearance_b, proximity_mm, distance_a,
             distance_b, copper_gap, admissible_width, offset))
 
     elapsed_ms = (perf_counter() - started) * 1000.0
@@ -1092,7 +1091,7 @@ def _centering_proposals(pcb_data, doors, *, build_new_segments,
 
 
 def center_interpad_routes(context, results, deadline=None, *, net_ids,
-                           clearance_factor=3.0,
+                           proximity_mm=1.0,
                            build_new_segments=False,
                            build_multi_door_path=False):
     """G3.6: center editable octolinear branches across valid pad doors.
@@ -1116,7 +1115,8 @@ def center_interpad_routes(context, results, deadline=None, *, net_ids,
         while deadline is None or perf_counter() < deadline:
             scan = find_interpad_doors(
                 context.pcb_data, context.config, net_id=net_id,
-                clearance_factor=clearance_factor, deadline=deadline)
+                proximity_mm=proximity_mm, deadline=deadline,
+                allowed_segment_ids=context.editable_segment_ids)
             doors = [door for door in scan.doors
                      if _door_key(door) not in processed_doors]
             if not doors:

@@ -75,7 +75,7 @@ def test_plugin_run_accepts_two_item_preparation_for_multiple_selected_nets():
                if isinstance(node, ast.FunctionDef) and node.name == "Run")
     for net_ids in ([], [1], [1, 2]):
         calls = []
-        prepared = (object(), [])
+        prepared = (types.SimpleNamespace(nets={}), [])
         settings = {"test": True}
 
         class Dialog:
@@ -96,6 +96,10 @@ def test_plugin_run_accepts_two_item_preparation_for_multiple_selected_nets():
                 calls.append(("prepare",))
                 return prepared
 
+            def _modifiable_net_rows(self, board, pcb_data):
+                calls.append(("modifiable",))
+                return []
+
             def _run_gloss(self, board, parent, values, nets, **kwargs):
                 calls.append(("run", nets, kwargs.get("prepared")))
 
@@ -110,9 +114,10 @@ def test_plugin_run_accepts_two_item_preparation_for_multiple_selected_nets():
         namespace["Run"](Plugin())
         assert ("dialog", len(net_ids)) in calls if len(net_ids) != 1 else (
             not any(call[0] == "dialog" for call in calls))
-        assert ("prepare",) in calls if len(net_ids) > 1 else (
+        assert ("prepare",) in calls if len(net_ids) != 1 else (
             ("prepare",) not in calls)
-        assert ("run", net_ids, prepared if len(net_ids) > 1 else None) in calls
+        assert ("run", net_ids,
+                prepared if len(net_ids) != 1 else None) in calls
 
 
 @pytest.mark.parametrize("has_zones, failure", [
@@ -234,6 +239,32 @@ def test_packaged_runtime_exposes_its_embedded_dgloss(tmp_path, monkeypatch):
         sys.path[:] = old_path
 
 
+def test_packaged_rust_binary_uses_a_content_addressed_cache(
+        tmp_path, monkeypatch):
+    root = tmp_path / "KRT"
+    rust_dir = root / "rust_router"
+    rust_dir.mkdir(parents=True)
+    source = rust_dir / "grid_router-windows-x86_64.pyd"
+    source.write_bytes(b"first packaged binary")
+    cache_root = tmp_path / "cache"
+
+    monkeypatch.setattr(runtime.sys, "platform", "win32")
+    monkeypatch.setattr(runtime.platform, "machine", lambda: "AMD64")
+    monkeypatch.setattr(runtime.tempfile, "gettempdir", lambda: str(cache_root))
+
+    first = runtime._resolve_rust_binary(root)
+    assert first.name == "grid_router.pyd"
+    assert first.read_bytes() == b"first packaged binary"
+
+    # Simulate an update while KiCad may still have the first path loaded and
+    # locked: a changed binary must be written to a different directory.
+    source.write_bytes(b"second packaged binary")
+    second = runtime._resolve_rust_binary(root)
+    assert second != first
+    assert first.read_bytes() == b"first packaged binary"
+    assert second.read_bytes() == b"second packaged binary"
+
+
 def test_dialog_has_a_top_level_sizer_for_panel_and_buttons():
     source = (ROOT / "kicad_krt_gloss" / "settings_dialog.py").read_text(
         encoding="utf-8")
@@ -252,7 +283,12 @@ def test_dialog_keeps_a_post_run_log_with_krt_style_controls():
     assert 'label="Gloss"' in source
     assert 'label="Close"' in source
     assert "wx.TE_READONLY" in source
-    assert "self.notebook.SetSelection(1)" in source
+    assert 'self.notebook.GetPageText(index) == "Log"' in source
+    assert 'self.notebook.AddPage(panel, "Centering")' in source
+    assert 'label="Centering"' in source
+    assert 'label="Refresh"' not in source
+    assert "on_refresh_centering" not in source
+    assert "panel, min=0.0, max=5.0" in source
 
     action = (ROOT / "kicad_krt_gloss" / "action_plugin.py").read_text(
         encoding="utf-8")
