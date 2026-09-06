@@ -311,7 +311,7 @@ def test_dialog_configuration_is_partitioned_by_action_scope():
     assert '"move_vias"' in gloss
     assert '"stay_in_corridor"' in gloss
     assert '"centering_proximity_mm"' in centering
-    assert '"centering_build_new_segments"' in centering
+    assert '"centering_build_new_segments"' not in centering
     assert source.index('AddPage(panel, "General")') < source.index(
         'AddPage(panel, "Gloss")') < source.index(
             'AddPage(panel, "Centering")')
@@ -332,8 +332,8 @@ def test_dialog_keeps_a_post_run_log_with_krt_style_controls():
     assert 'label="Refresh"' not in source
     assert "on_refresh_centering" not in source
     assert "panel, min=0.0, max=5.0" in source
-    assert '"centering_build_multi_door_path": True' in source
-    assert '"centering_build_new_segments": True' in source
+    assert "centering_build_multi_door_path" not in source
+    assert "centering_build_new_segments" not in source
     assert "No eligible door for the selected nets" in source
 
     action = (ROOT / "kicad_krt_gloss" / "action_plugin.py").read_text(

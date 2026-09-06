@@ -12,6 +12,19 @@ from dgloss.protected_centering import passage_constraints, respects_passages
 from dgloss.protected_centering import build_protected_path
 
 
+def test_obsolete_centering_settings_are_ignored_on_load():
+    from dgloss.config import GlossConfig
+
+    config = GlossConfig.from_value({
+        'centering_proximity_mm': 5.0,
+        'centering_build_new_segments': False,
+        'centering_build_multi_door_path': False,
+    }).as_dict()
+    assert config['centering_proximity_mm'] == 5.0
+    assert 'centering_build_new_segments' not in config
+    assert 'centering_build_multi_door_path' not in config
+
+
 def test_finite_distance_uses_copper_edges():
     pad = _pad('P', 0, 0, 2, size=1)
     assert _segment_pad_distance((2, -3), (2, 3), pad) == pytest.approx(1.5, abs=2e-4)

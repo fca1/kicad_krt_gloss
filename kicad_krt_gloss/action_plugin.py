@@ -325,10 +325,6 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                 outcome = run_centering(
                     results, pcb_data, config, net_ids=net_ids,
                     proximity_mm=values["centering_proximity_mm"],
-                    build_new_segments=values[
-                        "centering_build_new_segments"],
-                    build_multi_door_path=values[
-                        "centering_build_multi_door_path"],
                     budget_seconds=values["budget_seconds"],
                     excluded_net_ids=native_arc_net_ids(board),
                     seed_segments=(

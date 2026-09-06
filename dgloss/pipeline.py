@@ -418,8 +418,7 @@ def run_final_gloss(results, pcb_data, config, gloss_config=None, *,
 
 
 def run_centering(results, pcb_data, config, *, net_ids,
-                  proximity_mm=1.0, build_new_segments=False,
-                  build_multi_door_path=False, budget_seconds=20.0,
+                  proximity_mm=1.0, budget_seconds=20.0,
                   excluded_net_ids=None, seed_segments=None, _emit_log=True):
     """Run the independent G3.6 action without the ordinary gloss stages."""
     baseline_segments = list(pcb_data.segments)
@@ -448,8 +447,7 @@ def run_centering(results, pcb_data, config, *, net_ids,
         strips, added, changes, centering = center_interpad_routes(
             context, results, deadline=deadline, net_ids=scope_net_ids,
             proximity_mm=float(proximity_mm),
-            build_new_segments=bool(build_new_segments),
-            build_multi_door_path=bool(build_multi_door_path))
+            build_new_segments=True, build_multi_door_path=True)
         _append_result(results, "track_gloss_g3_6", added, [], changes)
         certified_started = perf_counter()
         g5 = _certify_g5_copper(context, before_grades, changes)
@@ -471,9 +469,6 @@ def run_centering(results, pcb_data, config, *, net_ids,
         stats = {
             "config": {
                 "centering_proximity_mm": float(proximity_mm),
-                "centering_build_new_segments": bool(build_new_segments),
-                "centering_build_multi_door_path": bool(
-                    build_multi_door_path),
                 "budget_seconds": float(budget_seconds),
             },
             "nets_processed": len(scope_net_ids),
@@ -650,9 +645,7 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
                 context, results, deadline=deadline,
                 net_ids=list(context.net_ids),
                 proximity_mm=selected.centering_proximity_mm,
-                build_new_segments=selected.centering_build_new_segments,
-                build_multi_door_path=(
-                    selected.centering_build_multi_door_path)) \
+                build_new_segments=True, build_multi_door_path=True) \
             if run else ([], [], GlossChanges(), {
                 "branches_centered": 0, "doors_centered": 0,
                 "segments_added": 0, "length_delta_mm": 0.0,

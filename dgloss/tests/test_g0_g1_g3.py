@@ -584,7 +584,6 @@ def test_a_later_gloss_completely_removes_a_longer_centering_path():
 
     centered_outcome = run_centering(
         [], pcb, config, net_ids=[1], proximity_mm=5.0,
-        build_new_segments=True, build_multi_door_path=True,
         _emit_log=False)
     centered = snapshot()
     assert centered_outcome.stats["doors_centered"] > 0

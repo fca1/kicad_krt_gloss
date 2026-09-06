@@ -21,8 +21,6 @@ GLOSS_DEFAULTS = {
 
 CENTERING_DEFAULTS = {
     "centering_proximity_mm": 1.0,
-    "centering_build_multi_door_path": True,
-    "centering_build_new_segments": True,
 }
 
 DEFAULTS = GENERAL_DEFAULTS | GLOSS_DEFAULTS | CENTERING_DEFAULTS
@@ -379,26 +377,6 @@ class GlossSettingsDialog(wx.Dialog):
             options.Add(self.centering_proximity_mm, 0,
                         wx.ALIGN_CENTER | wx.ALL, 10)
 
-        parameters_box = wx.StaticBox(panel, label="Centering Parameters")
-        parameters = wx.StaticBoxSizer(parameters_box, wx.VERTICAL)
-        self.centering_build_multi_door_path = wx.CheckBox(
-            panel, label="Build multi-door path")
-        self.centering_build_multi_door_path.SetValue(bool(
-            values["centering_build_multi_door_path"]))
-        self.centering_build_multi_door_path.SetToolTip(
-            "Allow one transformation to center a branch across several doors.")
-        parameters.Add(self.centering_build_multi_door_path, 0,
-                       wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
-
-        self.centering_build_new_segments = wx.CheckBox(
-            panel, label="Build new segments")
-        self.centering_build_new_segments.SetValue(bool(
-            values["centering_build_new_segments"]))
-        self.centering_build_new_segments.SetToolTip(
-            "Allow centering to increase the number of track segments.")
-        parameters.Add(self.centering_build_new_segments, 0,
-                       wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
-        options.Add(parameters, 0, wx.EXPAND | wx.ALL, 8)
         options.AddStretchSpacer()
         columns.Add(options, 1, wx.EXPAND | wx.TOP | wx.RIGHT | wx.BOTTOM, 8)
         content.Add(columns, 1, wx.EXPAND)
@@ -505,8 +483,4 @@ class GlossSettingsDialog(wx.Dialog):
                     "budget_seconds": self.budget_seconds.GetValue(),
                     "centering_proximity_mm": (
                         self.centering_proximity_mm.GetValue()),
-                    "centering_build_multi_door_path": (
-                        self.centering_build_multi_door_path.GetValue()),
-                    "centering_build_new_segments": (
-                        self.centering_build_new_segments.GetValue()),
                 }

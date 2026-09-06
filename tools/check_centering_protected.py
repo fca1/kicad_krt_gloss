@@ -24,7 +24,7 @@ def main():
     config = gloss.build_krt_config(options, pcb, net_ids)
     before = [s for s in pcb.segments if s.net_id in net_ids]
     outcome = run_centering([], pcb, config, net_ids=net_ids,
-        proximity_mm=5, build_new_segments=True, build_multi_door_path=True,
+        proximity_mm=5,
         budget_seconds=20, _emit_log=False)
     after = [s for s in pcb.segments if s.net_id in net_ids]
     stats = outcome.stats
