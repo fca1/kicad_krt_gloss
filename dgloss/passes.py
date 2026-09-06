@@ -1,19 +1,18 @@
 """G4: deterministic multi-net passes over the complete G3.5 chain."""
 
-from time import perf_counter
+from .execution import perf_counter
 
 from net_queries import calculate_route_length
 
 from .changes import GlossChanges
 
 
-def _collect(target, source):
-    for entry in source.get("segments", []):
-        entry["stage"] = "G4"
-    for entry in source.get("vias", []):
-        entry["stage"] = "G4"
-    target.segments.extend(source.get("segments", []))
-    target.vias.extend(source.get("vias", []))
+def _collect(target, source, pass_index=1):
+    # Keep the originating strategy and do not mutate its history entries.
+    target.segments.extend(dict(entry, pass_index=pass_index)
+                           for entry in source.get("segments", []))
+    target.vias.extend(dict(entry, pass_index=pass_index)
+                       for entry in source.get("vias", []))
 
 
 def run_multinet_passes(context, gloss_config, net_ids, results,
@@ -26,6 +25,7 @@ def run_multinet_passes(context, gloss_config, net_ids, results,
     via_strips = []
     changed_net_ids = set()
     passes = []
+    operation_totals = {}
     total_changes = 0
     total_segment_reduction = 0
     started = perf_counter()
@@ -42,7 +42,15 @@ def run_multinet_passes(context, gloss_config, net_ids, results,
         pass_started = perf_counter()
         outcome = run_g3_5(
             results, context, gloss_config, order, deadline, emit_log=False)
-        _collect(changes, outcome["changes"].as_dict())
+        _collect(changes, outcome["changes"].as_dict(), pass_index + 2)
+        for name in ("g3", "via", "pad", "node", "refine", "equal", "merge"):
+            totals = operation_totals.setdefault(name, {})
+            for key, value in outcome[name].items():
+                if isinstance(value, (int, float)):
+                    totals[key] = totals.get(key, 0) + value
+        merge_totals = operation_totals.setdefault("merge_summary", {})
+        for key in ("merged_count", "merged_nets", "merge_ms"):
+            merge_totals[key] = merge_totals.get(key, 0) + outcome[key]
         segment_strips.extend(outcome["segment_strips"])
         via_strips.extend(outcome["via_strips"])
         stage_rows = outcome["stage_stats"].as_dict()["stages"]
@@ -70,6 +78,7 @@ def run_multinet_passes(context, gloss_config, net_ids, results,
             "saved_mm": round(gain, 4),
             "elapsed_ms": round(elapsed_ms, 3),
             "completed": completed,
+            "operations": stage_rows,
         })
         print(f"Track Gloss G4 pass {pass_index + 1} "
               f"({'forward' if pass_index % 2 == 0 else 'reverse'}): "
@@ -90,6 +99,7 @@ def run_multinet_passes(context, gloss_config, net_ids, results,
         "via_strips": via_strips,
         "changes": changes,
         "passes": passes,
+        "operation_totals": operation_totals,
         "passes_completed": sum(row["completed"] for row in passes),
         "transformations": total_changes,
         "segment_reduction": total_segment_reduction,

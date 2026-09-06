@@ -16,12 +16,7 @@ GENERAL_DEFAULTS = {
 
 GLOSS_DEFAULTS = {
     "stay_in_corridor": False,
-    "enable_g3_1": True,
-    "enable_g3_2": True,
-    "enable_g3_3": True,
-    "enable_g3_4": True,
-    "enable_noncollinear_t_rails": True,
-    "enable_multipasses": True,
+    "move_vias": True,
 }
 
 CENTERING_DEFAULTS = {
@@ -38,7 +33,10 @@ class GlossSettingsDialog(wx.Dialog):
                  on_centering=None, pcb_data=None, centering_nets=(),
                  preselected_centering_nets=(), initial_log=""):
         super().__init__(parent, title="KiCad KRT Gloss")
-        values = dict(DEFAULTS, **(values or {}))
+        values = dict(values or {})
+        if "move_vias" not in values and "enable_g3_1" in values:
+            values["move_vias"] = values["enable_g3_1"]
+        values = dict(DEFAULTS, **values)
         self._on_gloss_callback = on_gloss
         self._on_centering_callback = on_centering
         wx.ToolTip.SetDelay(250)
@@ -234,23 +232,13 @@ class GlossSettingsDialog(wx.Dialog):
              "Require a clear progressive deformation for track-chain shortcuts "
              "and pad approaches. Conservative prototype; via and T-junction "
              "operations keep their existing behavior. Disabled by default."),
-            ("enable_g3_1", "Optimize movable vias",
+            ("move_vias", "Optimize movable vias",
              "Move an eligible unlocked via connected to exactly two unlocked "
-             "track segments on different copper layers. Only the two directly "
-             "connected segments are rebuilt. The via diameter, drill, type, "
+             "track segments on different copper layers. Both local and complete "
+             "track-chain searches obey this option. The via diameter, drill, type, "
              "net and layer span remain unchanged. The move is accepted only "
              "when it saves more than one grid step and passes KRT clearance "
              "and connectivity checks."),
-            ("enable_g3_2", "Optimize pad approaches",
-             "Shorten the terminal track chain leading to a pad while keeping "
-             "the pad and its native connection point fixed. The replacement "
-             "remains octolinear and must pass KRT clearance and connectivity "
-             "checks."),
-            ("enable_multipasses", "Repeat until stable",
-             "Repeat the enabled Gloss operations across the selected nets. "
-             "Each accepted change becomes an obstacle for the following nets, "
-             "and net order alternates between passes. Stop after a complete "
-             "pass with no change or when the time budget expires."),
         )
         for key, label, tooltip in visible_options:
             control = wx.CheckBox(panel, label=label)
@@ -432,9 +420,6 @@ class GlossSettingsDialog(wx.Dialog):
     def values(self):
         return {key: control.GetValue()
                 for key, control in self.controls.items()} | {
-                    "enable_g3_3": True,
-                    "enable_g3_4": True,
-                    "enable_noncollinear_t_rails": True,
                     "grid_step": self.grid_step.GetValue(),
                     "budget_seconds": self.budget_seconds.GetValue(),
                     "centering_proximity_mm": (

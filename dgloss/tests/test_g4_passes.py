@@ -22,6 +22,8 @@ def test_g4_replays_g3_5_in_alternating_complete_net_orders():
             "stage_stats": SimpleNamespace(as_dict=lambda: {
                 "stages": {"G3": {"changes": int(changed)}}}),
             "changed_net_ids": set(net_ids) if changed else set(),
+            "g3": {}, "via": {}, "pad": {}, "node": {},
+            "refine": {}, "merge": {}, "merged_nets": 0, "merge_ms": 0,
             "equal": {"segments_removed": int(changed),
                       "segments_added": 0},
             "merged_count": 0,

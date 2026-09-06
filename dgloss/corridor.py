@@ -6,7 +6,7 @@ Intermediate lines need not be octolinear; only emitted copper must be.
 """
 
 import math
-from time import perf_counter
+from .execution import perf_counter
 
 from kicad_parser import Segment
 

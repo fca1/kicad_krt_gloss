@@ -2,12 +2,12 @@
 
 import math
 from dataclasses import dataclass, field
-from time import perf_counter
+from .execution import perf_counter
 
 from check_connected import check_net_connectivity
-from geometry_utils import UnionFind
+from .topology import terminal_partition as _terminal_partition
 from net_queries import calculate_route_length
-from pcb_modification import merge_collinear_segments, smooth_octolinear_chains
+from pcb_modification import merge_collinear_segments
 
 from .algorithm import _connectivity_worse, shorten_routes
 from .branches import elementary_branch_segment_ids
@@ -52,11 +52,8 @@ def _restore(results, count, snapshot, pcb_data, segments, vias):
 
 
 def _grade(pcb_data, net_id):
-    return check_net_connectivity(
-        net_id,
-        [segment for segment in pcb_data.segments if segment.net_id == net_id],
-        [via for via in pcb_data.vias if via.net_id == net_id],
-        pcb_data.pads_by_net.get(net_id, []), [], pcb_data=pcb_data)
+    # Local and pass-level validation must use the same electrical model.
+    return _g5_grade(pcb_data, net_id)
 
 
 def _g5_grade(pcb_data, net_id):
@@ -92,33 +89,6 @@ def _route_signature(pcb_data, net_id):
     return tuple(sorted(segments)), tuple(sorted(vias))
 
 
-def _terminal_partition(grade):
-    """Normalize KRT terminal components so graph ids can be compared."""
-    graph = grade.get("graph") or {}
-    if graph:
-        union = UnionFind()
-        for first, second in graph.get("edges", ()):
-            union.union(first, second)
-        groups = {}
-        terminals = [
-            (("pad", index), point)
-            for index, point in (graph.get("pad_index_repr") or {}).items()
-        ] + [
-            (("zone", index), point)
-            for index, point in (graph.get("zone_index_repr") or {}).items()
-        ]
-        for terminal, point in terminals:
-            groups.setdefault(union.find(point), set()).add(terminal)
-        return frozenset(frozenset(group) for group in groups.values())
-
-    # Small synthetic callers may provide only check_net_connectivity's
-    # public pad_components summary.
-    groups = {}
-    for pad, component in (grade.get("pad_components") or {}).items():
-        groups.setdefault(component, set()).add(pad)
-    return frozenset(frozenset(group) for group in groups.values())
-
-
 def _append_result(results, cleanup, added_segments, added_vias, changes):
     if changes:
         results.append({
@@ -132,25 +102,6 @@ def _empty_via_stats():
     return {"vias_moved": 0, "saved_mm": 0.0, "net_ids_changed": set(),
             "algorithm_ms": 0.0, "segment_strips": [],
             "added_segments": []}
-
-
-def _run_scoped_krt_smooth(results, pcb_data, net_ids, editable_ids, **kwargs):
-    """Use KRT's keep-input gate as a thin elementary-branch adapter."""
-    before = [segment for segment in pcb_data.segments
-              if id(segment) in editable_ids]
-    scratch = [{"new_segments": list(before), "new_vias": [],
-                "cleanup": "track_gloss_be_scope"}]
-    changed, nets, _ignored, added, stats = smooth_octolinear_chains(
-        scratch, pcb_data, net_ids, keep_input_copper=True, **kwargs)
-    current_ids = {id(segment) for segment in pcb_data.segments}
-    removed = [segment for segment in before if id(segment) not in current_ids]
-    native, _vias = release_result_custody(results, removed)
-    if added:
-        results.append({"new_segments": list(added), "new_vias": [],
-                        "cleanup": "smooth_octolinear_be"})
-    updated = (set(editable_ids) - {id(segment) for segment in removed}) | \
-        {id(segment) for segment in added}
-    return changed, nets, native, added, stats, updated
 
 
 def _merge_collinear_in_scope(results, context, net_ids):
@@ -174,9 +125,9 @@ def _merge_collinear_in_scope(results, context, net_ids):
     return changed, nets, native, added, stats
 
 
-def _run_g3_5_pass(results, context, selected, net_ids, deadline, *, emit_log,
+def _run_optimization_pass(results, context, selected, net_ids, deadline, *, emit_log,
                    skip_smoothed_canonical=False):
-    """Execute G3--G3.5 directly for the supplied complete KRT net list."""
+    """Apply complementary search strategies under one optimization policy."""
     pcb_data = context.pcb_data
     run_net_ids = [net_id for net_id in net_ids
                    if net_id in context.net_ids]
@@ -204,7 +155,7 @@ def _run_g3_5_pass(results, context, selected, net_ids, deadline, *, emit_log,
                        elapsed_ms=g3["algorithm_ms"],
                        label="nets improved")
 
-    run, expired = available(selected.enable_g3_1)
+    run, expired = available((selected.move_vias and selected.enable_g3_1))
     via_strips, added_vias, via_changes, via = \
         move_mobile_vias(
             context, results, deadline=deadline, net_ids=run_net_ids) \
@@ -213,12 +164,12 @@ def _run_g3_5_pass(results, context, selected, net_ids, deadline, *, emit_log,
                    added_vias, via_changes)
     changes.vias.extend(via_changes.vias)
     changes.segments.extend(via_changes.segments)
-    stage_stats.record("G3.1", enabled=selected.enable_g3_1,
-                       skipped_budget=expired and selected.enable_g3_1,
+    stage_stats.record("G3.1", enabled=(selected.move_vias and selected.enable_g3_1),
+                       skipped_budget=expired and (selected.move_vias and selected.enable_g3_1),
                        changes=via["vias_moved"], saved_mm=via["saved_mm"],
                        elapsed_ms=via["algorithm_ms"], label="vias moved")
 
-    run, expired = available(selected.enable_g3_2)
+    run, expired = available(selected.optimize_pad_approaches)
     pad_strips, pad_added, pad_changes, pad = \
         optimize_pad_terminals(
             context, results, deadline=deadline, net_ids=run_net_ids,
@@ -228,12 +179,12 @@ def _run_g3_5_pass(results, context, selected, net_ids, deadline, *, emit_log,
             "net_ids_changed": set(), "algorithm_ms": 0.0})
     _append_result(results, "track_gloss_g3_2", pad_added, [], pad_changes)
     changes.segments.extend(pad_changes.segments)
-    stage_stats.record("G3.2", enabled=selected.enable_g3_2,
-                       skipped_budget=expired and selected.enable_g3_2,
+    stage_stats.record("G3.2", enabled=selected.optimize_pad_approaches,
+                       skipped_budget=expired and selected.optimize_pad_approaches,
                        changes=pad["pads_changed"], saved_mm=pad["saved_mm"],
                        elapsed_ms=pad["algorithm_ms"], label="pads optimized")
 
-    run, expired = available(selected.enable_g3_3)
+    run, expired = available(selected.move_junctions)
     node_strips, node_added, node_changes, node = \
         slide_t_nodes(
             context, results, deadline=deadline,
@@ -245,8 +196,8 @@ def _run_g3_5_pass(results, context, selected, net_ids, deadline, *, emit_log,
             "net_ids_changed": set(), "algorithm_ms": 0.0})
     _append_result(results, "track_gloss_g3_3", node_added, [], node_changes)
     changes.segments.extend(node_changes.segments)
-    stage_stats.record("G3.3", enabled=selected.enable_g3_3,
-                       skipped_budget=expired and selected.enable_g3_3,
+    stage_stats.record("G3.3", enabled=selected.move_junctions,
+                       skipped_budget=expired and selected.move_junctions,
                        changes=node["t_branches_slid"],
                        saved_mm=node["saved_mm"],
                        elapsed_ms=node["algorithm_ms"],
@@ -257,7 +208,7 @@ def _run_g3_5_pass(results, context, selected, net_ids, deadline, *, emit_log,
               f"collinear rail, {node['right_angles_cleaned']} "
               "90-degree bend(s) cleaned")
 
-    run, expired = available(selected.enable_g3_4)
+    run, expired = available((selected.move_vias and selected.enable_g3_4))
     refine_strips, refine_vias, refine_changes, refine = \
         refine_mobile_vias(
             context, results, deadline=deadline, net_ids=run_net_ids) \
@@ -266,8 +217,8 @@ def _run_g3_5_pass(results, context, selected, net_ids, deadline, *, emit_log,
                    refine_vias, refine_changes)
     changes.vias.extend(refine_changes.vias)
     changes.segments.extend(refine_changes.segments)
-    stage_stats.record("G3.4", enabled=selected.enable_g3_4,
-                       skipped_budget=expired and selected.enable_g3_4,
+    stage_stats.record("G3.4", enabled=(selected.move_vias and selected.enable_g3_4),
+                       skipped_budget=expired and (selected.move_vias and selected.enable_g3_4),
                        changes=refine["vias_moved"],
                        saved_mm=refine["saved_mm"],
                        elapsed_ms=refine["algorithm_ms"],
@@ -307,6 +258,8 @@ def _run_g3_5_pass(results, context, selected, net_ids, deadline, *, emit_log,
     final_segment_ids = {id(segment) for segment in pcb_data.segments}
     merge_removed = [segment for segment in merge_before
                      if id(segment) not in final_segment_ids]
+    if merge_removed and not context.branch_scoped:
+        context.replace_editable_segments(merge_removed, merge_added)
     merge_changes = GlossChanges(
         segments=([{"old": segment, "stage": "G3.5"}
                    for segment in merge_removed] +
@@ -456,88 +409,10 @@ def _certify_g5_copper(context, before_grades, changes):
 
 def run_final_gloss(results, pcb_data, config, gloss_config=None, *,
                     net_ids=None, excluded_net_ids=None, seed_segments=None):
-    """Plugin wrapper: run the last KRT smooth, then the post-smooth G0 API."""
-    original_segments = list(pcb_data.segments)
-    original_vias = list(pcb_data.vias)
-    original_count = len(results)
-    original_results = _result_snapshot(results)
-    try:
-        started = perf_counter()
-        if seed_segments:
-            seeded_net_ids = {segment.net_id for segment in seed_segments
-                              if segment.net_id}
-            net_ids = (seeded_net_ids if not net_ids else
-                       set(net_ids).intersection(seeded_net_ids))
-            if not net_ids:
-                raise RuntimeError(
-                    "selected seeds do not belong to the requested nets")
-        active_net_ids, excluded, exclusion_reasons = resolve_gloss_scope(
-            pcb_data, net_ids, excluded_net_ids)
-        input_before_length = calculate_route_length([
-            segment for segment in pcb_data.segments
-            if segment.net_id in active_net_ids])
-        input_signatures = {
-            net_id: _route_signature(pcb_data, net_id)
-            for net_id in active_net_ids}
-        editable_ids = None
-        branch_count = 0
-        selected = GlossConfig.from_value(
-            gloss_config if gloss_config is not None
-            else getattr(config, "gloss_config", None))
-        if seed_segments:
-            editable_ids, branch_count = elementary_branch_segment_ids(
-                pcb_data, seed_segments)
-            if not editable_ids:
-                raise RuntimeError(
-                    "no elementary branch matched the selected seed")
-        if selected.stay_in_corridor:
-            # KRT's preliminary smooth has no swept-path gate. Let G3 perform
-            # the same candidate search with the prototype gate instead.
-            _nets, strips, krt_stats = 0, [], {}
-        elif seed_segments:
-            (_count, _nets, strips, _added, krt_stats,
-             editable_ids) = _run_scoped_krt_smooth(
-                results, pcb_data, active_net_ids, editable_ids,
-                clearance=config.clearance,
-                net_clearances=getattr(config, "net_clearances", None),
-                board_edge_clearance=config.board_edge_clearance,
-                config=config, skip_net_ids=excluded,
-                min_gain=config.grid_step)
-        else:
-            _count, _nets, strips, _added, krt_stats = \
-                smooth_octolinear_chains(
-                    results, pcb_data, active_net_ids,
-                    clearance=config.clearance,
-                    net_clearances=getattr(config, "net_clearances", None),
-                    board_edge_clearance=config.board_edge_clearance,
-                    config=config, skip_net_ids=excluded,
-                    min_gain=config.grid_step)
-        krt_ms = (perf_counter() - started) * 1000.0
-        krt_after_length = calculate_route_length([
-            segment for segment in pcb_data.segments
-            if segment.net_id in active_net_ids])
-        krt_saved = input_before_length - krt_after_length
-        print(f"Track Gloss KRT smooth: {_nets} nets changed, "
-              f"-{krt_saved:.4f} mm, {krt_ms:.1f} ms")
-        return run_post_smooth_gloss(
-            results, pcb_data, config, gloss_config=gloss_config,
-            net_ids=active_net_ids, krt_strips=strips, krt_stats=krt_stats,
-            krt_ms=krt_ms,
-            krt_smooth_complete=not selected.stay_in_corridor,
-            _resolved_scope=(active_net_ids, excluded, exclusion_reasons),
-            _editable_segment_ids=editable_ids,
-            _branch_count=branch_count,
-            _input_before_length=input_before_length,
-            _input_signatures=input_signatures,
-            _visual_baseline_segments=original_segments,
-            _visual_baseline_vias=original_vias,
-            _total_started=started)
-    except Exception as exc:
-        _restore(results, original_count, original_results, pcb_data,
-                 original_segments, original_vias)
-        print(f"Track Gloss skipped; input preserved: {exc}")
-        return GlossOutcome(stats={"nets_changed": 0, "saved_mm": 0.0,
-                                   "gloss_errors": 1})
+    """Shared transactional entry point for plugin and command-line callers."""
+    return run_post_smooth_gloss(
+        results, pcb_data, config, gloss_config, net_ids=net_ids,
+        excluded_net_ids=excluded_net_ids, seed_segments=seed_segments)
 
 
 def run_centering(results, pcb_data, config, *, net_ids,
@@ -653,7 +528,11 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
                           _input_before_length=None, _input_signatures=None,
                           _visual_baseline_segments=None,
                           _visual_baseline_vias=None, _total_started=None):
-    """G0 API; callers may certify that final KRT smooth already completed."""
+    """Transactional optimization engine (legacy entry-point name).
+
+    krt_smooth_complete is accepted for compatibility, but never disables a
+    candidate family: every caller gets the same search and safety policy.
+    """
     baseline_segments = list(pcb_data.segments)
     baseline_vias = list(pcb_data.vias)
     visual_baseline_segments = (
@@ -709,30 +588,29 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
             if segment.net_id in scope_net_ids])
         before_grades = {net_id: _grade(pcb_data, net_id)
                          for net_id in scope_net_ids}
-        g5_before_grades = {net_id: _g5_grade(pcb_data, net_id)
-                            for net_id in scope_net_ids}
-        initial = _run_g3_5_pass(
+        g5_before_grades = before_grades
+        initial = _run_optimization_pass(
             results, context, selected, scope_net_ids, deadline,
             emit_log=_emit_log,
-            skip_smoothed_canonical=krt_smooth_complete)
+            skip_smoothed_canonical=False)
         changes = initial["changes"]
         gloss_stats = initial["stage_stats"]
-        g3, via, pad = initial["g3"], initial["via"], initial["pad"]
-        node, refine = initial["node"], initial["refine"]
-        equal = initial["equal"]
+        g3, via, pad = dict(initial["g3"]), dict(initial["via"]), dict(initial["pad"])
+        node, refine = dict(initial["node"]), dict(initial["refine"])
+        equal = dict(initial["equal"])
         merged_count, merged_nets = (initial["merged_count"],
                                      initial["merged_nets"])
-        merge, merge_ms = initial["merge"], initial["merge_ms"]
+        merge, merge_ms = dict(initial["merge"]), initial["merge_ms"]
 
         def available(enabled):
             expired = perf_counter() >= deadline
             gloss_stats.budget_expired = gloss_stats.budget_expired or expired
             return enabled and not expired, expired
 
-        run, expired = available(selected.enable_multipasses)
+        run, expired = available(selected.repeat_until_stable)
         g4 = run_multinet_passes(
             context, selected, list(context.net_ids), results,
-            deadline, _run_g3_5_pass) if run else {
+            deadline, _run_optimization_pass) if run else {
                 "segment_strips": [], "via_strips": [],
                 "changes": GlossChanges(), "passes": [],
                 "passes_completed": 0, "transformations": 0,
@@ -741,11 +619,21 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
                 "algorithm_ms": 0.0,
                 "stop_reason": "budget" if expired else "disabled",
             }
+        # Public operation counters cover every pass, not only the first one.
+        for name, counters in (("g3", g3), ("via", via), ("pad", pad),
+                               ("node", node), ("refine", refine),
+                               ("equal", equal), ("merge", merge)):
+            for key, value in g4.get("operation_totals", {}).get(name, {}).items():
+                counters[key] = counters.get(key, 0) + value
+        merge_totals = g4.get("operation_totals", {}).get("merge_summary", {})
+        merged_count += merge_totals.get("merged_count", 0)
+        merged_nets += merge_totals.get("merged_nets", 0)
+        merge_ms += merge_totals.get("merge_ms", 0)
         changes.segments.extend(g4["changes"].segments)
         changes.vias.extend(g4["changes"].vias)
         gloss_stats.record(
-            "G4", enabled=selected.enable_multipasses,
-            skipped_budget=expired and selected.enable_multipasses,
+            "G4", enabled=selected.repeat_until_stable,
+            skipped_budget=expired and selected.repeat_until_stable,
             changes=g4["transformations"], saved_mm=g4["saved_mm"],
             elapsed_ms=g4["algorithm_ms"], label="multi-net transformations")
 
@@ -816,7 +704,8 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
             "exclusion_reasons": dict(context.exclusion_reasons),
             "nets_changed": len(changed_net_ids), "saved_mm": total_saved,
             "elementary_branches": int(_branch_count),
-            "branch_scoped": context.branch_scoped,
+            "branch_scoped": _editable_segment_ids is not None,
+            "editable_layers": list(config.layers),
             "segment_changes": len(changes.segments),
             "via_changes": len(changes.vias),
             "doors_centered": centering["doors_centered"],
@@ -874,6 +763,10 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
             "g5_valid": True,
             "connectivity_regressions": 0,
         })
+        stats["pad_distance_cache"] = context.clearance_adapter._pad_distance.cache_info()._asdict()
+        stats["copper_data_cache"] = dict(context.clearance_adapter.copper_data_stats)
+        stats["search_cache"] = dict(context.search_cache.stats)
+        stats["zone_invalidations"] = context.zone_invalidations
         if _emit_log:
             copper_delta = (f"-{total_saved:.4f}" if total_saved >= 0.0 else
                             f"+{-total_saved:.4f}")
@@ -907,7 +800,7 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
         _restore(results, baseline_count, baseline_results, pcb_data,
                  baseline_segments, baseline_vias)
         if _emit_log:
-            print(f"Track Gloss skipped; KRT result preserved: {exc}")
+            print(f"Track Gloss skipped; input preserved: {exc}")
         return GlossOutcome(
             input_strip_segments=krt_strips,
             stats={"nets_changed": 0, "saved_mm": 0.0,

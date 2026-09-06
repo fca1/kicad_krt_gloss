@@ -3,9 +3,9 @@
 from collections import defaultdict
 from dataclasses import dataclass
 import math
-from time import perf_counter
+from .execution import perf_counter
 
-from check_connected import check_net_connectivity
+from .topology import terminal_partition, ReplacementGuard
 from check_drc import point_to_pad_distance
 from geometry_utils import point_to_segment_distance, segments_intersect
 from kicad_parser import Segment
@@ -16,6 +16,7 @@ from single_ended_routing import _segment_fits_wide
 from .changes import GlossChanges, release_result_custody
 from .segment_sliding import slide_interval, slide_segment
 from .corridor import stays_in_corridor
+from .krt_clearance import stable_copper_search
 
 
 @dataclass
@@ -39,6 +40,9 @@ class _ClearanceDecision:
 
 def _connectivity_worse(before, after):
     """Use KRT's connectivity grade without requiring an initially clean net."""
+    if (before.get("graph") is not None and after.get("graph") is not None and
+            terminal_partition(before) != terminal_partition(after)):
+        return True
     return ((before.get("connected") and not after.get("connected")) or
             len(after.get("disconnected_pads") or []) >
             len(before.get("disconnected_pads") or []) or
@@ -139,6 +143,16 @@ def _segments_for_points(points, layer, width, net_id):
             if pos_key(*points[i]) != pos_key(*points[i + 1])]
 
 
+def _connector_families(a, b, segment, grid_step):
+    """Shared octolinear connectors for chains, pads and junction approaches."""
+    yield "canonical", _candidate_segments(
+        a, b, segment.layer, segment.width, segment.net_id)
+    yield from (("chamfer", family) for family in
+                _chamfer_candidate_families(
+                    a, b, segment.layer, segment.width, segment.net_id,
+                    grid_step))
+
+
 def _chamfer_candidate_families(a, b, layer, width, net_id, grid_step):
     """Legacy fixed-endpoint octolinear chamfer families.
 
@@ -220,8 +234,8 @@ def _last_positive_chamfer_index(a, b, layer, width, net_id, grid_step,
 
 
 def _adaptive_chamfer_candidates(context, obstacles, a, b, layer, width,
-                                 net_id, old_length):
-    """Search the first locally reachable chamfer, five KRT cells at a time.
+                                 net_id, old_length, deadline=None):
+    """Search sampled chamfer positions, five KRT cells at a time.
 
     The search starts next to the existing geometry and moves toward the
     shortest connector. A grid rejection gets KRT's exact confirmation; a
@@ -245,6 +259,8 @@ def _adaptive_chamfer_candidates(context, obstacles, a, b, layer, width,
         return context.clearance_adapter.connector_clears(segments)
 
     for order in orders:
+        if deadline is not None and perf_counter() >= deadline:
+            return
         last = _last_positive_chamfer_index(
             a, b, layer, width, net_id, context.coord.grid_step, order,
             old_length)
@@ -258,6 +274,8 @@ def _adaptive_chamfer_candidates(context, obstacles, a, b, layer, width,
         best = probe
 
         while best > 1:
+            if deadline is not None and perf_counter() >= deadline:
+                return
             probe = max(1, best - stride)
             tested = candidate(probe, order)
             if clears(tested):
@@ -268,6 +286,8 @@ def _adaptive_chamfer_candidates(context, obstacles, a, b, layer, width,
             # time. Stop at the first valid point: anything beyond the
             # obstruction belongs to another local basin.
             for index in range(probe + 1, best):
+                if deadline is not None and perf_counter() >= deadline:
+                    return
                 tested = candidate(index, order)
                 if clears(tested):
                     best = index
@@ -349,31 +369,21 @@ def _reuses_source_segment(candidate, source_segments):
 
 def _candidate_clearance(context, obstacles, segments, source,
                          source_segments=(), *, defer_exact=False):
-    """G3 speed policy, explicitly split by candidate provenance.
+    """Grid-first enumeration, followed by the KRT geometric certificate.
 
-    KRT's own canonical connectors use KRT's exact smooth predicate through the
-    thin adapter.  The much larger legacy chamfer family is searched on KRT's
-    Rust grid.  A grid rejection is confirmed by KRT's exact predicate only
-    when every rejected segment is copper retained from the replaced source;
-    genuinely new copper must always pass the grid.  An exact certificate is
-    returned with the verdict so a selected replacement does not repeat work.
+    Dense chamfer searches use a conservative grid rejection filter. Canonical
+    probes and already checked adaptive proposals retain the exact fallback.
+    A direct, non-deferred query always asks the geometric predicate.
     """
     if not _candidate_geometry_valid(context, segments):
         return _ClearanceDecision(False)
-    if source == "canonical":
-        if defer_exact:
-            return _ClearanceDecision(True)
-        clear = context.clearance_adapter.connector_clears(segments)
-        return _ClearanceDecision(
-            clear, frozenset(map(id, segments)) if clear else frozenset())
-    rejected = [segment for segment in segments
-                if not _clears_krt_grid(context, obstacles, [segment])]
-    if not rejected:
-        return _ClearanceDecision(True)
-    if not source_segments or not all(
-            _reuses_source_segment(segment, source_segments)
-            for segment in rejected):
-        return _ClearanceDecision(False)
+    if defer_exact and source not in ("canonical", "chamfer_exact",
+                                      "segment_slide_exact"):
+        rejected = [segment for segment in segments
+                    if not _clears_krt_grid(context, obstacles, [segment])]
+        if rejected and not all(_reuses_source_segment(segment, source_segments)
+                                for segment in rejected):
+            return _ClearanceDecision(False)
     if defer_exact:
         return _ClearanceDecision(True)
     clear = context.clearance_adapter.connector_clears(segments)
@@ -496,10 +506,11 @@ def _shortest_path(edges, points, excluded):
     return selected
 
 
+@stable_copper_search
 def _best_chain_replacement(context, chain, net_id, foreign_obstacles,
                             net_segments, net_vias, deadline=None,
                             objective="shorter", include_canonical=True,
-                            stay_in_corridor=False):
+                            stay_in_corridor=False, accept_replacement=None):
     """Shortest valid path through a chain's ordered vertices (DAG dynamic program)."""
     n = len(chain.segments)
     span_ids = {id(seg) for seg in chain.segments}
@@ -517,6 +528,7 @@ def _best_chain_replacement(context, chain, net_id, foreign_obstacles,
     family_edges = {}
     edge_families = {}
     edge_candidates = {}
+    edge_spans = {}
     edge_source_points = {}
 
     for i in range(n - 1):
@@ -531,10 +543,18 @@ def _best_chain_replacement(context, chain, net_id, foreign_obstacles,
                 families.append(("canonical", _candidate_segments(
                     chain.points[i], chain.points[j], chain.layer,
                     chain.width, net_id)))
+            if objective == "shorter" and stay_in_corridor:
+                # Try progressively longer connectors when the shortest one
+                # cannot be reached. A failed deformation is not a barrier
+                # that justifies discarding the remaining candidate family.
+                families.extend(("chamfer", family) for family in
+                                _chamfer_candidate_families(
+                                    chain.points[i], chain.points[j], chain.layer,
+                                    chain.width, net_id, context.coord.grid_step))
             if objective == "shorter":
                 families.append(("chamfer_exact", _adaptive_chamfer_candidates(
                     context, foreign_obstacles, chain.points[i], chain.points[j],
-                    chain.layer, chain.width, net_id, old_length)))
+                    chain.layer, chain.width, net_id, old_length, deadline)))
                 if j == i + 3:
                     slides = _reachable_segment_slides(
                         context, tuple(chain.segments[i:j]), outside, net_vias,
@@ -558,7 +578,9 @@ def _best_chain_replacement(context, chain, net_id, foreign_obstacles,
                             continue
                     elif gain <= 1e-12:
                         break
-                    if not _candidate_geometry_valid(context, candidate):
+                    if not _candidate_clearance(
+                            context, foreign_obstacles, candidate, _source,
+                            chain.segments[i:j], defer_exact=True):
                         continue
                     if _touches_other_same_net(
                             candidate, outside, net_vias,
@@ -571,6 +593,7 @@ def _best_chain_replacement(context, chain, net_id, foreign_obstacles,
                     family_edges[family_id].append(edge_id)
                     edge_families[edge_id] = family_id
                     edge_candidates[edge_id] = candidate
+                    edge_spans[edge_id] = (i, j)
                     if stay_in_corridor:
                         edge_source_points[edge_id] = chain.points[i:j + 1]
 
@@ -580,6 +603,8 @@ def _best_chain_replacement(context, chain, net_id, foreign_obstacles,
     excluded = set()
     exact_status = {}
     while True:
+        if deadline is not None and perf_counter() >= deadline:
+            return None
         selected = _shortest_path(edges, chain.points, excluded)
         if not selected:
             return None
@@ -592,6 +617,8 @@ def _best_chain_replacement(context, chain, net_id, foreign_obstacles,
             selected_rank = family.index(edge_id)
             first_valid = None
             for preceding_id in family[:selected_rank + 1]:
+                if deadline is not None and perf_counter() >= deadline:
+                    return None
                 if preceding_id not in exact_status:
                     exact_status[preceding_id] = (
                         context.clearance_adapter.connector_clears(
@@ -599,6 +626,13 @@ def _best_chain_replacement(context, chain, net_id, foreign_obstacles,
                         (not stay_in_corridor or stays_in_corridor(
                             context, edge_source_points[preceding_id],
                             edge_candidates[preceding_id], deadline)))
+                    if exact_status[preceding_id] and accept_replacement:
+                        # Certify this shortcut, not only the final DAG winner.
+                        # A rejected shortcut leaves the other spans available.
+                        span = edge_spans[preceding_id]
+                        exact_status[preceding_id] = accept_replacement(
+                            chain.segments[span[0]:span[1]],
+                            edge_candidates[preceding_id])
                 if exact_status[preceding_id]:
                     first_valid = preceding_id
                     break
@@ -612,6 +646,20 @@ def _best_chain_replacement(context, chain, net_id, foreign_obstacles,
             if first_valid != edge_id:
                 changed_selection = True
         if not changed_selection:
+            removed = [segment for i, edge in selected if edge[2]
+                       for segment in chain.segments[i:edge[0]]]
+            added = [segment for _i, edge in selected if edge[2]
+                     for segment in edge[1]]
+            if removed and accept_replacement and not accept_replacement(removed, added):
+                # Individually safe shortcuts may together remove two alternate
+                # zone contacts. Reject this combination and keep searching.
+                changed = [(i, edge) for i, edge in selected if edge[2]]
+                i, edge = min(changed, key=lambda item:
+                              calculate_route_length(chain.segments[item[0]:item[1][0]])
+                              - item[1][3])
+                excluded.add(edge[4])
+                exact_status[edge[4]] = False
+                continue
             break
 
     removed = []
@@ -663,26 +711,28 @@ def shorten_routes(context, results, deadline=None, *, net_ids,
             if deadline is not None and perf_counter() >= deadline:
                 break
             current = [s for s in context.pcb_data.segments if s.net_id == net_id]
+            cache = getattr(context, "search_cache", None)
+            cache_key = None
+            if cache is not None:
+                cache_key, reused = cache.token(
+                    "tracks", net_id, chain.segments,
+                    (objective, include_canonical, stay_in_corridor))
+                if reused:
+                    continue
             replacement = _best_chain_replacement(
                 context, chain, net_id, foreign, current, net_vias,
                 deadline=deadline, objective=objective,
                 include_canonical=include_canonical,
-                stay_in_corridor=stay_in_corridor)
+                stay_in_corridor=stay_in_corridor,
+                accept_replacement=ReplacementGuard(
+                    context.pcb_data, net_id, current, net_vias))
             if replacement is None:
+                if cache is not None and (deadline is None or perf_counter() < deadline):
+                    cache.remember_failure(cache_key, chain.segments)
                 continue
             removed, added = replacement
             removed_ids = {id(seg) for seg in removed}
             trial = [seg for seg in current if id(seg) not in removed_ids] + added
-            before_grade = check_net_connectivity(
-                net_id, current, net_vias,
-                context.pcb_data.pads_by_net.get(net_id, []), [],
-                pcb_data=context.pcb_data)
-            after_grade = check_net_connectivity(
-                net_id, trial, net_vias,
-                context.pcb_data.pads_by_net.get(net_id, []), [],
-                pcb_data=context.pcb_data)
-            if _connectivity_worse(before_grade, after_grade):
-                continue
             gain = (calculate_route_length(
                         current, net_vias, context.pcb_data) -
                     calculate_route_length(

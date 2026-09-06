@@ -1,17 +1,17 @@
 """G3.2: simplify simple terminal chains up to the pad's native centre."""
 
 from collections import defaultdict
-from time import perf_counter
+from .execution import perf_counter
 
-from check_connected import check_net_connectivity
+from .topology import ReplacementGuard
+from .krt_clearance import stable_copper_search
 from check_drc import point_to_pad_distance
 from net_queries import calculate_route_length
 from routing_utils import pos_key
 
-from .algorithm import (_candidate_clearance, _candidate_segments,
-                        _connectivity_worse, _edge_directions,
+from .algorithm import (_candidate_clearance, _connector_families,
+                        _edge_directions,
                         _right_angle,
-                        _chamfer_candidate_families,
                         _touches_other_same_net)
 from .changes import GlossChanges, release_result_custody
 from .corridor import stays_in_corridor
@@ -126,17 +126,15 @@ def _new_boundary_right_angle(candidate, anchor, outside):
     return False
 
 
+@stable_copper_search
 def _best_pad_connector(context, pad, chain, points, outside, net_vias,
-                        foreign, deadline=None, stay_in_corridor=False):
+                        foreign, deadline=None, stay_in_corridor=False,
+                        accept_replacement=None):
     centre = (pad.global_x, pad.global_y)
     anchor = points[-1]
     old_length = calculate_route_length(chain)
-    families = [("canonical", _candidate_segments(
-        centre, anchor, chain[0].layer, chain[0].width, chain[0].net_id))]
-    families.extend(("chamfer", family) for family in
-                    _chamfer_candidate_families(
-                        centre, anchor, chain[0].layer, chain[0].width,
-                        chain[0].net_id, context.coord.grid_step))
+    families = _connector_families(centre, anchor, chain[0],
+                                   context.coord.grid_step)
     candidates = []
     sequence = 0
     for source, family in families:
@@ -172,7 +170,8 @@ def _best_pad_connector(context, pad, chain, points, outside, net_vias,
                 context.clearance_adapter.connector_clears(candidate)):
             if not stay_in_corridor or stays_in_corridor(
                     context, points, candidate, deadline):
-                return candidate
+                if accept_replacement is None or accept_replacement(chain, candidate):
+                    return candidate
     return None
 
 
@@ -211,22 +210,21 @@ def optimize_pad_terminals(context, results, deadline=None, *, net_ids,
                        if id(segment) not in removed_ids]
             net_vias = [via for via in context.pcb_data.vias
                         if via.net_id == net_id]
+            cache = getattr(context, "search_cache", None)
+            cache_key = None
+            if cache is not None:
+                cache_key, reused = cache.token(
+                    "pads", net_id, chain, (id(pad), stay_in_corridor))
+                if reused:
+                    continue
             candidate = _best_pad_connector(
                 context, pad, chain, points, outside, net_vias, foreign,
-                deadline=deadline, stay_in_corridor=stay_in_corridor)
+                deadline=deadline, stay_in_corridor=stay_in_corridor,
+                accept_replacement=ReplacementGuard(
+                    context.pcb_data, net_id, current, net_vias))
             if candidate is None:
-                continue
-
-            before_grade = check_net_connectivity(
-                net_id, current, net_vias,
-                context.pcb_data.pads_by_net.get(net_id, []), [],
-                pcb_data=context.pcb_data)
-            trial = outside + candidate
-            after_grade = check_net_connectivity(
-                net_id, trial, net_vias,
-                context.pcb_data.pads_by_net.get(net_id, []), [],
-                pcb_data=context.pcb_data)
-            if _connectivity_worse(before_grade, after_grade):
+                if cache is not None and (deadline is None or perf_counter() < deadline):
+                    cache.remember_failure(cache_key, chain)
                 continue
 
             native_segments, _native_vias = release_result_custody(

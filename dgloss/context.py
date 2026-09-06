@@ -14,6 +14,7 @@ from routing_config import GridCoord
 from routing_utils import build_layer_map
 
 from .krt_clearance import KrtClearanceAdapter
+from .search_cache import SearchCache
 
 
 @dataclass
@@ -31,6 +32,8 @@ class GlossContext:
     editable_segment_ids: set = None
     foreign_working: object = None
     foreign_excluded_net_id: object = None
+    search_cache: object = None
+    zone_invalidations: int = 0
 
     @property
     def branch_scoped(self):
@@ -41,7 +44,14 @@ class GlossContext:
                 all(id(segment) in self.editable_segment_ids
                     for segment in segments))
 
-    def replace_editable_segments(self, removed, added):
+    def replace_editable_segments(self, removed, added, old_vias=(), new_vias=()):
+        from plane_fill_model import invalidate_copper_models
+
+        touched = list(removed) + list(added)
+        vias = list(old_vias) + list(new_vias)
+        if self.search_cache is not None:
+            self.search_cache.changed(touched, vias)
+        self.zone_invalidations += len(invalidate_copper_models(self.pcb_data, touched, vias))
         if self.editable_segment_ids is None:
             return
         self.editable_segment_ids.difference_update(
@@ -116,7 +126,18 @@ def build_gloss_context(pcb_data, config, net_ids=None, *,
                         excluded_net_ids=None, exclusion_reasons=None,
                         editable_segment_ids=None):
     """Rebuild KRT obstacles from the post-smooth board."""
+    import math
+    if not math.isfinite(config.grid_step) or config.grid_step <= 0:
+        raise ValueError("grid_step must be finite and positive")
     layers = list(pcb_data.board_info.copper_layers or config.layers)
+    requested_layers = set(config.layers or layers)
+    if not requested_layers.issubset(layers):
+        raise ValueError("requested layers must be board copper layers")
+    if requested_layers != set(layers):
+        layer_ids = {id(segment) for segment in pcb_data.segments
+                     if segment.layer in requested_layers}
+        editable_segment_ids = (layer_ids if editable_segment_ids is None else
+                                set(editable_segment_ids).intersection(layer_ids))
     gloss_config = replace(config, layers=layers)
     present_net_ids = {s.net_id for s in pcb_data.segments if s.net_id}
     net_ids = sorted(present_net_ids if net_ids is None
@@ -138,6 +159,7 @@ def build_gloss_context(pcb_data, config, net_ids=None, *,
         working_obstacles=working,
         net_obstacles=caches,
         clearance_adapter=KrtClearanceAdapter(pcb_data, gloss_config),
+        search_cache=SearchCache(pcb_data, gloss_config),
         excluded_net_ids=set(excluded_net_ids or ()),
         exclusion_reasons=dict(exclusion_reasons or {}),
         editable_segment_ids=(None if editable_segment_ids is None else

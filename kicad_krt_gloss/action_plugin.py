@@ -133,7 +133,7 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                 except Exception:
                     pass
                 if append_log is not None:
-                    append_log(text)
+                    wx.CallAfter(append_log, text)
                 return len(text)
 
             def flush(self):
@@ -155,7 +155,9 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                     print("Track Gloss cancelled: dependencies are unavailable.")
                     return False
                 from kicad_parser import build_pcb_data_from_board
-                from dgloss import GlossConfig, run_final_gloss
+                from dgloss import GlossConfig
+                from dgloss.execution import GlossSession
+                from .progress_dialog import GlossProgressDialog
                 from .board_adapter import apply_gloss, build_krt_config
 
                 if prepared is None:
@@ -176,20 +178,30 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                     board, pcb_data, values["grid_step"], net_ids=net_ids)
                 gloss_config = GlossConfig(
                     stay_in_corridor=values.get("stay_in_corridor", False),
-                    enable_g3_1=values["enable_g3_1"],
-                    enable_g3_2=values["enable_g3_2"],
-                    enable_g3_3=values["enable_g3_3"],
-                    enable_g3_4=values["enable_g3_4"],
-                    enable_noncollinear_t_rails=values[
-                        "enable_noncollinear_t_rails"],
-                    enable_multipasses=values["enable_multipasses"],
+                    move_vias=values.get("move_vias",
+                                         values.get("enable_g3_1", True)),
                     budget_seconds=values["budget_seconds"],
                 )
-                results = []
-                outcome = run_final_gloss(
-                    results, pcb_data, config, gloss_config, net_ids=net_ids,
+                session = GlossSession(
+                    pcb_data, config, gloss_config, net_ids=net_ids,
                     excluded_net_ids=native_arc_net_ids(board),
                     seed_segments=seed_segments)
+                progress = GlossProgressDialog(parent, session)
+                try:
+                    session.start()
+                    progress.ShowModal()
+                finally:
+                    if not session.done.is_set():
+                        session.control.cancel()
+                    progress.Destroy()
+                completed = session.result()
+                if completed is None:
+                    print("Track Gloss cancelled; board unchanged.")
+                    return False
+                results, outcome = completed
+                if not outcome.stats.get("g5_valid", False):
+                    print("Track Gloss validation failed; board unchanged.")
+                    return False
                 removed, added, moved, debug_layer = apply_gloss(
                     board, results, outcome)
                 pcbnew.Refresh()

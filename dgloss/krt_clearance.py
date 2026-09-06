@@ -1,6 +1,9 @@
 """G3 clearance adapter: KRT owns every geometry and rule calculation."""
 
 import math
+from functools import lru_cache
+from functools import wraps
+from contextlib import contextmanager, nullcontext
 
 import numpy as np
 
@@ -24,22 +27,23 @@ from single_ended_routing import (_FOREIGN_PAD_WINDOW,
 def _exact_foreign_segment_distance(pcb_data, net_id, x1, y1, x2, y2,
                                     layer, *, net_clearances=None,
                                     base_clearance=0.0,
-                                    track_clearances=None):
+                                    track_clearances=None, prepared_copper=None):
     """Compose KRT's cached arrays and exact vectorized capsule distance.
 
     KRT owns the obstacle arrays, broad phase and analytic distance primitive.
     dgloss only folds KRT's rule excess into the returned distance, exactly as
     KRT's sampled convenience helper does.
     """
-    nid, fax, fay, fbx, fby, half_width = _foreign_seg_arrays(pcb_data, layer)
+    arrays, bounds = (prepared_copper if prepared_copper is not None else
+                      (_foreign_seg_arrays(pcb_data, layer), None))
+    nid, fax, fay, fbx, fby, half_width = arrays
     if nid.size == 0:
         return 1e9
 
     radius = _FOREIGN_PAD_WINDOW
-    min_x = np.minimum(fax, fbx) - half_width
-    max_x = np.maximum(fax, fbx) + half_width
-    min_y = np.minimum(fay, fby) - half_width
-    max_y = np.maximum(fay, fby) + half_width
+    min_x, max_x, min_y, max_y = (bounds if bounds is not None else (
+        np.minimum(fax, fbx) - half_width, np.maximum(fax, fbx) + half_width,
+        np.minimum(fay, fby) - half_width, np.maximum(fay, fby) + half_width))
     near = ((max_x >= min(x1, x2) - radius) &
             (min_x <= max(x1, x2) + radius) &
             (max_y >= min(y1, y2) - radius) &
@@ -66,6 +70,16 @@ def _exact_foreign_segment_distance(pcb_data, net_id, x1, y1, x2, y2,
     return float(np.min(distance))
 
 
+def stable_copper_search(function):
+    """Batch read-only proposals; never decorate a function that commits copper."""
+    @wraps(function)
+    def wrapped(context, *args, **kwargs):
+        batch = getattr(context.clearance_adapter, "stable_copper", nullcontext)
+        with batch():
+            return function(context, *args, **kwargs)
+    return wrapped
+
+
 class KrtClearanceAdapter:
     """Thin G3 adapter for the predicate embedded in KRT's final smooth.
 
@@ -90,6 +104,48 @@ class KrtClearanceAdapter:
         self.board_bounds = pcb_data.board_info.board_bounds
         self.keepouts = self._collect_keepouts()
         self.via_keepouts = self._collect_keepouts(for_vias=True)
+        # Pads and rules are immutable during this adapter's single Gloss run.
+        # Never cache distances to tracks/vias: those move between candidates.
+        # Keep coordinates exact (no grid rounding of a clearance certificate).
+        self._pad_distance = lru_cache(maxsize=8192)(self._uncached_pad_distance)
+        self._copper_batch = None
+        self.copper_data_stats = {"builds": 0, "reuses": 0, "certificate_hits": 0}
+
+    @contextmanager
+    def stable_copper(self):
+        """Reuse KRT arrays only while the caller guarantees no copper mutation.
+
+        A scope ends before committing a candidate. No arrays escape that
+        revision, even on rejection, timeout or an exception. Outside this
+        scope KRT's regular signature/invalidation checks remain in charge.
+        """
+        previous = self._copper_batch
+        if previous is None:
+            self._copper_batch = {}
+        try:
+            yield
+        finally:
+            self._copper_batch = previous
+
+    def _prepared_copper(self, layer):
+        batch = getattr(self, "_copper_batch", None)
+        if batch is None:
+            return None
+        if layer in batch:
+            self.copper_data_stats["reuses"] += 1
+            return batch[layer]
+        arrays = _foreign_seg_arrays(self.pcb, layer)
+        _nid, ax, ay, bx, by, half = arrays
+        bounds = (np.minimum(ax, bx) - half, np.maximum(ax, bx) + half,
+                  np.minimum(ay, by) - half, np.maximum(ay, by) + half)
+        batch[layer] = arrays, bounds
+        self.copper_data_stats["builds"] += 1
+        return batch[layer]
+
+    def _uncached_pad_distance(self, net_id, x1, y1, x2, y2, layer, effective):
+        return _seg_foreign_pad_dist(
+            self.pcb, net_id, x1, y1, x2, y2, layer,
+            base_clearance=effective, net_clearances=self.net_clearances)
 
     def _collect_keepouts(self, for_vias=False):
         keepouts = []
@@ -170,17 +226,31 @@ class KrtClearanceAdapter:
         return True
 
     def segment_clears(self, seg):
+        batch = getattr(self, "_copper_batch", None)
+        if batch is None:
+            return self._segment_clears(seg)
+        certificates = batch.setdefault("certificates", {})
+        key = (seg.net_id, seg.layer, seg.width, seg.start_x, seg.start_y,
+               seg.end_x, seg.end_y)
+        if key in certificates:
+            self.copper_data_stats["certificate_hits"] += 1
+            return certificates[key]
+        clear = self._segment_clears(seg)
+        certificates[key] = clear
+        return clear
+
+    def _segment_clears(self, seg):
         effective = self._effective_clearance(seg.net_id, seg.layer)
         distance = min(
-            _seg_foreign_pad_dist(
-                self.pcb, seg.net_id, seg.start_x, seg.start_y,
-                seg.end_x, seg.end_y, seg.layer, base_clearance=effective,
-                net_clearances=self.net_clearances),
+            self._pad_distance(
+                seg.net_id, seg.start_x, seg.start_y,
+                seg.end_x, seg.end_y, seg.layer, effective),
             _exact_foreign_segment_distance(
                 self.pcb, seg.net_id, seg.start_x, seg.start_y,
                 seg.end_x, seg.end_y, seg.layer,
                 net_clearances=self.net_clearances, base_clearance=effective,
-                track_clearances=self.track_clearances),
+                track_clearances=self.track_clearances,
+                prepared_copper=self._prepared_copper(seg.layer)),
             _seg_foreign_via_dist(
                 self.pcb, seg.net_id, seg.start_x, seg.start_y,
                 seg.end_x, seg.end_y, seg.layer,

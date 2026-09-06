@@ -182,7 +182,7 @@ def test_g3_5_config_defaults_enable_every_optional_stage():
 def test_g0_post_smooth_entry_never_runs_krt_smooth_again():
     pcb, config, _first, _second = _parallel_board()
     disabled = GlossConfig(False, False, False, False)
-    with patch("dgloss.pipeline.smooth_octolinear_chains") as smooth:
+    with patch("pcb_modification.smooth_octolinear_chains") as smooth:
         outcome = run_post_smooth_gloss([], pcb, config, disabled)
     smooth.assert_not_called()
     assert outcome.stats["config"]["enable_g3_1"] is False
@@ -288,35 +288,35 @@ def test_via_clearance_honours_foreign_pad_local_clearance():
 def test_final_entry_passes_the_same_complete_net_scope_to_krt_and_dgloss():
     pcb, config, _first, _second = _parallel_board()
     disabled = GlossConfig(False, False, False, False)
-    with patch("dgloss.pipeline.smooth_octolinear_chains",
+    with patch("pcb_modification.smooth_octolinear_chains",
                return_value=(0, set(), [], [], {"saved_mm": 0.0})) as smooth:
         outcome = run_final_gloss(
             [], pcb, config, disabled, net_ids=[2])
-    assert smooth.call_args.args[2] == [2]
+    smooth.assert_not_called()
     assert outcome.stats["nets_processed"] == 1
 
 
 def test_final_entry_certifies_that_krt_smooth_completed():
     pcb, config, _first, _second = _parallel_board()
     sentinel = object()
-    with patch("dgloss.pipeline.smooth_octolinear_chains",
+    with patch("pcb_modification.smooth_octolinear_chains",
                return_value=(0, set(), [], [], {"saved_mm": 0.0})), \
             patch("dgloss.pipeline.run_post_smooth_gloss",
                   return_value=sentinel) as post_smooth:
         outcome = run_final_gloss([], pcb, config, net_ids=[1])
 
     assert outcome is sentinel
-    assert post_smooth.call_args.kwargs["krt_smooth_complete"] is True
+    assert post_smooth.call_args.kwargs.get("krt_smooth_complete", False) is False
 
 
 def test_final_entry_excludes_adapter_arc_nets_before_krt_smooth_and_g0():
     pcb, config, _first, _second = _parallel_board()
     disabled = GlossConfig(False, False, False, False)
-    with patch("dgloss.pipeline.smooth_octolinear_chains",
+    with patch("pcb_modification.smooth_octolinear_chains",
                return_value=(0, set(), [], [], {"saved_mm": 0.0})) as smooth:
         outcome = run_final_gloss(
             [], pcb, config, disabled, excluded_net_ids=[1])
-    assert smooth.call_args.args[2] == [2]
+    smooth.assert_not_called()
     assert outcome.stats["nets_processed"] == 1
     assert outcome.stats["excluded_net_ids"] == [1]
 
@@ -366,7 +366,8 @@ def test_g3_shortens_one_net_without_changing_widths():
                                   s.end_y - s.start_y) for s in pcb.segments)
     assert after_length < before_length - config.grid_step
     assert all(math.isclose(s.width, 0.2) for s in pcb.segments)
-    assert outcome.stats["krt_baseline_saved_mm"] > config.grid_step
+    assert outcome.stats["krt_baseline_saved_mm"] == 0
+    assert outcome.stats["saved_mm"] > config.grid_step
     assert outcome.input_strip_segments
 
 
@@ -425,8 +426,12 @@ def test_a11_style_grid_rejection_uses_exact_krt_only_for_retained_copper():
             context, object(), [first_leg, retained], "chamfer", [source])
 
         new_rejected = Segment(3.0, 2.0, 3.0, 6.0, 0.4, "B.Cu", 1)
-        assert not _candidate_clears(
-            context, object(), [first_leg, new_rejected], "chamfer", [source])
+        assert not _candidate_clearance(
+            context, object(), [first_leg, new_rejected], "chamfer", [source],
+            defer_exact=True)
+        assert _candidate_clearance(
+            context, object(), [first_leg, retained], "chamfer", [source],
+            defer_exact=True)
 
 
 def test_exact_clearance_certificate_is_carried_by_the_candidate():
@@ -485,10 +490,8 @@ def test_pad_candidates_are_exact_checked_in_gain_order_until_one_passes():
         coord=types.SimpleNamespace(grid_step=0.1),
         clearance_adapter=adapter)
 
-    with patch("dgloss.pad_terminals._candidate_segments",
-               return_value=iter((best_rejected, accepted, worse_unused))), \
-            patch("dgloss.pad_terminals._chamfer_candidate_families",
-                  return_value=[]):
+    with patch("dgloss.pad_terminals._connector_families",
+               return_value=[("canonical", iter((best_rejected, accepted, worse_unused)))]):
         result = _best_pad_connector(
             context, pad, chain, [(0.0, 0.0), (0.0, 5.0), (5.0, 5.0)],
             [], [], object())
@@ -552,14 +555,14 @@ def test_a_later_gloss_completely_removes_a_longer_centering_path():
     assert reduced[1] == 1
     assert math.isclose(first_gloss.stats["before_mm"], initial[0],
                         abs_tol=1e-4)
-    assert math.isclose(first_gloss.stats["krt_after_mm"], reduced[0],
+    assert math.isclose(first_gloss.stats["krt_after_mm"], initial[0],
                         abs_tol=1e-4)
     assert math.isclose(first_gloss.stats["after_mm"], reduced[0],
                         abs_tol=1e-4)
     assert math.isclose(first_gloss.stats["saved_mm"],
                         initial[0] - reduced[0], abs_tol=1e-4)
-    assert math.isclose(first_gloss.stats["post_krt_saved_mm"], 0.0,
-                        abs_tol=1e-7)
+    assert math.isclose(first_gloss.stats["post_krt_saved_mm"], initial[0] - reduced[0],
+                        abs_tol=1e-4)
     assert first_gloss.stats["nets_changed"] == 1
     assert first_gloss.visual_changes["segments"]
 

@@ -14,7 +14,7 @@ from kicad_parser import Segment, Via
 
 from dgloss.branches import elementary_branch_segment_ids
 from dgloss.context import GlossContext
-from dgloss.pipeline import _run_scoped_krt_smooth
+from dgloss.pipeline import _merge_collinear_in_scope
 
 
 def _pcb(segments, *, vias=(), pads=()):
@@ -117,7 +117,7 @@ def test_context_transports_editability_through_replacements():
     assert context.editable_segment_ids == {id(new)}
 
 
-def test_scoped_krt_smooth_exposes_only_branch_copper_as_mutable():
+def test_scoped_merge_exposes_only_branch_copper_as_mutable():
     editable = _seg(0, 0, 1, 0)
     outside = _seg(1, 0, 2, 0)
     replacement = _seg(0, 0, 1, 1)
@@ -127,18 +127,22 @@ def test_scoped_krt_smooth_exposes_only_branch_copper_as_mutable():
     def fake_smooth(scratch, live_pcb, net_ids, **kwargs):
         assert scratch[0]["new_segments"] == [editable]
         assert kwargs["keep_input_copper"] is True
-        assert net_ids == [1]
+        assert set(net_ids) == {1}
         live_pcb.segments = [outside, replacement]
         return 1, 1, [], [replacement], {"spans": 1}
 
-    with patch("dgloss.pipeline.smooth_octolinear_chains", fake_smooth):
-        changed, nets, native, added, stats, updated = \
-            _run_scoped_krt_smooth(
-                results, pcb, [1], {id(editable)}, min_gain=0.1)
+    context = GlossContext(
+        pcb_data=pcb, config=None, coord=None, layer_map={}, net_ids=[1],
+        working_obstacles=None, net_obstacles={}, clearance_adapter=None,
+        excluded_net_ids=set(), exclusion_reasons={},
+        editable_segment_ids={id(editable)})
+    with patch("dgloss.pipeline.merge_collinear_segments", fake_smooth):
+        changed, nets, native, added, stats = \
+            _merge_collinear_in_scope(results, context, [1])
 
     assert (changed, nets, native, added, stats) == \
         (1, 1, [], [replacement], {"spans": 1})
     assert pcb.segments == [outside, replacement]
     assert results[0]["new_segments"] == [outside]
     assert results[1]["new_segments"] == [replacement]
-    assert updated == {id(replacement)}
+    assert context.editable_segment_ids == {id(replacement)}

@@ -3,9 +3,9 @@
 import math
 from collections import defaultdict
 from dataclasses import replace
-from time import perf_counter
+from .execution import perf_counter
 
-from check_connected import check_net_connectivity
+from .topology import check_local_connectivity as check_net_connectivity
 from kicad_parser import Segment
 from net_queries import calculate_route_length
 from routing_utils import pos_key
@@ -149,6 +149,7 @@ def move_mobile_vias(context, results, *, net_ids, stage="G3.1",
                           if via.net_id == net_id and via is not old_via]
             old_length = calculate_route_length(removed_segments)
             best = None
+            before_grade = None
             for position in _candidate_positions(
                     context, anchors[0], anchors[1], (old_via.x, old_via.y)):
                 if deadline is not None and perf_counter() >= deadline:
@@ -160,6 +161,9 @@ def move_mobile_vias(context, results, *, net_ids, stage="G3.1",
                 candidate = [leg for leg in legs if leg is not None]
                 new_length = calculate_route_length(candidate)
                 if old_length - new_length <= context.coord.grid_step + 1e-12:
+                    continue
+                score = (new_length, len(candidate), position[0], position[1])
+                if best is not None and score >= best[0]:
                     continue
                 if any(calculate_route_length([leg]) <
                        context.coord.grid_step - 1e-9 for leg in candidate):
@@ -181,27 +185,25 @@ def move_mobile_vias(context, results, *, net_ids, stage="G3.1",
                 if not context.clearance_adapter.via_clears(
                         moved_via, ignored_via=old_via):
                     continue
-                score = (new_length, len(candidate), position[0], position[1])
-                if best is None or score < best[0]:
-                    best = score, moved_via, candidate
+                if before_grade is None:
+                    before_grade = check_net_connectivity(
+                        net_id, net_segments, other_vias + [old_via],
+                        context.pcb_data.pads_by_net.get(net_id, []), [],
+                        pcb_data=context.pcb_data)
+                after_grade = check_net_connectivity(
+                    net_id, outside + candidate, other_vias + [moved_via],
+                    context.pcb_data.pads_by_net.get(net_id, []), [],
+                    pcb_data=context.pcb_data)
+                if _connectivity_worse(before_grade, after_grade):
+                    continue
+                best = score, moved_via, candidate
             if best is None:
                 continue
 
             _score, moved_via, candidate = best
-            before_grade = check_net_connectivity(
-                net_id, net_segments,
-                [via for via in context.pcb_data.vias if via.net_id == net_id],
-                context.pcb_data.pads_by_net.get(net_id, []), [],
-                pcb_data=context.pcb_data)
             trial_segments = outside + candidate
             trial_vias = [via for via in context.pcb_data.vias
                           if via.net_id == net_id and via is not old_via] + [moved_via]
-            after_grade = check_net_connectivity(
-                net_id, trial_segments, trial_vias,
-                context.pcb_data.pads_by_net.get(net_id, []), [],
-                pcb_data=context.pcb_data)
-            if _connectivity_worse(before_grade, after_grade):
-                continue
 
             strips, native_vias = release_result_custody(
                 results, removed_segments, [old_via])
@@ -210,9 +212,10 @@ def move_mobile_vias(context, results, *, net_ids, stage="G3.1",
                 input_vias.append(old_via)
             context.pcb_data.segments = [segment for segment in context.pcb_data.segments
                                          if id(segment) not in removed_ids] + candidate
-            context.replace_editable_segments(removed_segments, candidate)
             context.pcb_data.vias = [via for via in context.pcb_data.vias
                                      if via is not old_via] + [moved_via]
+            context.replace_editable_segments(removed_segments, candidate,
+                                               [old_via], [moved_via])
             if hasattr(context.pcb_data, "_foreign_seg_arr_cache"):
                 context.pcb_data._foreign_seg_arr_cache = None
             changes.segments.extend({"old": segment, "stage": stage}

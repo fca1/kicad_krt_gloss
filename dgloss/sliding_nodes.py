@@ -3,18 +3,19 @@
 import math
 from collections import defaultdict
 from itertools import combinations
-from time import perf_counter
+from .execution import perf_counter
 
-from check_connected import check_net_connectivity
+from .topology import ReplacementGuard
+from .krt_clearance import stable_copper_search
 from check_drc import point_to_pad_distance
 from geometry_utils import point_to_segment_distance, segments_intersect
 from kicad_parser import Segment
 from net_queries import calculate_route_length
 from routing_utils import pos_key
 
-from .algorithm import (_connectivity_worse,
-                        _candidate_clearance, _candidate_segments,
-                        _segments_for_points, _chamfer_candidate_families,
+from .algorithm import (
+                        _candidate_clearance, _connector_families,
+                        _segments_for_points,
                         _touches_other_same_net)
 from .changes import GlossChanges, release_result_custody
 from .pad_terminals import _new_boundary_right_angle, _pad_on_layer
@@ -152,15 +153,6 @@ def _candidate_meets_only_rail_end(candidate, point, rails):
     return True
 
 
-def _connector_families(a, b, segment, grid_step):
-    yield "canonical", _candidate_segments(
-        a, b, segment.layer, segment.width, segment.net_id)
-    yield from (("chamfer", family) for family in
-                _chamfer_candidate_families(
-                    a, b, segment.layer, segment.width, segment.net_id,
-                    grid_step))
-
-
 def _right_angle_at(point, segments):
     vectors = [_vector_from(point, segment) for segment in segments
                if pos_key(segment.start_x, segment.start_y) == pos_key(*point)
@@ -194,8 +186,11 @@ def _new_segments_join_cleanly(segments):
     return True
 
 
+@stable_copper_search
 def _best_slide(context, node, chain, anchor, rail_groups, current, net_vias,
                 foreign, incident, deadline=None):
+    accept_replacement = ReplacementGuard(
+        context.pcb_data, chain[0].net_id, current, net_vias)
     branch = chain[0]
     candidates = []
     sequence = 0
@@ -313,7 +308,8 @@ def _best_slide(context, node, chain, anchor, rail_groups, current, net_vias,
             break
         if (all(id(segment) in exact_segment_ids for segment in added) or
                 context.clearance_adapter.connector_clears(added)):
-            return removed, added, cleaned
+            if accept_replacement(removed, added):
+                return removed, added, cleaned
     return None
 
 
@@ -394,19 +390,6 @@ def slide_t_nodes(context, results, deadline=None, *,
                 if not context.segments_editable(removed):
                     continue
                 removed_ids = {id(segment) for segment in removed}
-                before_grade = check_net_connectivity(
-                    net_id, current, net_vias,
-                    context.pcb_data.pads_by_net.get(net_id, []), [],
-                    pcb_data=context.pcb_data)
-                trial = [segment for segment in current
-                         if id(segment) not in removed_ids] + candidate
-                after_grade = check_net_connectivity(
-                    net_id, trial, net_vias,
-                    context.pcb_data.pads_by_net.get(net_id, []), [],
-                    pcb_data=context.pcb_data)
-                if _connectivity_worse(before_grade, after_grade):
-                    continue
-
                 native_segments, _native_vias = release_result_custody(
                     results, removed)
                 strips.extend(native_segments)

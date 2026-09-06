@@ -303,8 +303,8 @@ def test_dialog_configuration_is_partitioned_by_action_scope():
     assert '"selection_uses_elementary_branches"' in general
     assert '"grid_step"' in general
     assert '"budget_seconds"' in general
-    assert '"enable_g3_1"' in gloss
-    assert '"enable_multipasses"' in gloss
+    assert '"move_vias"' in gloss
+    assert '"stay_in_corridor"' in gloss
     assert '"centering_proximity_mm"' in centering
     assert '"centering_build_new_segments"' in centering
     assert source.index('AddPage(panel, "General")') < source.index(
@@ -365,27 +365,22 @@ def test_pcm_package_includes_the_about_logo():
 def test_dialog_exposes_the_integrated_gloss_options_by_public_name():
     source = (ROOT / "kicad_krt_gloss" / "settings_dialog.py").read_text(
         encoding="utf-8")
-    assert '\"enable_noncollinear_t_rails\": True' in source
-    assert '\"enable_multipasses\": True' in source
+    assert '\"move_vias\": True' in source
+    assert '\"stay_in_corridor\": False' in source
     assert "enable_g4" not in source
     assert source.count("SetToolTip(") >= 2
     assert 'label="Use elementary branches"' in source
-    assert '"enable_multipasses", "Repeat until stable"' in source
+    assert '"move_vias", "Optimize movable vias"' in source
     assert 'label="G3.3' not in source
     assert 'label="G3.4' not in source
-    assert '"enable_g3_3": True' in source[source.index("def values(self):"):]
-    assert '"enable_g3_4": True' in source[source.index("def values(self):"):]
-    assert '"enable_noncollinear_t_rails": True' in source[
-        source.index("def values(self):"):]
+    assert '"enable_g3_3": True' not in source[source.index("def values(self):"):]
+    assert '"enable_g3_4": True' not in source[source.index("def values(self):"):]
     assert 'label="Selection Scope"' in source
     assert 'label="Gloss Operations"' in source
     assert 'label="Calculation Settings"' in source
     assert 'label="Execution Limit"' in source
     assert '"selection_scope_illustration.png"' in source
     assert "wx.ToolTip.SetDelay(250)" in source
-    assert "Only the two directly" in source
-    assert "the pad and its native connection point fixed" in source
-    assert "net order alternates between passes" in source
     assert "must save strictly more than this value" in source
     assert "KRT defaults to 0.1 mm" not in source
     assert "For a direct KRT API call" not in source
@@ -415,7 +410,7 @@ def test_plugin_selection_mode_defaults_to_be_and_cli_stays_net_only():
         encoding="utf-8")
     cli = (ROOT / "gloss.py").read_text(encoding="utf-8")
     key = '"selection_uses_elementary_branches"'
-    assert dialog.index(f"{key}: True") < dialog.index('"enable_g3_1": True')
+    assert dialog.index(f"{key}: True") < dialog.index('"move_vias": True')
     assert "Selected elementary branches:" not in dialog
     assert 'selection.Add(selected_net, 0, wx.ALIGN_RIGHT' in dialog
     assert "bounded by pads, free ends or T/X" in dialog

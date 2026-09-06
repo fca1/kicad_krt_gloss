@@ -16,7 +16,7 @@ configure_krt_runtime()
 
 import routing_defaults as defaults
 from copy_board import copy_board
-from dgloss import GlossConfig, run_post_smooth_gloss
+from dgloss import GlossConfig, run_final_gloss
 from kicad_dru import install_layer_clearances, install_track_clearances
 from kicad_parser import parse_kicad_pcb
 from list_nets import (board_default_netclass_clearance,
@@ -73,12 +73,14 @@ def build_parser():
     parser.add_argument("--hole-to-hole-clearance", type=float, default=None)
 
     parser.add_argument("--budget-seconds", type=float, default=20.0)
-    parser.add_argument("--no-g3-1", action="store_true")
-    parser.add_argument("--no-g3-2", action="store_true")
-    parser.add_argument("--no-g3-3", action="store_true")
-    parser.add_argument("--no-g3-4", action="store_true")
-    parser.add_argument("--no-noncollinear-t-rails", action="store_true")
-    parser.add_argument("--no-multipasses", action="store_true")
+    parser.add_argument("--no-move-vias", action="store_true",
+                        help="Keep all vias fixed")
+    parser.add_argument("--no-g3-1", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--no-g3-2", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--no-g3-3", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--no-g3-4", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--no-noncollinear-t-rails", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--no-multipasses", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--stay-in-corridor", action="store_true",
                         help="Prototype: require a clear deformation for track shortcuts")
     return parser
@@ -287,6 +289,7 @@ def main(argv=None):
 
     config = build_krt_config(args, pcb_data, net_ids)
     gloss_config = GlossConfig(
+        move_vias=not (args.no_move_vias or args.no_g3_1),
         enable_g3_1=not args.no_g3_1, enable_g3_2=not args.no_g3_2,
         enable_g3_3=not args.no_g3_3, enable_g3_4=not args.no_g3_4,
         budget_seconds=max(0.0, args.budget_seconds),
@@ -295,7 +298,7 @@ def main(argv=None):
         stay_in_corridor=args.stay_in_corridor)
     results = []
     started = perf_counter()
-    outcome = run_post_smooth_gloss(
+    outcome = run_final_gloss(
         results, pcb_data, config, gloss_config, net_ids=net_ids)
     wall_ms = (perf_counter() - started) * 1000.0
     debug_layer = None
