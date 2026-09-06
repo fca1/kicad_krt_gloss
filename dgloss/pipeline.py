@@ -194,7 +194,8 @@ def _run_g3_5_pass(results, context, selected, net_ids, deadline, *, emit_log,
 
     strips, added, g3_changes, g3 = shorten_routes(
         context, results, deadline=deadline, net_ids=run_net_ids,
-        include_canonical=not skip_smoothed_canonical)
+        include_canonical=not skip_smoothed_canonical,
+        stay_in_corridor=selected.stay_in_corridor)
     _append_result(results, "track_gloss_g3", added, [], g3_changes)
     changes.segments.extend(g3_changes.segments)
     changes.vias.extend(g3_changes.vias)
@@ -220,7 +221,8 @@ def _run_g3_5_pass(results, context, selected, net_ids, deadline, *, emit_log,
     run, expired = available(selected.enable_g3_2)
     pad_strips, pad_added, pad_changes, pad = \
         optimize_pad_terminals(
-            context, results, deadline=deadline, net_ids=run_net_ids) \
+            context, results, deadline=deadline, net_ids=run_net_ids,
+            stay_in_corridor=selected.stay_in_corridor) \
         if run else ([], [], GlossChanges(), {
             "pads_changed": 0, "saved_mm": 0.0,
             "net_ids_changed": set(), "algorithm_ms": 0.0})
@@ -276,7 +278,7 @@ def _run_g3_5_pass(results, context, selected, net_ids, deadline, *, emit_log,
         shorten_routes(
             context, results, deadline=deadline,
             objective="fewer_segments", stage="G3.5",
-            net_ids=run_net_ids) \
+            net_ids=run_net_ids, stay_in_corridor=selected.stay_in_corridor) \
         if run else ([], [], GlossChanges(), {
             "nets_changed": 0, "segments_removed": 0,
             "segments_added": 0, "saved_mm": 0.0,
@@ -479,12 +481,20 @@ def run_final_gloss(results, pcb_data, config, gloss_config=None, *,
             for net_id in active_net_ids}
         editable_ids = None
         branch_count = 0
+        selected = GlossConfig.from_value(
+            gloss_config if gloss_config is not None
+            else getattr(config, "gloss_config", None))
         if seed_segments:
             editable_ids, branch_count = elementary_branch_segment_ids(
                 pcb_data, seed_segments)
             if not editable_ids:
                 raise RuntimeError(
                     "no elementary branch matched the selected seed")
+        if selected.stay_in_corridor:
+            # KRT's preliminary smooth has no swept-path gate. Let G3 perform
+            # the same candidate search with the prototype gate instead.
+            _nets, strips, krt_stats = 0, [], {}
+        elif seed_segments:
             (_count, _nets, strips, _added, krt_stats,
              editable_ids) = _run_scoped_krt_smooth(
                 results, pcb_data, active_net_ids, editable_ids,
@@ -513,7 +523,7 @@ def run_final_gloss(results, pcb_data, config, gloss_config=None, *,
             results, pcb_data, config, gloss_config=gloss_config,
             net_ids=active_net_ids, krt_strips=strips, krt_stats=krt_stats,
             krt_ms=krt_ms,
-            krt_smooth_complete=True,
+            krt_smooth_complete=not selected.stay_in_corridor,
             _resolved_scope=(active_net_ids, excluded, exclusion_reasons),
             _editable_segment_ids=editable_ids,
             _branch_count=branch_count,

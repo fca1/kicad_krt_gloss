@@ -79,6 +79,8 @@ def build_parser():
     parser.add_argument("--no-g3-4", action="store_true")
     parser.add_argument("--no-noncollinear-t-rails", action="store_true")
     parser.add_argument("--no-multipasses", action="store_true")
+    parser.add_argument("--stay-in-corridor", action="store_true",
+                        help="Prototype: require a clear deformation for track shortcuts")
     return parser
 
 
@@ -289,7 +291,8 @@ def main(argv=None):
         enable_g3_3=not args.no_g3_3, enable_g3_4=not args.no_g3_4,
         budget_seconds=max(0.0, args.budget_seconds),
         enable_noncollinear_t_rails=not args.no_noncollinear_t_rails,
-        enable_multipasses=not args.no_multipasses)
+        enable_multipasses=not args.no_multipasses,
+        stay_in_corridor=args.stay_in_corridor)
     results = []
     started = perf_counter()
     outcome = run_post_smooth_gloss(

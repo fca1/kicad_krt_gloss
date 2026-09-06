@@ -175,6 +175,7 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                 config = build_krt_config(
                     board, pcb_data, values["grid_step"], net_ids=net_ids)
                 gloss_config = GlossConfig(
+                    stay_in_corridor=values.get("stay_in_corridor", False),
                     enable_g3_1=values["enable_g3_1"],
                     enable_g3_2=values["enable_g3_2"],
                     enable_g3_3=values["enable_g3_3"],

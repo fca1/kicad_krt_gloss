@@ -15,6 +15,7 @@ GENERAL_DEFAULTS = {
 }
 
 GLOSS_DEFAULTS = {
+    "stay_in_corridor": False,
     "enable_g3_1": True,
     "enable_g3_2": True,
     "enable_g3_3": True,
@@ -229,6 +230,10 @@ class GlossSettingsDialog(wx.Dialog):
         operations_box = wx.StaticBox(panel, label="Gloss Operations")
         operations = wx.StaticBoxSizer(operations_box, wx.VERTICAL)
         visible_options = (
+            ("stay_in_corridor", "Stay in corridor (prototype)",
+             "Require a clear progressive deformation for track-chain shortcuts "
+             "and pad approaches. Conservative prototype; via and T-junction "
+             "operations keep their existing behavior. Disabled by default."),
             ("enable_g3_1", "Optimize movable vias",
              "Move an eligible unlocked via connected to exactly two unlocked "
              "track segments on different copper layers. Only the two directly "

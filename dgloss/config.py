@@ -21,6 +21,8 @@ class GlossConfig:
     centering_proximity_mm: float = 1.0
     centering_build_new_segments: bool = False
     centering_build_multi_door_path: bool = False
+    # Prototype restriction for fixed-anchor track shortcuts; opt-in.
+    stay_in_corridor: bool = False
 
     @classmethod
     def from_value(cls, value=None):

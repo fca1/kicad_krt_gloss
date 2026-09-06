@@ -15,6 +15,7 @@ from routing_utils import pos_key
 from single_ended_routing import _segment_fits_wide
 from .changes import GlossChanges, release_result_custody
 from .segment_sliding import slide_interval, slide_segment
+from .corridor import stays_in_corridor
 
 
 @dataclass
@@ -497,7 +498,8 @@ def _shortest_path(edges, points, excluded):
 
 def _best_chain_replacement(context, chain, net_id, foreign_obstacles,
                             net_segments, net_vias, deadline=None,
-                            objective="shorter", include_canonical=True):
+                            objective="shorter", include_canonical=True,
+                            stay_in_corridor=False):
     """Shortest valid path through a chain's ordered vertices (DAG dynamic program)."""
     n = len(chain.segments)
     span_ids = {id(seg) for seg in chain.segments}
@@ -515,6 +517,7 @@ def _best_chain_replacement(context, chain, net_id, foreign_obstacles,
     family_edges = {}
     edge_families = {}
     edge_candidates = {}
+    edge_source_points = {}
 
     for i in range(n - 1):
         if deadline is not None and perf_counter() >= deadline:
@@ -568,6 +571,8 @@ def _best_chain_replacement(context, chain, net_id, foreign_obstacles,
                     family_edges[family_id].append(edge_id)
                     edge_families[edge_id] = family_id
                     edge_candidates[edge_id] = candidate
+                    if stay_in_corridor:
+                        edge_source_points[edge_id] = chain.points[i:j + 1]
 
     # Exact KRT geometry remains authoritative. When an edge wins, validate its
     # family predecessors in generator order. The first exact-valid candidate
@@ -590,7 +595,10 @@ def _best_chain_replacement(context, chain, net_id, foreign_obstacles,
                 if preceding_id not in exact_status:
                     exact_status[preceding_id] = (
                         context.clearance_adapter.connector_clears(
-                            edge_candidates[preceding_id]))
+                            edge_candidates[preceding_id]) and
+                        (not stay_in_corridor or stays_in_corridor(
+                            context, edge_source_points[preceding_id],
+                            edge_candidates[preceding_id], deadline)))
                 if exact_status[preceding_id]:
                     first_valid = preceding_id
                     break
@@ -628,7 +636,7 @@ def _best_chain_replacement(context, chain, net_id, foreign_obstacles,
 
 def shorten_routes(context, results, deadline=None, *, net_ids,
                    objective="shorter", stage="G3",
-                   include_canonical=True):
+                   include_canonical=True, stay_in_corridor=False):
     """Run one deterministic dgloss pass, net by net, with fixed vias."""
     changes = GlossChanges()
     strips = []
@@ -658,7 +666,8 @@ def shorten_routes(context, results, deadline=None, *, net_ids,
             replacement = _best_chain_replacement(
                 context, chain, net_id, foreign, current, net_vias,
                 deadline=deadline, objective=objective,
-                include_canonical=include_canonical)
+                include_canonical=include_canonical,
+                stay_in_corridor=stay_in_corridor)
             if replacement is None:
                 continue
             removed, added = replacement

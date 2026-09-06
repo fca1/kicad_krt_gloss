@@ -14,6 +14,7 @@ from .algorithm import (_candidate_clearance, _candidate_segments,
                         _chamfer_candidate_families,
                         _touches_other_same_net)
 from .changes import GlossChanges, release_result_custody
+from .corridor import stays_in_corridor
 
 
 def _pad_on_layer(pad, layer):
@@ -126,7 +127,7 @@ def _new_boundary_right_angle(candidate, anchor, outside):
 
 
 def _best_pad_connector(context, pad, chain, points, outside, net_vias,
-                        foreign, deadline=None):
+                        foreign, deadline=None, stay_in_corridor=False):
     centre = (pad.global_x, pad.global_y)
     anchor = points[-1]
     old_length = calculate_route_length(chain)
@@ -169,11 +170,14 @@ def _best_pad_connector(context, pad, chain, points, outside, net_vias,
             break
         if (all(id(segment) in exact_segment_ids for segment in candidate) or
                 context.clearance_adapter.connector_clears(candidate)):
-            return candidate
+            if not stay_in_corridor or stays_in_corridor(
+                    context, points, candidate, deadline):
+                return candidate
     return None
 
 
-def optimize_pad_terminals(context, results, deadline=None, *, net_ids):
+def optimize_pad_terminals(context, results, deadline=None, *, net_ids,
+                           stay_in_corridor=False):
     """One deterministic G3.2 pass; pads stay fixed and terminate the walk."""
     started = perf_counter()
     changes = GlossChanges()
@@ -209,7 +213,7 @@ def optimize_pad_terminals(context, results, deadline=None, *, net_ids):
                         if via.net_id == net_id]
             candidate = _best_pad_connector(
                 context, pad, chain, points, outside, net_vias, foreign,
-                deadline=deadline)
+                deadline=deadline, stay_in_corridor=stay_in_corridor)
             if candidate is None:
                 continue
 
