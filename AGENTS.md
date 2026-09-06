@@ -1,5 +1,7 @@
 # Instructions du projet
 
+Le projet Smooth Gloss KRT est un projet de référence.
+
 Analyser avant toute action.
 
 Modifier le code uniquement après « go ».
