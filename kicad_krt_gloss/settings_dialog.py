@@ -231,25 +231,91 @@ class GlossSettingsDialog(wx.Dialog):
             ("stay_in_corridor", "Stay in corridor (prototype)",
              "Require a clear progressive deformation for track-chain shortcuts "
              "and pad approaches. Conservative prototype; via and T-junction "
-             "operations keep their existing behavior. Disabled by default."),
-            ("move_vias", "Optimize movable vias",
+             "operations keep their existing behavior. Disabled by default.",
+             "corridor"),
+            ("move_vias", "Movable vias",
              "Move an eligible unlocked via connected to exactly two unlocked "
              "track segments on different copper layers. Both local and complete "
              "track-chain searches obey this option. The via diameter, drill, type, "
              "net and layer span remain unchanged. The move is accepted only "
              "when it saves more than one grid step and passes KRT clearance "
-             "and connectivity checks."),
+             "and connectivity checks.", "via"),
         )
-        for key, label, tooltip in visible_options:
+        for key, label, tooltip, illustration in visible_options:
             control = wx.CheckBox(panel, label=label)
             control.SetValue(bool(values[key]))
             control.SetToolTip(tooltip)
             self.controls[key] = control
-            operations.Add(control, 0, wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
+            row = wx.BoxSizer(wx.HORIZONTAL)
+            row.Add(control, 1, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 8)
+            row.Add(self._create_gloss_illustration(
+                panel, illustration, tooltip), 0,
+                wx.ALIGN_CENTER_VERTICAL | wx.LEFT | wx.RIGHT, 8)
+            operations.Add(row, 0, wx.EXPAND | wx.BOTTOM, 8)
         content.Add(operations, 0, wx.EXPAND | wx.ALL, 8)
         content.AddStretchSpacer()
         panel.SetSizer(content)
         self.notebook.AddPage(panel, "Gloss")
+
+    @staticmethod
+    def _create_gloss_illustration(parent, kind, tooltip):
+        """Return a compact visual explanation for one Gloss option."""
+        diagram = wx.Panel(parent, size=(180, 72))
+        diagram.SetBackgroundStyle(wx.BG_STYLE_PAINT)
+        diagram.SetToolTip(tooltip)
+
+        def paint(_event):
+            dc = wx.AutoBufferedPaintDC(diagram)
+            dc.SetBackground(wx.Brush(wx.Colour(27, 40, 55)))
+            dc.Clear()
+            cyan = wx.Colour(62, 207, 222)
+            gold = wx.Colour(245, 183, 57)
+            green = wx.Colour(91, 217, 149)
+            if kind == "corridor":
+                dc.SetPen(wx.Pen(wx.Colour(225, 101, 93), 2))
+                for start in range(32, 148, 12):
+                    dc.DrawLine(start, 63, min(start + 6, 148), 63)
+                dc.SetPen(wx.Pen(cyan, 1))
+                dc.SetBrush(wx.Brush(wx.Colour(38, 75, 91)))
+                dc.DrawPolygon([
+                    wx.Point(20, 55), wx.Point(43, 55),
+                    wx.Point(43, 15), wx.Point(137, 15),
+                    wx.Point(137, 55), wx.Point(160, 55),
+                    wx.Point(160, 71), wx.Point(120, 71),
+                    wx.Point(120, 31), wx.Point(60, 31),
+                    wx.Point(60, 71), wx.Point(20, 71),
+                ])
+                dc.SetPen(wx.Pen(green, 3))
+                dc.DrawLine(24, 63, 51, 63)
+                dc.DrawLine(51, 63, 51, 23)
+                dc.DrawLine(51, 23, 129, 23)
+                dc.DrawLine(129, 23, 129, 63)
+                dc.DrawLine(129, 63, 156, 63)
+                dc.SetPen(wx.Pen(gold, 2))
+                dc.SetBrush(wx.Brush(gold))
+                # Obstacle pad below the corridor bridge and above the rejected
+                # shorter path.
+                dc.DrawRectangle(82, 40, 16, 12)
+                dc.DrawCircle(24, 63, 5)
+                dc.DrawCircle(156, 63, 5)
+            else:
+                dc.SetPen(wx.Pen(cyan, 6))
+                dc.DrawLine(18, 36, 68, 36)
+                dc.SetPen(wx.Pen(cyan, 3))
+                dc.DrawLine(68, 36, 162, 36)
+                dc.SetPen(wx.Pen(wx.Colour(122, 142, 158), 1))
+                dc.SetBrush(wx.Brush(wx.Colour(122, 142, 158)))
+                dc.DrawCircle(68, 36, 9)
+                dc.SetPen(wx.Pen(gold, 2))
+                dc.SetBrush(wx.Brush(gold))
+                dc.DrawCircle(116, 36, 9)
+                dc.SetPen(wx.Pen(gold, 2))
+                dc.DrawLine(82, 18, 106, 18)
+                dc.DrawLine(106, 18, 99, 14)
+                dc.DrawLine(106, 18, 99, 22)
+
+        diagram.Bind(wx.EVT_PAINT, paint)
+        return diagram
 
     def _create_centering_tab(self, pcb_data, centering_nets,
                               preselected_nets, values):
@@ -281,25 +347,40 @@ class GlossSettingsDialog(wx.Dialog):
         options = wx.BoxSizer(wx.VERTICAL)
         icon_path = os.path.join(
             os.path.dirname(__file__), "centering_illustration.png")
-        if os.path.exists(icon_path):
-            image = wx.Image(icon_path, wx.BITMAP_TYPE_PNG)
-            options.Add(wx.StaticBitmap(panel, bitmap=wx.Bitmap(image)), 0,
-                        wx.ALIGN_CENTER | wx.ALL, 10)
-
-        parameters_box = wx.StaticBox(panel, label="Centering Parameters")
-        parameters = wx.StaticBoxSizer(parameters_box, wx.VERTICAL)
-        proximity_row = wx.BoxSizer(wx.HORIZONTAL)
-        proximity_row.Add(wx.StaticText(panel, label="Proxi (mm):"), 0,
-                          wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 8)
         self.centering_proximity_mm = wx.SpinCtrlDouble(
             panel, min=0.0, max=5.0,
             initial=float(values["centering_proximity_mm"]), inc=0.1)
         self.centering_proximity_mm.SetDigits(2)
         self.centering_proximity_mm.SetToolTip(
             "Maximum absolute proximity to obstacles, in millimetres.")
-        proximity_row.Add(self.centering_proximity_mm, 1)
-        parameters.Add(proximity_row, 0, wx.EXPAND | wx.ALL, 8)
+        if os.path.exists(icon_path):
+            image = wx.Image(icon_path, wx.BITMAP_TYPE_PNG)
+            bitmap = wx.Bitmap(image)
+            diagram = wx.Panel(panel, size=bitmap.GetSize())
+            diagram.SetBackgroundStyle(wx.BG_STYLE_PAINT)
 
+            def paint_diagram(_event):
+                """Draw the diagram behind its overlaid input control."""
+                dc = wx.AutoBufferedPaintDC(diagram)
+                dc.DrawBitmap(bitmap, 0, 0, True)
+
+            diagram.Bind(wx.EVT_PAINT, paint_diagram)
+            # The diagram already names this value.  Place the editor directly
+            # beside that label so the value and its visual meaning stay together.
+            self.centering_proximity_mm.Reparent(diagram)
+            self.centering_proximity_mm.SetPosition((123, 31))
+            self.centering_proximity_mm.SetSize((52, -1))
+            proximity_title = wx.StaticText(panel, label="Proximity max")
+            proximity_title.SetFont(proximity_title.GetFont().Bold())
+            options.Add(proximity_title, 0, wx.ALIGN_CENTER | wx.TOP, 10)
+            options.Add(diagram, 0, wx.ALIGN_CENTER | wx.ALL, 10)
+        else:
+            # Keep the setting reachable if the optional illustration is absent.
+            options.Add(self.centering_proximity_mm, 0,
+                        wx.ALIGN_CENTER | wx.ALL, 10)
+
+        parameters_box = wx.StaticBox(panel, label="Centering Parameters")
+        parameters = wx.StaticBoxSizer(parameters_box, wx.VERTICAL)
         self.centering_build_multi_door_path = wx.CheckBox(
             panel, label="Build multi-door path")
         self.centering_build_multi_door_path.SetValue(bool(
