@@ -35,23 +35,21 @@ summary, `JSON_SUMMARY`, `JSON_SUMMARY_MIN`, and optionally a full JSON file.
 
 ## Plugin use
 
-The standalone plugin runs final KRT smooth and then Track Gloss. These dialog
-options are enabled by default:
+The standalone plugin runs final KRT smooth and then Track Gloss. The General
+tab groups these visible options, enabled by default:
 
 | Option | Effect |
 |---|---|
-| `Selection — use elementary branches` | Selected tracks designate BEs; unchecked, selection designates complete nets |
-| `Track Gloss G3.1 — mobile vias` | Allows local movement of eligible vias |
-| `Track Gloss G3.2 — pad terminals` | Optimizes pad terminations |
-| `Track Gloss G3.3 — sliding T nodes` | Allows sliding T branches |
-| `Track Gloss G3.3 — allow non-collinear rails` | Enables the T variant without a collinear rail |
-| `Track Gloss G3.4 — complete via chains` | Optimizes complete chains around vias |
-| `G4 — multi-net convergence passes` | Repeats G3.5 until convergence |
-| `G5 — final compliance certification` | Certifies output without changing geometry |
-| `Gloss time budget (s)` | 10–240 second dgloss optimization budget, in 10-second increments |
+| `Use elementary branches` | Selected segments designate their BEs; unchecked, they designate their complete nets |
+| `Optimize movable vias` | Allows G3.1 local movement of eligible vias |
+| `Optimize pad approaches` | Allows G3.2 pad-termination optimization |
+| `Repeat until stable` | Repeats G3.5 per net until stable or the budget expires |
+| `KRT grid step (mm)` | Sets KRT resolution and the minimum useful gain |
+| `Time budget` | 10–240 second optimization budget, in 10-second increments |
 
-G3 ordinary-chain reduction is the always-active foundation. A disabled option
-runs neither its stage nor its visualization.
+G3, G3.3 with its non-collinear variant, G3.4 and G5 are no longer presented as
+choices. They remain enabled. A disabled visible option runs neither its stage
+nor its visualization.
 
 A selected straight track is a seed. G0 finds its maximal elementary branch
 and every stage remains within it. Several tracks may identify several branches

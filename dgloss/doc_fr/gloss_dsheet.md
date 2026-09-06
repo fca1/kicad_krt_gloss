@@ -37,23 +37,21 @@ avec `--json-out`, le bilan JSON complet dans un fichier.
 
 ## Emploi depuis le plugin
 
-Le plugin autonome exécute le dernier smooth KRT puis Track Gloss. Les options
-suivantes sont visibles dans sa boîte de dialogue et activées par défaut :
+Le plugin autonome exécute le dernier smooth KRT puis Track Gloss. L'onglet
+General regroupe les choix visibles suivants, activés par défaut :
 
 | Option | Effet |
 |---|---|
-| `Selection — use elementary branches` | Les pistes sélectionnées désignent des BE ; décochée, la sélection désigne les nets complets |
-| `Track Gloss G3.1 — mobile vias` | Autorise le déplacement local des vias mobiles |
-| `Track Gloss G3.2 — pad terminals` | Autorise l'optimisation des terminaisons de pads |
-| `Track Gloss G3.3 — sliding T nodes` | Autorise les branches de T glissantes |
-| `Track Gloss G3.3 — allow non-collinear rails` | Autorise la variante des T sans rail colinéaire |
-| `Track Gloss G3.4 — complete via chains` | Autorise l'optimisation complète autour des vias |
-| `G4 — multi-net convergence passes` | Répète G3.5 par net jusqu'à convergence |
-| `G5 — final compliance certification` | Certifie le résultat sans modifier sa géométrie |
-| `Gloss time budget (s)` | Budget d'optimisation dgloss de 10 à 240 secondes, par pas de 10 |
+| `Use elementary branches` | Les segments sélectionnés désignent leurs BE ; décochée, ils désignent leurs nets complets |
+| `Optimize movable vias` | Autorise le déplacement local des vias mobiles par G3.1 |
+| `Optimize pad approaches` | Autorise l'optimisation des terminaisons de pads par G3.2 |
+| `Repeat until stable` | Répète G3.5 par net jusqu'à stabilisation ou expiration du budget |
+| `KRT grid step (mm)` | Définit la résolution KRT et le gain minimal utile |
+| `Time budget` | Budget d'optimisation de 10 à 240 secondes, par pas de 10 |
 
-G3, réduction des chaînes ordinaires, constitue le socle et reste actif. Une
-option décochée ne lance pas son étape et ne crée pas sa visualisation.
+G3, G3.3 avec sa variante non colinéaire, G3.4 et G5 ne sont pas présentés
+comme des choix. Ils restent actifs. Une option visible décochée ne lance pas
+son étape et ne crée pas sa visualisation.
 
 Une piste droite sélectionnée sert de graine. G0 détermine sa branche
 élémentaire maximale, puis toutes les étapes restent limitées à cette branche.

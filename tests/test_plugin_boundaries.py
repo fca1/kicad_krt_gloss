@@ -170,8 +170,20 @@ def test_pcm_presentation_keeps_authorship_and_plain_krt_link():
         "https://github.com/drandyhaas/KiCadRoutingTools")
 
 
-def test_selection_filters_every_supported_item_to_unique_complete_net_ids():
-    assert selected_net_ids(Board()) == [7, 9, 10, 11]
+def test_selection_uses_only_selected_straight_segments_for_net_ids():
+    board = Board()
+    board.tracks.extend([Item(12), Item(13)])
+    board.tracks[-2].GetClass = lambda: "PCB_VIA"
+    board.tracks[-1].GetClass = lambda: "PCB_ARC"
+
+    assert selected_net_ids(board) == [7]
+
+
+def test_pad_or_footprint_selection_does_not_designate_a_net():
+    board = Board()
+    board.tracks = []
+
+    assert selected_net_ids(board) == []
 
 
 def test_selected_straight_track_maps_to_its_krt_segment_seed():
@@ -270,10 +282,34 @@ def test_dialog_has_a_top_level_sizer_for_panel_and_buttons():
         encoding="utf-8")
     assert "panel.SetSizer(content)" in source
     assert 'self.notebook.AddPage(panel, "General")' in source
+    assert 'self.notebook.AddPage(panel, "Gloss")' in source
     assert 'self.notebook.AddPage(log_panel, "Log")' in source
     assert 'self.notebook.AddPage(about, "About")' in source
     assert "outer.Add(self.notebook, 1, wx.EXPAND)" in source
     assert "self.SetSizerAndFit(outer)" in source
+
+
+def test_dialog_configuration_is_partitioned_by_action_scope():
+    source = (ROOT / "kicad_krt_gloss" / "settings_dialog.py").read_text(
+        encoding="utf-8")
+
+    general = source[source.index("GENERAL_DEFAULTS = {"):
+                     source.index("GLOSS_DEFAULTS = {")]
+    gloss = source[source.index("GLOSS_DEFAULTS = {"):
+                   source.index("CENTERING_DEFAULTS = {")]
+    centering = source[source.index("CENTERING_DEFAULTS = {"):
+                       source.index("DEFAULTS = GENERAL_DEFAULTS")]
+
+    assert '"selection_uses_elementary_branches"' in general
+    assert '"grid_step"' in general
+    assert '"budget_seconds"' in general
+    assert '"enable_g3_1"' in gloss
+    assert '"enable_multipasses"' in gloss
+    assert '"centering_proximity_mm"' in centering
+    assert '"centering_build_new_segments"' in centering
+    assert source.index('AddPage(panel, "General")') < source.index(
+        'AddPage(panel, "Gloss")') < source.index(
+            'AddPage(panel, "Centering")')
 
 
 def test_dialog_keeps_a_post_run_log_with_krt_style_controls():
@@ -323,6 +359,7 @@ def test_about_tab_uses_project_versions_and_attribution():
 def test_pcm_package_includes_the_about_logo():
     source = (ROOT / "package_pcm.py").read_text(encoding="utf-8")
     assert '"icon_24.png", "icon_64.png"' in source
+    assert '"selection_scope_illustration.png"' in source
 
 
 def test_dialog_exposes_the_integrated_gloss_options_by_public_name():
@@ -332,11 +369,28 @@ def test_dialog_exposes_the_integrated_gloss_options_by_public_name():
     assert '\"enable_multipasses\": True' in source
     assert "enable_g4" not in source
     assert source.count("SetToolTip(") >= 2
-    assert "Repeat enabled optimizations" in source
+    assert 'label="Use elementary branches"' in source
+    assert '"enable_multipasses", "Repeat until stable"' in source
+    assert 'label="G3.3' not in source
+    assert 'label="G3.4' not in source
+    assert '"enable_g3_3": True' in source[source.index("def values(self):"):]
+    assert '"enable_g3_4": True' in source[source.index("def values(self):"):]
+    assert '"enable_noncollinear_t_rails": True' in source[
+        source.index("def values(self):"):]
+    assert 'label="Selection Scope"' in source
+    assert 'label="Gloss Operations"' in source
+    assert 'label="Calculation Settings"' in source
+    assert 'label="Execution Limit"' in source
+    assert '"selection_scope_illustration.png"' in source
+    assert "wx.ToolTip.SetDelay(250)" in source
+    assert "Only the two directly" in source
+    assert "the pad and its native connection point fixed" in source
+    assert "net order alternates between passes" in source
+    assert "must save strictly more than this value" in source
     assert "KRT defaults to 0.1 mm" not in source
     assert "For a direct KRT API call" not in source
     assert '"budget_seconds": 20.0' in source
-    assert 'label="Gloss time budget (s):"' in source
+    assert 'label="Time budget:"' in source
     assert "min=10.0, max=240.0" in source
     assert "inc=10.0" in source
 
@@ -363,8 +417,8 @@ def test_plugin_selection_mode_defaults_to_be_and_cli_stays_net_only():
     key = '"selection_uses_elementary_branches"'
     assert dialog.index(f"{key}: True") < dialog.index('"enable_g3_1": True')
     assert "Selected elementary branches:" not in dialog
-    assert 'content.Add(selected_net, 0, wx.ALIGN_RIGHT' in dialog
-    assert "stopping at a pad, free end, or T/X" in dialog
+    assert 'selection.Add(selected_net, 0, wx.ALIGN_RIGHT' in dialog
+    assert "bounded by pads, free ends or T/X" in dialog
     assert key in action
     assert key not in cli
 

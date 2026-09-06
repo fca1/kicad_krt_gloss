@@ -8,20 +8,28 @@ import wx.adv
 from .version import __version__
 
 
-DEFAULTS = {
+GENERAL_DEFAULTS = {
     "selection_uses_elementary_branches": True,
+    "grid_step": 0.1,
+    "budget_seconds": 20.0,
+}
+
+GLOSS_DEFAULTS = {
     "enable_g3_1": True,
     "enable_g3_2": True,
     "enable_g3_3": True,
     "enable_g3_4": True,
     "enable_noncollinear_t_rails": True,
     "enable_multipasses": True,
-    "grid_step": 0.1,
-    "budget_seconds": 20.0,
+}
+
+CENTERING_DEFAULTS = {
     "centering_proximity_mm": 1.0,
     "centering_build_multi_door_path": True,
     "centering_build_new_segments": True,
 }
+
+DEFAULTS = GENERAL_DEFAULTS | GLOSS_DEFAULTS | CENTERING_DEFAULTS
 
 
 class GlossSettingsDialog(wx.Dialog):
@@ -32,9 +40,16 @@ class GlossSettingsDialog(wx.Dialog):
         values = dict(DEFAULTS, **(values or {}))
         self._on_gloss_callback = on_gloss
         self._on_centering_callback = on_centering
+        wx.ToolTip.SetDelay(250)
+        wx.ToolTip.SetAutoPop(15000)
+        wx.ToolTip.SetReshow(50)
         self.notebook = wx.Notebook(self)
         panel = wx.Panel(self.notebook)
         content = wx.BoxSizer(wx.VERTICAL)
+        self.controls = {}
+
+        selection_box = wx.StaticBox(panel, label="Selection Scope")
+        selection = wx.StaticBoxSizer(selection_box, wx.VERTICAL)
         selection_label = "Selected Net" if selected_count <= 1 else \
             "Selected Nets"
         selection_value = str(selected_count) if selected_count else "ALL"
@@ -44,75 +59,77 @@ class GlossSettingsDialog(wx.Dialog):
         selected_font.SetPointSize(selected_font.GetPointSize() + 4)
         selected_font.SetWeight(wx.FONTWEIGHT_BOLD)
         selected_net.SetFont(selected_font)
-        content.Add(selected_net, 0, wx.ALIGN_RIGHT | wx.ALL, 10)
+        selection.Add(selected_net, 0, wx.ALIGN_RIGHT | wx.ALL, 8)
 
-        self.controls = {}
-        labels = {
-            "selection_uses_elementary_branches": (
-                "Selection — use elementary branches"),
-            "enable_g3_1": "G3.1 — mobile vias",
-            "enable_g3_2": "G3.2 — pad terminals",
-            "enable_g3_3": "G3.3 — sliding T nodes",
-            "enable_noncollinear_t_rails": (
-                "G3.3 — allow non-collinear rails"),
-            "enable_g3_4": "G3.4 — complete via chains",
-            "enable_multipasses": "G4 — multi-net convergence passes",
-        }
-        tooltips = {
-            "selection_uses_elementary_branches": (
-                "On: each selected straight track seeds its maximal "
-                "elementary branch, stopping at a pad, free end, or T/X "
-                "junction. Off: every complete net identified by the "
-                "selection is glossed."),
-            "enable_g3_1": (
-                "Move eligible vias on the KRT grid to shorten their tracks."),
-            "enable_g3_2": (
-                "Shorten track approaches to pads while preserving connectivity."),
-            "enable_g3_3": (
-                "Slide T-junction branches along existing track rails."),
-            "enable_noncollinear_t_rails": (
-                "Also use each branch of a non-collinear T-junction as a rail."),
-            "enable_g3_4": (
-                "Optimize the complete track chains connected through movable vias."),
-            "enable_multipasses": (
-                "Repeat enabled optimizations across nets until convergence or timeout."),
-        }
-        for key, label in labels.items():
-            control = wx.CheckBox(panel, label=label)
-            control.SetValue(bool(values[key]))
-            control.SetToolTip(tooltips[key])
-            self.controls[key] = control
-            content.Add(control, 0, wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
+        selection_row = wx.BoxSizer(wx.HORIZONTAL)
+        key = "selection_uses_elementary_branches"
+        control = wx.CheckBox(panel, label="Use elementary branches")
+        control.SetValue(bool(values[key]))
+        branch_help = (
+            "When enabled, each selected track segment designates its complete "
+            "elementary branch, bounded by pads, free ends or T/X junctions. "
+            "When disabled, the complete nets containing the selected segments "
+            "are processed.")
+        control.SetToolTip(branch_help)
+        self.controls[key] = control
+        selection_row.Add(control, 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 8)
+        illustration_path = os.path.join(
+            os.path.dirname(__file__), "selection_scope_illustration.png")
+        if os.path.exists(illustration_path):
+            image = wx.Image(illustration_path, wx.BITMAP_TYPE_PNG)
+            illustration = wx.StaticBitmap(panel, bitmap=wx.Bitmap(image))
+            illustration.SetToolTip(branch_help)
+            selection_row.Add(illustration, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 8)
+        selection.Add(selection_row, 0, wx.EXPAND)
+        content.Add(selection, 0, wx.EXPAND | wx.ALL, 8)
 
+        calculation_box = wx.StaticBox(panel, label="Calculation Settings")
+        calculation = wx.StaticBoxSizer(calculation_box, wx.VERTICAL)
         row = wx.BoxSizer(wx.HORIZONTAL)
-        row.Add(wx.StaticText(panel, label="KRT grid step (mm):"), 0,
-                wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 8)
+        grid_label = wx.StaticText(panel, label="KRT grid step (mm):")
+        row.Add(grid_label, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 8)
         self.grid_step = wx.SpinCtrlDouble(
             panel, min=0.01, max=2.0, initial=float(values["grid_step"]),
-            inc=0.01)
+            inc=0.01, size=(100, -1))
         self.grid_step.SetDigits(3)
-        self.grid_step.SetToolTip(
-            "Grid resolution used by standalone gloss.")
-        row.Add(self.grid_step, 1)
-        content.Add(row, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
+        grid_help = (
+            "Set the KRT search-grid resolution in millimetres. Length-reduction "
+            "operations must save strictly more than this value, and generated "
+            "micro-segments shorter than one grid step are rejected. A smaller "
+            "step can find finer improvements but may take longer.")
+        grid_label.SetToolTip(grid_help)
+        self.grid_step.SetToolTip(grid_help)
+        row.Add(self.grid_step, 0)
+        calculation.Add(row, 0, wx.ALL, 8)
+        content.Add(calculation, 0,
+                    wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
 
+        budget_box = wx.StaticBox(panel, label="Execution Limit")
+        budget = wx.StaticBoxSizer(budget_box, wx.VERTICAL)
         budget_row = wx.BoxSizer(wx.HORIZONTAL)
-        budget_row.Add(wx.StaticText(panel, label="Gloss time budget (s):"),
-                       0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 8)
+        budget_label = wx.StaticText(panel, label="Time budget:")
+        budget_row.Add(budget_label, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 8)
         self.budget_seconds = wx.SpinCtrlDouble(
             panel, min=10.0, max=240.0,
-            initial=float(values["budget_seconds"]), inc=10.0)
+            initial=float(values["budget_seconds"]), inc=10.0,
+            size=(90, -1))
         self.budget_seconds.SetDigits(0)
-        self.budget_seconds.SetToolTip(
-            "Cooperative dgloss optimization budget. Total runtime may be "
-            "longer because final KRT smooth, certification, and KiCad apply "
-            "run outside this strict limit.")
-        budget_row.Add(self.budget_seconds, 1)
-        content.Add(budget_row, 0,
-                    wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
+        budget_help = (
+            "Maximum time allocated to Gloss optimization passes. KRT "
+            "preprocessing, final validation and applying the result may make "
+            "the total runtime longer.")
+        budget_label.SetToolTip(budget_help)
+        self.budget_seconds.SetToolTip(budget_help)
+        budget_row.Add(self.budget_seconds, 0)
+        budget_unit = wx.StaticText(panel, label="s")
+        budget_unit.SetToolTip(budget_help)
+        budget_row.Add(budget_unit, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
+        budget.Add(budget_row, 0, wx.ALL, 8)
+        content.Add(budget, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
         panel.SetSizer(content)
         self.notebook.AddPage(panel, "General")
 
+        self._create_gloss_tab(values)
         self._create_centering_tab(
             pcb_data, centering_nets, preselected_centering_nets, values)
 
@@ -204,6 +221,42 @@ class GlossSettingsDialog(wx.Dialog):
         outer.Add(buttons, 0, wx.EXPAND | wx.ALL, 10)
         self.SetSizerAndFit(outer)
         self.SetMinSize(self.GetSize())
+
+    def _create_gloss_tab(self, values):
+        """Build the page containing options used only by the Gloss action."""
+        panel = wx.Panel(self.notebook)
+        content = wx.BoxSizer(wx.VERTICAL)
+        operations_box = wx.StaticBox(panel, label="Gloss Operations")
+        operations = wx.StaticBoxSizer(operations_box, wx.VERTICAL)
+        visible_options = (
+            ("enable_g3_1", "Optimize movable vias",
+             "Move an eligible unlocked via connected to exactly two unlocked "
+             "track segments on different copper layers. Only the two directly "
+             "connected segments are rebuilt. The via diameter, drill, type, "
+             "net and layer span remain unchanged. The move is accepted only "
+             "when it saves more than one grid step and passes KRT clearance "
+             "and connectivity checks."),
+            ("enable_g3_2", "Optimize pad approaches",
+             "Shorten the terminal track chain leading to a pad while keeping "
+             "the pad and its native connection point fixed. The replacement "
+             "remains octolinear and must pass KRT clearance and connectivity "
+             "checks."),
+            ("enable_multipasses", "Repeat until stable",
+             "Repeat the enabled Gloss operations across the selected nets. "
+             "Each accepted change becomes an obstacle for the following nets, "
+             "and net order alternates between passes. Stop after a complete "
+             "pass with no change or when the time budget expires."),
+        )
+        for key, label, tooltip in visible_options:
+            control = wx.CheckBox(panel, label=label)
+            control.SetValue(bool(values[key]))
+            control.SetToolTip(tooltip)
+            self.controls[key] = control
+            operations.Add(control, 0, wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
+        content.Add(operations, 0, wx.EXPAND | wx.ALL, 8)
+        content.AddStretchSpacer()
+        panel.SetSizer(content)
+        self.notebook.AddPage(panel, "Gloss")
 
     def _create_centering_tab(self, pcb_data, centering_nets,
                               preselected_nets, values):
@@ -374,6 +427,9 @@ class GlossSettingsDialog(wx.Dialog):
     def values(self):
         return {key: control.GetValue()
                 for key, control in self.controls.items()} | {
+                    "enable_g3_3": True,
+                    "enable_g3_4": True,
+                    "enable_noncollinear_t_rails": True,
                     "grid_step": self.grid_step.GetValue(),
                     "budget_seconds": self.budget_seconds.GetValue(),
                     "centering_proximity_mm": (

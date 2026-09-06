@@ -56,7 +56,8 @@ def build(output_dir):
         for name in ("__init__.py", "action_plugin.py", "board_adapter.py",
                      "debug_overlay.py", "gloss_visualization.py", "runtime.py", "selection.py",
                      "settings_dialog.py", "version.py", "icon_24.png", "icon_64.png",
-                     "icon_24_dark.png", "centering_illustration.png"):
+                     "icon_24_dark.png", "centering_illustration.png",
+                     "selection_scope_illustration.png"):
             shutil.copy2(PLUGIN / name, plugins / name)
         package_documents = (
             (ROOT / "docs" / "AUTHORS.md", "AUTHORS.md"),

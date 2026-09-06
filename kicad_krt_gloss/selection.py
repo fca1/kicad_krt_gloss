@@ -1,4 +1,4 @@
-"""Convert the live KiCad selection to complete KRT net identifiers."""
+"""Convert selected copper segments to complete KRT net identifiers."""
 
 from collections import defaultdict
 
@@ -7,25 +7,12 @@ POSITION_DECIMALS = 6
 
 
 def selected_net_ids(board):
-    """Return sorted unique positive net codes from every selectable PCB item."""
-    selected = []
-    selected.extend(item for item in board.GetTracks() if item.IsSelected())
-
-    for footprint in board.GetFootprints():
-        footprint_selected = footprint.IsSelected()
-        selected.extend(pad for pad in footprint.Pads()
-                        if footprint_selected or pad.IsSelected())
-
-    try:
-        selected.extend(board.GetArea(index)
-                        for index in range(board.GetAreaCount())
-                        if board.GetArea(index).IsSelected())
-    except AttributeError:
-        selected.extend(zone for zone in board.Zones() if zone.IsSelected())
-
+    """Return nets designated by one or more selected straight segments."""
     net_ids = set()
-    for item in selected:
+    for item in board.GetTracks():
         try:
+            if not item.IsSelected() or item.GetClass() != "PCB_TRACK":
+                continue
             net_id = int(item.GetNetCode())
         except (AttributeError, TypeError, ValueError):
             continue
