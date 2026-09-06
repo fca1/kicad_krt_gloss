@@ -370,7 +370,10 @@ def test_dialog_exposes_the_integrated_gloss_options_by_public_name():
     assert "enable_g4" not in source
     assert source.count("SetToolTip(") >= 2
     assert 'label="Use elementary branches"' in source
-    assert '"move_vias", "Optimize movable vias"' in source
+    assert '"move_vias", "Movable vias"' in source
+    assert '"stay_in_corridor", "Stay in corridor (prototype)"' in source
+    assert 'label="Proximity max"' in source
+    assert "def _create_gloss_illustration" in source
     assert 'label="G3.3' not in source
     assert 'label="G3.4' not in source
     assert '"enable_g3_3": True' not in source[source.index("def values(self):"):]
@@ -460,18 +463,20 @@ def test_plugin_renders_the_complete_final_delta_once():
 
 def test_plugin_config_delegates_dru_rules_to_krt():
     class NetClass:
-        def GetTrackWidth(self): return 0.2
-        def GetClearance(self): return 0.1
-        def GetViaDiameter(self): return 0.4
-        def GetViaDrill(self): return 0.2
+        def GetTrackWidth(self): return 200000
+        def GetClearance(self): return 100000
+        def GetViaDiameter(self): return 400000
+        def GetViaDrill(self): return 200000
 
     class NetSettings:
         def GetDefaultNetclass(self): return NetClass()
         def GetEffectiveNetClass(self, _name): return NetClass()
+        def GetNetclasses(self): return {}
 
     class Settings:
         m_NetSettings = NetSettings()
-        m_CopperEdgeClearance = 0.15
+        m_CopperEdgeClearance = 150000
+        m_HoleToHoleMin = 250000
 
     class LiveBoard:
         def GetDesignSettings(self): return Settings()
@@ -481,15 +486,40 @@ def test_plugin_config_delegates_dru_rules_to_krt():
         board_info=types.SimpleNamespace(copper_layers=["F.Cu", "B.Cu"]),
         nets={1: types.SimpleNamespace(name="N1")},
         source_path="example.kicad_pcb")
-    pcbnew = types.SimpleNamespace(ToMM=float)
+    pcbnew = types.SimpleNamespace(ToMM=lambda value: value / 1e6)
     with (patch.dict(sys.modules, {"pcbnew": pcbnew}),
-          patch("kicad_dru.install_layer_clearances") as install_layers,
-          patch("kicad_dru.install_track_clearances") as install_tracks):
+          patch("dgloss.rules.install_layer_clearances") as install_layers,
+          patch("dgloss.rules.install_track_clearances") as install_tracks):
         config = build_krt_config(LiveBoard(), pcb, 0.1, net_ids=[1])
     install_layers.assert_called_once_with(
         config, None, "example.kicad_pcb", pcb)
     install_tracks.assert_called_once_with(
         config, None, "example.kicad_pcb", pcb, routed_net_ids=[1])
+    assert config.track_width == 0.2
+    assert config.via_size == 0.4
+    assert config.net_clearances[1] == 0.1
+    assert config.board_edge_clearance == 0.15
+    assert config.hole_to_hole_clearance == 0.25
+    assert config.rules.board_min["min_hole_to_hole"] == 0.25
+
+
+def test_rule_installation_retains_live_table_after_file_channels():
+    from design_rules import DesignRules
+    from dgloss.rules import install_gloss_rules
+    from routing_config import GridRouteConfig
+
+    live = DesignRules(board_min={"min_clearance": 0.25})
+    disk = DesignRules(board_min={"min_clearance": 0.1},
+                       fab_floor={"clearance": 0.09})
+    config = GridRouteConfig()
+    pcb = types.SimpleNamespace(source_path="board.kicad_pcb")
+    with (patch("dgloss.rules.install_layer_clearances",
+                side_effect=lambda *args: setattr(config, "rules", disk)),
+          patch("dgloss.rules.install_track_clearances")):
+        result = install_gloss_rules(config, pcb, [1], rules=live)
+    assert result is live and config.rules is live
+    assert config.rules.board_min["min_clearance"] == 0.25
+    assert config.rules.fab_floor == {"clearance": 0.09}
 
 
 def test_native_keys_distinguish_width_and_via_geometry():

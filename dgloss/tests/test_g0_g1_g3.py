@@ -285,6 +285,22 @@ def test_via_clearance_honours_foreign_pad_local_clearance():
     assert not KrtClearanceAdapter(pcb, config).via_clears(candidate)
 
 
+def test_via_pad_override_replaces_class_clearance_but_respects_board_floor():
+    from design_rules import DesignRules
+
+    pcb, config, _first, _second = _parallel_board()
+    pcb.segments = []
+    pad = pcb.pads_by_net[2][0]
+    pcb.pads_by_net = {2: [pad]}
+    config.clearance = 0.5
+    pad.local_clearance = 0.1
+    candidate = Via(2.65, 6.0, 0.3, 0.2, ["F.Cu", "B.Cu"], 1)
+    config.rules = DesignRules(board_min={"min_clearance": 0.1})
+    assert KrtClearanceAdapter(pcb, config).via_clears(candidate)
+    config.rules = DesignRules(board_min={"min_clearance": 0.3})
+    assert not KrtClearanceAdapter(pcb, config).via_clears(candidate)
+
+
 def test_final_entry_passes_the_same_complete_net_scope_to_krt_and_dgloss():
     pcb, config, _first, _second = _parallel_board()
     disabled = GlossConfig(False, False, False, False)

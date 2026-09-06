@@ -313,7 +313,7 @@ class KrtClearanceAdapter:
                 pair = pads_shared_layer_clearance(
                     pair, getattr(self.config, "layer_clearances", None),
                     copper)
-                pair = max(pair, getattr(pad, "local_clearance", 0.0) or 0.0)
+                pair = self.config.pad_override_clearance(pair, pad)
                 if check_pad_via_overlap(
                     pad, via, pair, self.config.layers, 0.0)[0]:
                     return False

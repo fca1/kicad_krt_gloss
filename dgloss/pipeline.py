@@ -6,6 +6,7 @@ from .execution import perf_counter
 
 from check_connected import check_net_connectivity
 from .topology import terminal_partition as _terminal_partition
+from .zone_models import prepare_zone_models
 from net_queries import calculate_route_length
 from pcb_modification import merge_collinear_segments
 
@@ -59,6 +60,7 @@ def _grade(pcb_data, net_id):
 def _g5_grade(pcb_data, net_id):
     zones = [zone for zone in (getattr(pcb_data, "zones", None) or [])
              if zone.net_id == net_id]
+    prepare_zone_models(pcb_data, zones)
     return check_net_connectivity(
         net_id,
         [segment for segment in pcb_data.segments if segment.net_id == net_id],

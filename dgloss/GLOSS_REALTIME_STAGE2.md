@@ -1,5 +1,39 @@
 # Gloss : réalisation en deux étapes
 
+## État après intégration KRT
+
+Le transfert des adaptations de zones vers `dgloss/zone_models.py` est intégré
+avec la mise à jour du sous-module KRT vers `0aff32c0`, sans modification locale
+de ses sources. Le binaire local a été recompilé en 0.22.0. La passe suivante
+est décrite dans `GLOSS_KRT_RULES_REVIEW.md` : chargement des règles centralisé,
+surcharges locales de pads réutilisées depuis KRT, 161 tests réussis. La piste
+du filtre supplémentaire de vias est abandonnée et son outil d'essai supprimé.
+Les mentions de travail non commité ci-dessous décrivent les étapes historiques.
+
+## Mise à jour : adaptations sorties de KRT
+
+Les mesures historiques ci-dessous décrivent l'état conservé par le tag
+`before_tries` (`4de4a2b`). Depuis, KRT a été remis sur son commit d'origine
+`8aa76378e94f52086d56905eaf6ed209dc774b9b`, sans modification de ses fichiers.
+Les deux adaptations sont dans `dgloss/zone_models.py` : invalidation ciblée et
+adaptateur mémorisant le plus grand composant. Le calcul du modèle reste délégué
+à KRT. Ses caches existants partagent le même adaptateur ; aucune fonction globale
+KRT n'est remplacée et aucun fichier KRT complet n'est copié dans le projet.
+
+Nouvelle vérification : **159 tests du dépôt réussis**, plus les trois scripts
+KRT ciblés sur le remplissage. Les quatre cartes convergent avec la même
+certification, les mêmes gains et les mêmes compteurs de recherches/invalidation.
+Temps muraux sans profileur, budget 60 s : dispenser **7,34 s**, picofx_pump
+**13,12 s**, ember_he **20,50 s**, bitaxe_ultra **18,78 s**. Ces mesures uniques
+restent comparables à celles ci-dessous ; elles ne prouvent pas une stricte
+égalité de performance. Aucun nouveau DRC natif exhaustif n'a été réalisé.
+
+Le tag `before_tries` est inchangé. L'ancien commit KRT `0e0029d9` est conservé
+par la branche locale de sauvegarde `codex/before-tries-zone-models` du sous-module.
+Le transfert et le changement de référence KRT ne sont pas encore commités.
+
+## Historique de l'étape 2, avant transfert
+
 6 septembre 2026 — `improve_gloss`, travail non commité.
 Suite de `GLOSS_REALTIME_REVIEW.md`. Les entrées et leurs hashes sont inchangés.
 

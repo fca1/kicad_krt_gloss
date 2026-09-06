@@ -45,7 +45,7 @@ class GlossContext:
                     for segment in segments))
 
     def replace_editable_segments(self, removed, added, old_vias=(), new_vias=()):
-        from plane_fill_model import invalidate_copper_models
+        from .zone_models import invalidate_copper_models
 
         touched = list(removed) + list(added)
         vias = list(old_vias) + list(new_vias)

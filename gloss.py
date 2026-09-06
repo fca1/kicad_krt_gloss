@@ -17,7 +17,7 @@ configure_krt_runtime()
 import routing_defaults as defaults
 from copy_board import copy_board
 from dgloss import GlossConfig, run_final_gloss
-from kicad_dru import install_layer_clearances, install_track_clearances
+from dgloss.rules import install_gloss_rules
 from kicad_parser import parse_kicad_pcb
 from list_nets import (board_default_netclass_clearance,
                        board_default_netclass_param,
@@ -208,9 +208,8 @@ def build_krt_config(args, pcb_data, net_ids):
                 net_id: min(value, args.clearance)
                 for net_id, value in config.net_clearances.items()}
     config.set_net_clearances(config.net_clearances, net_ids)
-    install_layer_clearances(config, None, args.input_file, pcb_data)
-    install_track_clearances(
-        config, None, args.input_file, pcb_data, routed_net_ids=net_ids)
+    install_gloss_rules(config, pcb_data, net_ids,
+                        source_path=args.input_file)
     return config
 
 

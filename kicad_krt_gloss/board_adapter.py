@@ -35,44 +35,29 @@ def build_krt_config(board, pcb_data, grid_step, net_ids=None):
     """Build GridRouteConfig from live native rules plus the standalone grid."""
     import pcbnew
     from routing_config import GridRouteConfig
+    from design_rules import DesignRules
 
     settings = board.GetDesignSettings()
     net_settings = getattr(settings, "m_NetSettings", None)
-    default_class = None
-    try:
-        default_class = net_settings.GetDefaultNetclass()
-    except Exception:
-        pass
-
-    def class_value(name, fallback):
-        if default_class is None:
-            return fallback
-        try:
-            value = _mm(pcbnew, getattr(default_class, name)())
-            return value if value > 0 else fallback
-        except Exception:
-            return fallback
-
-    edge = 0.0
-    try:
-        edge = _mm(pcbnew, settings.m_CopperEdgeClearance)
-    except Exception:
-        pass
+    rules = DesignRules.from_pcbnew(board, pcb_data)
     config = GridRouteConfig(
-        track_width=class_value("GetTrackWidth", 0.1),
-        clearance=class_value("GetClearance", 0.1),
-        via_size=class_value("GetViaDiameter", 0.3),
-        via_drill=class_value("GetViaDrill", 0.2),
+        track_width=rules.class_value(0, "track_width") or 0.1,
+        clearance=rules.class_value(0, "clearance") or 0.1,
+        via_size=rules.class_value(0, "via_diameter") or 0.3,
+        via_drill=rules.class_value(0, "via_drill") or 0.2,
         grid_step=float(grid_step),
         layers=list(pcb_data.board_info.copper_layers),
-        board_edge_clearance=max(0.0, edge),
+        board_edge_clearance=rules.board_min.get("min_copper_edge_clearance", 0.0),
+        hole_to_hole_clearance=rules.board_min.get("min_hole_to_hole"),
     )
 
     clearances = {}
     for net_id, net in pcb_data.nets.items():
         if not net_id:
             continue
-        value = config.clearance
+        value = rules.class_value(net_id, "clearance") or config.clearance
+        # KRT currently reads membership assignments from disk. Preserve live
+        # effective assignments too, including edits not yet saved by KiCad.
         try:
             net_class = net_settings.GetEffectiveNetClass(net.name)
             resolved = _mm(pcbnew, net_class.GetClearance())
@@ -85,12 +70,11 @@ def build_krt_config(board, pcb_data, grid_step, net_ids=None):
     config.set_net_clearances(clearances, routed_net_ids)
     # Reuse KRT's rule-file resolvers.  PCBData.source_path points at the live
     # board's project, which remains the authority for .kicad_dru rules.
-    from kicad_dru import install_layer_clearances, install_track_clearances
+    from dgloss.rules import install_gloss_rules
     source_path = getattr(pcb_data, "source_path", "") or \
         (board.GetFileName() or "")
-    install_layer_clearances(config, None, source_path, pcb_data)
-    install_track_clearances(
-        config, None, source_path, pcb_data, routed_net_ids=routed_net_ids)
+    install_gloss_rules(config, pcb_data, routed_net_ids,
+                        source_path=source_path, rules=rules)
     return config
 
 

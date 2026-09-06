@@ -2,6 +2,7 @@
 
 from check_connected import check_net_connectivity as _check
 from geometry_utils import UnionFind
+from .zone_models import prepare_zone_models
 
 
 def terminal_partition(grade):
@@ -27,6 +28,7 @@ def check_local_connectivity(net_id, segments, vias, pads, zones, *, pcb_data):
     # electrical graph check, not a substitute for a native zone refill/DRC.
     zones = [zone for zone in (getattr(pcb_data, "zones", None) or [])
              if zone.net_id == net_id]
+    prepare_zone_models(pcb_data, zones)
     return _check(net_id, segments, vias, pads, zones, pcb_data=pcb_data,
                   return_graph=True)
 
