@@ -131,6 +131,11 @@ def _axis_to_pad_distance(axis, direction, pad):
              axis[1] - direction[1] * extent)
     end = (axis[0] + direction[0] * extent,
            axis[1] + direction[1] * extent)
+    return _segment_pad_distance(start, end, pad)
+
+
+def _segment_pad_distance(start, end, pad):
+    """Distance from a finite track axis to copper, using KRT geometry."""
     polygons = getattr(pad, "polygons", None)
     if polygons:
         distance, _closest = _segment_to_polys_distance(
@@ -1130,13 +1135,23 @@ def center_interpad_routes(context, results, deadline=None, *, net_ids,
                 context.pcb_data.pads_by_net.get(net_id, []), [],
                 pcb_data=context.pcb_data)
             accepted = None
-            for selected_doors, candidate in _centering_proposals(
+            def proposals():
+                if build_multi_door_path and build_new_segments:
+                    from .protected_centering import build_protected_path
+                    for group in _branch_door_groups(context.pcb_data, doors):
+                        yield group, build_protected_path(context, group, deadline)
+                yield from _centering_proposals(
                     context.pcb_data, doors,
                     build_new_segments=build_new_segments,
-                    build_multi_door_path=build_multi_door_path):
+                    build_multi_door_path=(build_multi_door_path and
+                                           not build_new_segments))
+            for selected_doors, candidate in proposals():
                 if deadline is not None and perf_counter() >= deadline:
                     break
                 if candidate is None:
+                    continue
+                from .protected_centering import certify_passages
+                if not certify_passages(candidate, selected_doors):
                     continue
                 candidates_tested += 1
                 valid, _after_grade = _candidate_is_valid(
