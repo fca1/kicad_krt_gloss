@@ -101,7 +101,7 @@ def test_plugin_run_accepts_two_item_preparation_for_multiple_selected_nets():
                 return []
 
             def _run_gloss(self, board, parent, values, nets, **kwargs):
-                calls.append(("run", nets, kwargs.get("prepared")))
+                calls.append(("run", nets, kwargs))
 
         namespace = {
             "pcbnew": types.SimpleNamespace(GetBoard=lambda: object()),
@@ -116,8 +116,13 @@ def test_plugin_run_accepts_two_item_preparation_for_multiple_selected_nets():
             not any(call[0] == "dialog" for call in calls))
         assert ("prepare",) in calls if len(net_ids) != 1 else (
             ("prepare",) not in calls)
-        assert ("run", net_ids,
-                prepared if len(net_ids) != 1 else None) in calls
+        run_call = next(call for call in calls if call[0] == "run")
+        assert run_call[1] == net_ids
+        if len(net_ids) != 1:
+            assert run_call[2].get("prepared") == prepared
+            assert "show_progress" not in run_call[2]
+        else:
+            assert run_call[2] == {"show_progress": False}
 
 
 @pytest.mark.parametrize("has_zones, failure", [
@@ -443,6 +448,16 @@ def test_single_selected_net_skips_the_success_summary_dialog():
         'f"Scope: {scope}\\n"')
     assert "f'Differences are shown on {debug_layer} '" in source
     assert '("TrackGloss Changes").' in source
+
+
+def test_single_selected_net_runs_without_the_progress_dialog():
+    source = (ROOT / "kicad_krt_gloss" / "action_plugin.py").read_text(
+        encoding="utf-8")
+    assert "values, net_ids, show_progress=False" in source
+    assert "if show_progress:" in source
+    assert source.index("if show_progress:") < source.index(
+        "GlossProgressDialog(parent, session)")
+    assert "outcome = run_final_gloss(" in source
 
 
 def test_cli_exposes_optional_auto_or_explicit_debug_layer():

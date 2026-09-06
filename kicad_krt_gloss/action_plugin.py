@@ -83,7 +83,7 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
             self.__class__._settings = values
             return
 
-        self._run_gloss(board, parent, values, net_ids)
+        self._run_gloss(board, parent, values, net_ids, show_progress=False)
 
     @staticmethod
     def _modifiable_net_rows(board, pcb_data):
@@ -119,7 +119,7 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                 wx.EndBusyCursor()
 
     def _run_gloss(self, board, parent, values, net_ids, *, append_log=None,
-                   prepared=None):
+                   prepared=None, show_progress=True):
         """Run once and retain the same concise statistics shown by KRT."""
         captured = io.StringIO()
 
@@ -155,9 +155,7 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                     print("Track Gloss cancelled: dependencies are unavailable.")
                     return False
                 from kicad_parser import build_pcb_data_from_board
-                from dgloss import GlossConfig
-                from dgloss.execution import GlossSession
-                from .progress_dialog import GlossProgressDialog
+                from dgloss import GlossConfig, run_final_gloss
                 from .board_adapter import apply_gloss, build_krt_config
 
                 if prepared is None:
@@ -182,23 +180,34 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                                          values.get("enable_g3_1", True)),
                     budget_seconds=values["budget_seconds"],
                 )
-                session = GlossSession(
-                    pcb_data, config, gloss_config, net_ids=net_ids,
-                    excluded_net_ids=native_arc_net_ids(board),
-                    seed_segments=seed_segments)
-                progress = GlossProgressDialog(parent, session)
-                try:
-                    session.start()
-                    progress.ShowModal()
-                finally:
-                    if not session.done.is_set():
-                        session.control.cancel()
-                    progress.Destroy()
-                completed = session.result()
-                if completed is None:
-                    print("Track Gloss cancelled; board unchanged.")
-                    return False
-                results, outcome = completed
+                run_kwargs = {
+                    "net_ids": net_ids,
+                    "excluded_net_ids": native_arc_net_ids(board),
+                    "seed_segments": seed_segments,
+                }
+                if show_progress:
+                    from dgloss.execution import GlossSession
+                    from .progress_dialog import GlossProgressDialog
+
+                    session = GlossSession(
+                        pcb_data, config, gloss_config, **run_kwargs)
+                    progress = GlossProgressDialog(parent, session)
+                    try:
+                        session.start()
+                        progress.ShowModal()
+                    finally:
+                        if not session.done.is_set():
+                            session.control.cancel()
+                        progress.Destroy()
+                    completed = session.result()
+                    if completed is None:
+                        print("Track Gloss cancelled; board unchanged.")
+                        return False
+                    results, outcome = completed
+                else:
+                    results = []
+                    outcome = run_final_gloss(
+                        results, pcb_data, config, gloss_config, **run_kwargs)
                 if not outcome.stats.get("g5_valid", False):
                     print("Track Gloss validation failed; board unchanged.")
                     return False
