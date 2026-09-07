@@ -308,6 +308,10 @@ def _best_slide(context, node, chain, anchor, rail_groups, current, net_vias,
             break
         if (all(id(segment) in exact_segment_ids for segment in added) or
                 context.clearance_adapter.connector_clears(added)):
+            motion = getattr(context, "_reduction_motion", None)
+            if motion is not None and not motion.junction(
+                    context, removed, added, node, anchor, deadline):
+                continue
             if accept_replacement(removed, added):
                 return removed, added, cleaned
     return None

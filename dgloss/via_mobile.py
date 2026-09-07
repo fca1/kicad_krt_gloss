@@ -185,6 +185,10 @@ def move_mobile_vias(context, results, *, net_ids, stage="G3.1",
                 if not context.clearance_adapter.via_clears(
                         moved_via, ignored_via=old_via):
                     continue
+                motion = getattr(context, "_reduction_motion", None)
+                if motion is not None and not motion.via(
+                        context, chains, anchors, old_via, moved_via, legs, deadline):
+                    continue
                 if before_grade is None:
                     before_grade = check_net_connectivity(
                         net_id, net_segments, other_vias + [old_via],
