@@ -25,6 +25,7 @@ class SearchStats:
     sweep_intervals: int = 0
     rejected: int = 0
     capped: int = 0
+    candidate_capped: int = 0
     seconds: float = 0.0
     offsets: list = field(default_factory=list)
 
@@ -49,7 +50,7 @@ def length_rate(geometry):
 
 def best_slide(context, source, outside, vias, anchors, deadline=None, *,
                accept_replacement=None, stats=None, max_candidates=32,
-               max_probes=512, stay_in_corridor=True):
+               max_probes=512, stay_in_corridor=True, max_candidate_probes=None):
     """Return only a shortening, certified incumbent; no geometry mutation."""
     from dgloss.algorithm import _touches_other_same_net
     stats = stats if stats is not None else SearchStats()
@@ -57,6 +58,7 @@ def best_slide(context, source, outside, vias, anchors, deadline=None, *,
     started = perf_counter()
     probes_start = stats.segment_probes
     candidates_start = stats.candidates
+    candidate_start = probes_start
     step = context.coord.grid_step
     tolerance = step / 4.0
     geometry = _ordered_geometry(*source)
@@ -80,10 +82,21 @@ def best_slide(context, source, outside, vias, anchors, deadline=None, *,
     def expired():
         return deadline is not None and perf_counter() >= deadline
 
+    class CandidateLimit(Exception):
+        pass
+
+    def work_exhausted():
+        if expired() or stats.segment_probes-probes_start >= max_probes:
+            return True
+        if (max_candidate_probes is not None and
+                stats.segment_probes-candidate_start >= max_candidate_probes):
+            raise CandidateLimit
+        return False
+
     def sweep(low, high):
         stack = [(low, high, 0)]
         while stack:
-            if expired() or stats.segment_probes - probes_start >= max_probes:
+            if work_exhausted():
                 return False
             left, right, depth = stack.pop()
             mid = (left + right) / 2
@@ -94,7 +107,7 @@ def best_slide(context, source, outside, vias, anchors, deadline=None, *,
             stats.sweep_intervals += 1
             clear = True
             for i in range(3):
-                if expired() or stats.segment_probes - probes_start >= max_probes:
+                if work_exhausted():
                     return False
                 # Each outside member stays on one fixed support, so its swept
                 # union is exactly its longest state, with no width inflation.
@@ -114,7 +127,7 @@ def best_slide(context, source, outside, vias, anchors, deadline=None, *,
                 if not context.clearance_adapter.segment_clears(probe):
                     if i != 1:
                         return False  # Exact swept union already intersects.
-                    if expired() or stats.segment_probes-probes_start >= max_probes:
+                    if work_exhausted():
                         return False
                     actual = Segment(*points[i], *points[i+1], source[i].width,
                                      source[i].layer, source[i].net_id)
@@ -142,7 +155,7 @@ def best_slide(context, source, outside, vias, anchors, deadline=None, *,
             return None
         # Also check the rounded emitted geometry, independently of the sweep.
         for segment in segments:
-            if expired() or stats.segment_probes - probes_start >= max_probes:
+            if work_exhausted():
                 return None
             stats.segment_probes += 1
             if not context.clearance_adapter.segment_clears(segment):
@@ -159,7 +172,14 @@ def best_slide(context, source, outside, vias, anchors, deadline=None, *,
                         stats.segment_probes-probes_start >= max_probes):
                     stats.capped += 1
                     break
-                candidate = candidate_at(low, target)
+                candidate_start = stats.segment_probes
+                try:
+                    candidate = candidate_at(low, target)
+                except CandidateLimit:
+                    # Unknown within this allowance, not a proven obstacle.
+                    # Shrink the attempted interval; never advance its low end.
+                    stats.candidate_capped += 1
+                    candidate = None
                 if candidate is not None:
                     low = target
                     if candidate.before_length-candidate.after_length > 1e-7:
