@@ -274,6 +274,17 @@ def _run_optimization_pass(results, context, selected, net_ids, deadline, *, emi
         changes=merge.get("joints", 0), saved_mm=0.0,
         elapsed_ms=merge_ms, label="collinear joints removed")
 
+    if not selected.stay_in_corridor:
+        local_strips, local_added, local_changes, local_stats = shorten_routes(
+            context, results, deadline=deadline, net_ids=run_net_ids,
+            local_only=True, stage="G3 local")
+        _append_result(results, "track_gloss_local", local_added, [], local_changes)
+        strips.extend(local_strips)
+        changes.segments.extend(local_changes.segments)
+        stage_stats.record("G3 local", changes=local_stats["nets_changed"],
+                           saved_mm=local_stats["saved_mm"],
+                           elapsed_ms=local_stats["algorithm_ms"], label="local reductions")
+
     after_length = _validate_final(
         context, before_grades, before_length, changes)
     changed_net_ids = {row["net_id"] for row in g3.get("per_net", [])
@@ -284,6 +295,9 @@ def _run_optimization_pass(results, context, selected, net_ids, deadline, *, emi
         entry["old"].net_id for entry in equal_changes.segments
         if "old" in entry)
     changed_net_ids.update(segment.net_id for segment in merge_removed)
+    if not selected.stay_in_corridor:
+        changed_net_ids.update(entry["old"].net_id for entry in local_changes.segments
+                               if "old" in entry)
 
     return {
         "context": context, "changes": changes,

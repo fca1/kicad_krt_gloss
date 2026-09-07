@@ -684,7 +684,7 @@ def _best_chain_replacement(context, chain, net_id, foreign_obstacles,
 
 def shorten_routes(context, results, deadline=None, *, net_ids,
                    objective="shorter", stage="G3",
-                   include_canonical=True, stay_in_corridor=False):
+                   include_canonical=True, stay_in_corridor=False, local_only=False):
     """Run one deterministic dgloss pass, net by net, with fixed vias."""
     changes = GlossChanges()
     strips = []
@@ -716,16 +716,22 @@ def shorten_routes(context, results, deadline=None, *, net_ids,
             if cache is not None:
                 cache_key, reused = cache.token(
                     "tracks", net_id, chain.segments,
-                    (objective, include_canonical, stay_in_corridor))
+                    (objective, include_canonical, stay_in_corridor, local_only))
                 if reused:
                     continue
-            replacement = _best_chain_replacement(
-                context, chain, net_id, foreign, current, net_vias,
-                deadline=deadline, objective=objective,
-                include_canonical=include_canonical,
-                stay_in_corridor=stay_in_corridor,
-                accept_replacement=ReplacementGuard(
-                    context.pcb_data, net_id, current, net_vias))
+            use_local = objective == "shorter" and (stay_in_corridor or local_only)
+            if use_local:
+                from .local_gloss import local_replacement
+                replacement = local_replacement(
+                    context, chain, net_id, current, net_vias, deadline)
+            else:
+                replacement = _best_chain_replacement(
+                    context, chain, net_id, foreign, current, net_vias,
+                    deadline=deadline, objective=objective,
+                    include_canonical=include_canonical,
+                    stay_in_corridor=stay_in_corridor,
+                    accept_replacement=ReplacementGuard(
+                        context.pcb_data, net_id, current, net_vias))
             if replacement is None:
                 if cache is not None and (deadline is None or perf_counter() < deadline):
                     cache.remember_failure(cache_key, chain.segments)
@@ -740,7 +746,9 @@ def shorten_routes(context, results, deadline=None, *, net_ids,
             if objective == "fewer_segments":
                 if abs(gain) > 1e-9 or len(trial) >= len(current):
                     continue
-            elif gain <= context.coord.grid_step:
+            elif use_local and abs(gain) <= 1e-7 and len(added) < len(removed):
+                pass
+            elif gain <= (1e-7 if use_local else context.coord.grid_step):
                 continue
             context.pcb_data.segments = [
                 seg for seg in context.pcb_data.segments
