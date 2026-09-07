@@ -1,7 +1,7 @@
 """Measure repeated per-net Gloss with all foreign copper fixed at PACK0 input."""
 import argparse
 from collections import Counter
-from contextlib import redirect_stdout, redirect_stderr
+from contextlib import redirect_stdout, redirect_stderr, nullcontext
 import hashlib
 import io
 import json
@@ -24,6 +24,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--max-passes', type=int, default=50)
     parser.add_argument('--net-budget', type=float, default=120.)
+    parser.add_argument('--auto-gloss', action='store_true', help='Experimental changed-chain queue; G4 remains disabled')
     parser.add_argument('--output', type=Path, default=Path('.build/net_self_convergence_tildagon.json'))
     args = parser.parse_args()
     pack = json.loads(Path('docs/PACK0.json').read_text(encoding='utf-8'))
@@ -50,6 +51,11 @@ def main():
         excluded=list(excluded),runs=[])
     args.output.parent.mkdir(parents=True,exist_ok=True)
     selected=GlossConfig(repeat_until_stable=False,budget_seconds=args.net_budget)
+    data['variant']='auto_gloss' if args.auto_gloss else 'production'
+    data['g4_enabled']=False
+    if args.auto_gloss:
+        from tools.auto_gloss import auto_gloss
+        data['protocol']=data['protocol'].replace('full production chain per call', 'production stages with auto gloss changed-chain queue per call')
     for index,net in enumerate(scope):
         row=dict(net_id=net,name=pcb.nets[net].name,passes=[],status='pass_limit',
                  initial_segments=sum(s.net_id==net for s in original_segments),
@@ -69,8 +75,12 @@ def main():
                         row['status']='budget'
                         break
                     tick=perf_counter()
-                    outcome=_run_optimization_pass(results,context,selected,[net],deadline,emit_log=False)
+                    with auto_gloss() if args.auto_gloss else nullcontext() as auto_stats:
+                        outcome=_run_optimization_pass(results,context,selected,[net],deadline,emit_log=False)
                     elapsed=perf_counter()-tick
+                    live_segments={id(s) for s in pcb.segments}
+                    assert all(id(s) in live_segments for result in results
+                               for s in result.get('new_segments', [])), 'stale output segment'
                     changes.segments.extend(outcome['changes'].segments)
                     changes.vias.extend(outcome['changes'].vias)
                     after=_route_signature(pcb,net)
@@ -79,7 +89,7 @@ def main():
                     row['passes'].append(dict(index=attempt,seconds=elapsed,
                         gain_mm=outcome['before_length']-outcome['after_length'],
                         geometry_changed=after!=signature,completed=completed,
-                        stages=stages))
+                        stages=stages,auto_gloss=dict(auto_stats) if auto_stats is not None else None))
                     if not completed:
                         row['status']='budget'
                         break
