@@ -176,6 +176,31 @@ def slide_segment(first, middle, last, offset, *, minimum_length=0.0):
         calculate_route_length(built))
 
 
+def slide_length_rate(first, middle, last):
+    """Length derivative per signed normal millimetre, before reversal.
+
+    Every member remains on its support with a fixed traversal direction, so
+    its length is affine in the offset. None denotes unsupported geometry.
+    """
+    geometry = _ordered_geometry(first, middle, last)
+    if geometry is None:
+        return None
+    a, b, c, d = geometry
+    shifted = _joints_at_offset(geometry, 1.0)
+    if shifted is None:
+        return None
+    vb, vc = _sub(shifted[0], b), _sub(shifted[1], c)
+    rate = 0.0
+    for vector, velocity in ((_sub(b, a), vb),
+                             (_sub(c, b), _sub(vc, vb)),
+                             (_sub(c, d), vc)):
+        length = math.hypot(*vector)
+        if length <= _EPS:
+            return None
+        rate += _dot(vector, velocity) / length
+    return rate
+
+
 def slide_interval(first, middle, last, *, minimum_length=0.0):
     """Return the full no-reversal interval for the scalar slide."""
     geometry = _ordered_geometry(first, middle, last)

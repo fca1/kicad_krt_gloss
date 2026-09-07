@@ -10,9 +10,10 @@ for path in (ROOT, ROOT / "KRT", ROOT / "KRT" / "py_router",
     sys.path.insert(0, str(path))
 
 from kicad_parser import Segment
+from dgloss.krt_api import calculate_route_length
 
 from dgloss.algorithm import _reachable_segment_slides
-from dgloss.segment_sliding import slide_interval, slide_segment
+from dgloss.segment_sliding import slide_interval, slide_segment, slide_length_rate
 
 
 def _segment(a, b):
@@ -183,3 +184,36 @@ def test_g3_policy_stops_at_first_exact_obstacle_and_keeps_best_slide():
     middle = candidates[0][1]
     assert math.isclose(middle.start_y, 90.2, abs_tol=1e-9)
     assert math.isclose(middle.end_y, 90.2, abs_tol=1e-9)
+
+
+def test_length_rate_and_useful_direction_across_rotations_and_reflections():
+    source = (_segment((0, 0), (3, -3)),
+              _segment((3, -3), (8, -3)),
+              _segment((8, -3), (12, 1)))
+    expected = 2 - 2 * math.sqrt(2)
+    for reflected in (False, True):
+        for turns in range(8):
+            geometry = [_rotate_segment(s, turns) for s in source]
+            if reflected:
+                geometry = [_reflect_segment(s) for s in geometry]
+            rate = slide_length_rate(*geometry)
+            assert math.isclose(rate, -expected if reflected else expected, abs_tol=1e-8)
+            observed = []
+            def clear(candidate):
+                observed.append(calculate_route_length(candidate))
+                return True
+            context = types.SimpleNamespace(coord=types.SimpleNamespace(grid_step=.1),
+                clearance_adapter=types.SimpleNamespace(connector_clears=clear))
+            list(_reachable_segment_slides(context, geometry, [], [], ()))
+            assert observed
+            assert all(length < calculate_route_length(geometry) for length in observed)
+
+
+def test_neutral_slide_never_calls_clearance():
+    source = (_segment((0, 0), (4, 0)), _segment((4, 0), (6, 2)),
+              _segment((6, 2), (10, 2)))
+    def forbidden(_):
+        raise AssertionError('No useful shortening direction')
+    context = types.SimpleNamespace(coord=types.SimpleNamespace(grid_step=.1),
+        clearance_adapter=types.SimpleNamespace(connector_clears=forbidden))
+    assert list(_reachable_segment_slides(context, source, [], [], ())) == []

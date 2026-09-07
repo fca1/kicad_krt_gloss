@@ -14,7 +14,7 @@ from dgloss.krt_api import _octolinear_bends
 from dgloss.krt_api import pos_key
 from dgloss.krt_api import _segment_fits_wide
 from .changes import GlossChanges, release_result_custody
-from .segment_sliding import slide_interval, slide_segment
+from .segment_sliding import slide_interval, slide_segment, slide_length_rate
 from .corridor import stays_in_corridor
 from .krt_clearance import stable_copper_search
 
@@ -298,13 +298,16 @@ def _adaptive_chamfer_candidates(context, obstacles, a, b, layer, width,
 
 def _reachable_segment_slides(context, source, outside, net_vias, anchors,
                               deadline=None, max_steps=2000):
-    """Yield the best locally reachable slide in each signed direction.
+    """Yield the best locally reachable slide in the shortening direction.
 
     Geometry is provided by :mod:`segment_sliding`; this function is only G3's
-    shortening and reachability policy.  Each direction is walked outward from
-    the incumbent and stops at its first same-net or exact-KRT obstruction, so
-    it cannot jump into a disconnected clearance basin.
+    shortening and reachability policy. The useful direction is walked outward
+    from the incumbent and stops at its first sampled same-net or exact-KRT
+    obstruction. This sampled search is not a continuous corridor certificate.
     """
+    rate = slide_length_rate(*source)
+    if rate is None or abs(rate) < 1e-9:
+        return
     interval = slide_interval(
         *source, minimum_length=context.coord.grid_step)
     if interval is None:
@@ -313,7 +316,7 @@ def _reachable_segment_slides(context, source, outside, net_vias, anchors,
     step = context.coord.grid_step
     span_limit = max(old_length, step)
 
-    for sign in (-1, 1):
+    for sign in ((-1,) if rate > 0.0 else (1,)):
         bound = interval.maximum if sign > 0 else -interval.minimum
         if math.isinf(bound):
             bound = span_limit
