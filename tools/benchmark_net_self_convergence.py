@@ -27,9 +27,10 @@ def main():
     parser.add_argument('--auto-gloss', action='store_true', help='Experimental changed-chain queue; G4 remains disabled')
     parser.add_argument('--joint-gloss', action='store_true', help='Common length/segment DAG; no changed-chain queue, no G4')
     parser.add_argument('--window-auto-gloss', action='store_true', help='Auto gloss with at most three segments per revisit; no G4')
+    parser.add_argument('--progressive-via', action='store_true', help='Integrated auto gloss with experimental via absorption; no G4')
     parser.add_argument('--output', type=Path, default=Path('.build/net_self_convergence_tildagon.json'))
     args = parser.parse_args()
-    if sum((args.auto_gloss, args.joint_gloss, args.window_auto_gloss)) > 1:
+    if sum((args.auto_gloss, args.joint_gloss, args.window_auto_gloss, args.progressive_via)) > 1:
         parser.error('Choose one prototype')
     pack = json.loads(Path('docs/PACK0.json').read_text(encoding='utf-8'))
     entry = next(b for b in pack['boards'] if b['name']=='tildagon_base')
@@ -68,6 +69,10 @@ def main():
         from tools.window_auto_gloss import window_auto_gloss
         data['variant']='window_auto_gloss'
         data['protocol']=data['protocol'].replace('full production chain per call', 'production stages with auto gloss revisiting windows of at most three segments')
+    if args.progressive_via:
+        from tools.progressive_via import progressive_via
+        data['variant']='progressive_via'
+        data['protocol']=data['protocol'].replace('full production chain per call', 'integrated full-chain auto gloss with experimental via absorption and continuation')
     for index,net in enumerate(scope):
         row=dict(net_id=net,name=pcb.nets[net].name,passes=[],status='pass_limit',
                  initial_segments=sum(s.net_id==net for s in original_segments),
@@ -87,7 +92,8 @@ def main():
                         row['status']='budget'
                         break
                     tick=perf_counter()
-                    experiment = (window_auto_gloss() if args.window_auto_gloss else
+                    experiment = (progressive_via() if args.progressive_via else
+                                  window_auto_gloss() if args.window_auto_gloss else
                                   joint_gloss() if args.joint_gloss else
                                   auto_gloss() if args.auto_gloss else nullcontext())
                     with experiment as auto_stats:
