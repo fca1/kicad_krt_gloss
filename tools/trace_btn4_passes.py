@@ -1,5 +1,6 @@
-"""Diagnostic replay of net59; line tracing is not a timing benchmark."""
+"""Diagnostic replay of one PACK0 net (59 by default), not a timing benchmark."""
 from contextlib import ExitStack, redirect_stdout, redirect_stderr
+import argparse
 import hashlib
 import inspect
 import io
@@ -16,19 +17,26 @@ from dgloss.changes import GlossChanges
 import dgloss.pipeline as pipeline
 import dgloss.via_mobile as via_module
 
+TARGET_NET=59
 
 def snapshot(pcb):
     return dict(segments=[(s.layer,s.width,s.start_x,s.start_y,s.end_x,s.end_y)
-        for s in pcb.segments if s.net_id==59],
-        vias=[(v.x,v.y,v.size,v.drill) for v in pcb.vias if v.net_id==59])
+        for s in pcb.segments if s.net_id==TARGET_NET],
+        vias=[(v.x,v.y,v.size,v.drill) for v in pcb.vias if v.net_id==TARGET_NET])
 
 
 def main():
+    global TARGET_NET
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--net',type=int,default=59)
+    parser.add_argument('--output',type=Path,default=Path('.build/trace_btn4_passes.json'))
+    args=parser.parse_args()
+    TARGET_NET=args.net
     pack=json.loads(Path('docs/PACK0.json').read_text())
     entry=next(b for b in pack['boards'] if b['name']=='tildagon_base')
     board=Path(pack['corpus_root'])/entry['path']
     assert hashlib.sha256(board.read_bytes()).hexdigest()==entry['sha256']
-    log=io.StringIO();data=dict(net_id=59,net_name='/GPIO/BTN4',sha256=entry['sha256'],events=[],stages=[])
+    log=io.StringIO();data=dict(net_id=TARGET_NET,sha256=entry['sha256'],events=[],stages=[])
     pass_no=[0]
     function=via_module.move_mobile_vias
     lines,start_line=inspect.getsourcelines(function)
@@ -47,7 +55,7 @@ def main():
         if event=='line' and frame.f_lineno in reasons:
             local=frame.f_locals
             via=local.get('old_via')
-            if via is not None and via.net_id==59 and 'position' in local:
+            if via is not None and via.net_id==TARGET_NET and 'position' in local:
                 data['events'].append(dict(pass_no=pass_no[0],stage=local['stage'],
                     via=(via.x,via.y),position=local['position'],anchors=local.get('anchors'),
                     old_length=local.get('old_length'),new_length=local.get('new_length'),
@@ -59,8 +67,9 @@ def main():
         cli=gloss.build_parser().parse_args([str(board),'--preview'])
         config=gloss.build_krt_config(cli,pcb,ids)
         context=build_gloss_context(pcb,config,ids)
-        initial=pipeline._route_signature(pcb,59)
-        grade=pipeline._grade(pcb,59)
+        data['net_name']=pcb.nets[TARGET_NET].name
+        initial=pipeline._route_signature(pcb,TARGET_NET)
+        grade=pipeline._grade(pcb,TARGET_NET)
         data['initial']=snapshot(pcb)
         changes=GlossChanges();results=[]
         with ExitStack() as stack:
@@ -82,19 +91,20 @@ def main():
                 for number in range(1,7):
                     pass_no[0]=number
                     outcome=pipeline._run_optimization_pass(results,context,
-                        GlossConfig(repeat_until_stable=False),[59],float('inf'),emit_log=False)
+                        GlossConfig(repeat_until_stable=False),[TARGET_NET],float('inf'),emit_log=False)
                     changes.segments.extend(outcome['changes'].segments)
                     changes.vias.extend(outcome['changes'].vias)
-                    signature=pipeline._route_signature(pcb,59)
+                    signature=pipeline._route_signature(pcb,TARGET_NET)
                     if signature==initial:
                         break
                     initial=signature
             finally:
                 sys.settrace(old_trace)
-        data['g5']=pipeline._certify_g5_copper(context,{59:grade},changes)
+        data['g5']=pipeline._certify_g5_copper(context,{TARGET_NET:grade},changes)
     assert hashlib.sha256(board.read_bytes()).hexdigest()==entry['sha256']
     data['source_unchanged']=True
-    Path('.build/trace_btn4_passes.json').write_text(json.dumps(data,indent=2),encoding='utf-8')
+    args.output.parent.mkdir(parents=True,exist_ok=True)
+    args.output.write_text(json.dumps(data,indent=2),encoding='utf-8')
     print('passes',pass_no[0],'events',len(data['events']),'G5',data['g5'])
 
 
