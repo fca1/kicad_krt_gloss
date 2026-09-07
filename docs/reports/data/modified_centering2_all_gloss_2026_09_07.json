@@ -1,0 +1,249 @@
+{
+  "sha256": "8556b99dd650bc1e5db02582fed0de45d391357d2b2dee6080d81137770370c4",
+  "settings": {
+    "scope": "all",
+    "corridor": false,
+    "g4": false,
+    "center": false,
+    "proximity": 1.0,
+    "profile": false,
+    "output": ".build\\modified_all_gloss.json"
+  },
+  "parse_seconds": 0.010376699967309833,
+  "seconds": 0.5393391998950392,
+  "nets": [
+    2,
+    5,
+    6,
+    7
+  ],
+  "stats": {
+    "nets_changed": 2,
+    "segments_removed": 39,
+    "segments_added": 6,
+    "saved_mm": 154.8635,
+    "algorithm_ms": 372.32,
+    "per_net": [
+      {
+        "net_id": 2,
+        "before_mm": 73.43767670841366,
+        "after_mm": 73.43767670841366,
+        "saved_mm": 0.0,
+        "algorithm_ms": 11.076699942350388
+      },
+      {
+        "net_id": 5,
+        "before_mm": 129.80529573173854,
+        "after_mm": 100.22396820942892,
+        "saved_mm": 29.58132752230962,
+        "algorithm_ms": 135.45439997687936
+      },
+      {
+        "net_id": 6,
+        "before_mm": 104.45422433049808,
+        "after_mm": 56.05979797464466,
+        "saved_mm": 48.39442635585342,
+        "algorithm_ms": 224.94069999083877
+      },
+      {
+        "net_id": 7,
+        "before_mm": 36.865389565666185,
+        "after_mm": 36.865389565666185,
+        "saved_mm": 0.0,
+        "algorithm_ms": 0.8481999393552542
+      }
+    ],
+    "config": {
+      "enable_g3_1": true,
+      "enable_g3_2": true,
+      "enable_g3_3": true,
+      "enable_g3_4": true,
+      "budget_seconds": 20.0,
+      "enable_noncollinear_t_rails": true,
+      "enable_multipasses": true,
+      "enable_g3_6": false,
+      "centering_proximity_mm": 1.0,
+      "stay_in_corridor": false,
+      "move_vias": true,
+      "optimize_pad_approaches": true,
+      "move_junctions": true,
+      "repeat_until_stable": false
+    },
+    "gloss": {
+      "budget_seconds": 19.953053300036117,
+      "budget_expired": false,
+      "stages": {
+        "G3": {
+          "enabled": true,
+          "changes": 2,
+          "saved_mm": 77.9758,
+          "elapsed_ms": 372.32,
+          "label": "nets improved",
+          "skipped_budget": false
+        },
+        "G3.1": {
+          "enabled": true,
+          "changes": 1,
+          "saved_mm": 33.3196,
+          "elapsed_ms": 6.985,
+          "label": "vias moved",
+          "skipped_budget": false
+        },
+        "G3.2": {
+          "enabled": true,
+          "changes": 0,
+          "saved_mm": 0.0,
+          "elapsed_ms": 84.723,
+          "label": "pads optimized",
+          "skipped_budget": false
+        },
+        "G3.3": {
+          "enabled": true,
+          "changes": 0,
+          "saved_mm": 0.0,
+          "elapsed_ms": 1.823,
+          "label": "T branches moved",
+          "skipped_budget": false
+        },
+        "G3.4": {
+          "enabled": true,
+          "changes": 1,
+          "saved_mm": 43.5681,
+          "elapsed_ms": 5.478,
+          "label": "vias refined",
+          "skipped_budget": false
+        },
+        "G3.5 equal length": {
+          "enabled": true,
+          "changes": 0,
+          "saved_mm": 0.0,
+          "elapsed_ms": 1.459,
+          "label": "segments removed at equal length",
+          "skipped_budget": false
+        },
+        "G3.5 segments": {
+          "enabled": true,
+          "changes": 0,
+          "saved_mm": 0.0,
+          "elapsed_ms": 0.098,
+          "label": "collinear joints removed",
+          "skipped_budget": false
+        },
+        "G3 local": {
+          "enabled": true,
+          "changes": 0,
+          "saved_mm": 0.0,
+          "elapsed_ms": 3.419,
+          "label": "local reductions",
+          "skipped_budget": false
+        },
+        "G4": {
+          "enabled": false,
+          "changes": 0,
+          "saved_mm": 0.0,
+          "elapsed_ms": 0.0,
+          "label": "multi-net transformations",
+          "skipped_budget": false
+        },
+        "G3.6": {
+          "enabled": false,
+          "changes": 0,
+          "saved_mm": 0.0,
+          "elapsed_ms": 0.0,
+          "label": "doors centered",
+          "skipped_budget": false
+        },
+        "G5": {
+          "enabled": true,
+          "changes": 4,
+          "saved_mm": 0.0,
+          "elapsed_ms": 2.163,
+          "label": "final objects certified",
+          "skipped_budget": false
+        }
+      }
+    },
+    "nets_processed": 4,
+    "nets_excluded": 0,
+    "excluded_net_ids": [],
+    "exclusion_reasons": {},
+    "elementary_branches": 0,
+    "branch_scoped": false,
+    "editable_layers": [
+      "F.Cu",
+      "B.Cu"
+    ],
+    "segment_changes": 56,
+    "via_changes": 2,
+    "doors_centered": 0,
+    "centering_branches_changed": 0,
+    "centering_segments_added": 0,
+    "centering_length_delta_mm": 0.0,
+    "centering_candidates_tested": 0,
+    "centering_algorithm_ms": 0.0,
+    "before_mm": 344.5626,
+    "krt_after_mm": 344.5626,
+    "after_mm": 189.6991,
+    "total_ms": 538.518,
+    "krt_baseline_ms": 0.0,
+    "krt_baseline_saved_mm": 0.0,
+    "post_krt_saved_mm": 154.8635,
+    "vias_moved": 1,
+    "via_algorithm_ms": 6.985,
+    "pads_changed": 0,
+    "pad_algorithm_ms": 84.723,
+    "pad_saved_mm": 0.0,
+    "t_branches_slid": 0,
+    "noncollinear_t_slid": 0,
+    "right_angles_cleaned": 0,
+    "node_algorithm_ms": 1.823,
+    "node_saved_mm": 0.0,
+    "vias_refined": 1,
+    "refine_via_algorithm_ms": 5.478,
+    "refine_via_saved_mm": 43.5681,
+    "equal_length_nets_changed": 0,
+    "equal_length_segments_removed": 0,
+    "equal_length_segments_added": 0,
+    "equal_length_segment_reduction": 0,
+    "equal_length_algorithm_ms": 1.459,
+    "segments_merged": 0,
+    "merge_nets_changed": 0,
+    "merge_joints": 0,
+    "merge_segments_removed": 0,
+    "merge_segments_added": 0,
+    "merge_nets_skipped_large": 0,
+    "merge_algorithm_ms": 0.098,
+    "g4_passes": [],
+    "g4_passes_completed": 0,
+    "g4_transformations": 0,
+    "g4_segment_reduction": 0,
+    "g4_saved_mm": 0.0,
+    "g4_algorithm_ms": 0.0,
+    "g4_stop_reason": "disabled",
+    "g5_segments_certified": 3,
+    "g5_segments_geometry_preserved": 0,
+    "g5_vias_certified": 1,
+    "g5_algorithm_ms": 2.163,
+    "g5_valid": true,
+    "connectivity_regressions": 0,
+    "pad_distance_cache": {
+      "hits": 23,
+      "misses": 2375,
+      "maxsize": 8192,
+      "currsize": 2375
+    },
+    "copper_data_cache": {
+      "builds": 9,
+      "reuses": 2380,
+      "certificate_hits": 221
+    },
+    "search_cache": {
+      "hits": 0,
+      "misses": 21,
+      "invalidations": 0
+    },
+    "zone_invalidations": 0,
+    "corridor_motion": {}
+  },
+  "log": "Copper-to-hole clearance 0.25mm (from the board's own min_hole_clearance, above the 0.2mm fab floor)\nTrack Gloss G3: 2 nets improved, -77.9758 mm, 372.3 ms\nTrack Gloss G3.1: 1 vias moved, -33.3196 mm, 7.0 ms\nTrack Gloss G3.2: 0 pads optimized, 0.0000 mm, 84.7 ms\nTrack Gloss G3.3: 0 T branches moved, 0.0000 mm, 1.8 ms\nTrack Gloss G3.4: 1 vias refined, -43.5681 mm, 5.5 ms\nTrack Gloss G3.5 equal length: 0 segments removed at equal length, 0.0000 mm, 1.5 ms\nTrack Gloss G3.5 segments: 0 collinear joints removed, 0.0000 mm, 0.1 ms\nTrack Gloss G3 local: 0 local reductions, 0.0000 mm, 3.4 ms\nTrack Gloss G4: disabled\nTrack Gloss G3.6: disabled\nTrack Gloss G5: 4 final objects certified, 0.0000 mm, 2.2 ms\nTrack Gloss final: 4 nets processed, 2 changed, -154.8635 mm, 538.5 ms\n"
+}

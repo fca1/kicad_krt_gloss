@@ -1,0 +1,48 @@
+         2255777 function calls (2254351 primitive calls) in 1.306 seconds
+
+   Ordered by: cumulative time
+   List reduced from 1462 to 40 due to restriction <40>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.001    0.001    1.275    1.275 C:\Users\frant\Downloads\kicad_krt_gloss\.build\progressive_zip_check\plugins\dgloss\pipeline.py:436(run_final_gloss)
+        1    0.000    0.000    1.274    1.274 C:\Users\frant\Downloads\kicad_krt_gloss\.build\progressive_zip_check\plugins\dgloss\pipeline.py:578(run_post_smooth_gloss)
+        2    0.000    0.000    1.205    0.603 C:\Users\frant\Downloads\kicad_krt_gloss\.build\progressive_zip_check\plugins\dgloss\pipeline.py:139(_run_optimization_pass)
+       31    0.000    0.000    1.041    0.034 C:\Users\frant\Downloads\kicad_krt_gloss\.build\progressive_zip_check\plugins\dgloss\krt_clearance.py:75(wrapped)
+    11668    0.011    0.000    0.665    0.000 C:\Users\frant\Downloads\kicad_krt_gloss\.build\progressive_zip_check\plugins\dgloss\krt_clearance.py:228(segment_clears)
+     7384    0.026    0.000    0.653    0.000 C:\Users\frant\Downloads\kicad_krt_gloss\.build\progressive_zip_check\plugins\dgloss\krt_clearance.py:242(_segment_clears)
+      131    0.016    0.000    0.625    0.005 C:\Users\frant\Downloads\kicad_krt_gloss\.build\progressive_zip_check\plugins\dgloss\corridor.py:33(stays_in_corridor)
+        4    0.000    0.000    0.566    0.141 C:\Users\frant\Downloads\kicad_krt_gloss\.build\progressive_zip_check\plugins\dgloss\algorithm.py:693(shorten_routes)
+       11    0.003    0.000    0.524    0.048 C:\Users\frant\Downloads\kicad_krt_gloss\.build\progressive_zip_check\plugins\dgloss\local_gloss.py:13(local_replacement)
+        2    0.000    0.000    0.516    0.258 C:\Users\frant\Downloads\kicad_krt_gloss\.build\progressive_zip_check\plugins\dgloss\pad_terminals.py:167(optimize_pad_terminals)
+       17    0.002    0.000    0.507    0.030 C:\Users\frant\Downloads\kicad_krt_gloss\.build\progressive_zip_check\plugins\dgloss\pad_terminals.py:129(_best_pad_connector)
+     6739    0.008    0.000    0.444    0.000 C:\Users\frant\Downloads\kicad_krt_gloss\.build\progressive_zip_check\plugins\dgloss\krt_clearance.py:145(_uncached_pad_distance)
+     6739    0.313    0.000    0.435    0.000 C:\Users\frant\Downloads\kicad_krt_gloss\.build\progressive_zip_check\plugins\KRT\py_router\single_ended_routing.py:272(_seg_foreign_pad_dist)
+     1136    0.002    0.000    0.219    0.000 C:\Users\frant\Downloads\kicad_krt_gloss\.build\progressive_zip_check\plugins\dgloss\algorithm.py:373(_candidate_clearance)
+     1106    0.001    0.000    0.204    0.000 C:\Users\frant\Downloads\kicad_krt_gloss\.build\progressive_zip_check\plugins\dgloss\algorithm.py:385(<listcomp>)
+     3326    0.003    0.000    0.204    0.000 C:\Users\frant\Downloads\kicad_krt_gloss\.build\progressive_zip_check\plugins\dgloss\algorithm.py:344(_clears_krt_grid)
+        1    0.000    0.000    0.174    0.174 C:\Users\frant\Downloads\kicad_krt_gloss\.build\progressive_zip_check\plugins\dgloss\passes.py:18(run_multinet_passes)
+     3332    0.004    0.000    0.173    0.000 C:\Users\frant\Downloads\kicad_krt_gloss\.build\progressive_zip_check\plugins\KRT\py_router\single_ended_routing.py:5315(_segment_fits_wide)
+     3264    0.165    0.000    0.165    0.000 {method 'segment_blocked' of 'builtins.GridObstacleMap' objects}
+       75    0.010    0.000    0.157    0.002 C:\Users\frant\Downloads\kicad_krt_gloss\.build\progressive_zip_check\plugins\KRT\py_router\check_connected.py:987(check_net_connectivity)
+      874    0.075    0.000    0.106    0.000 C:\Users\frant\Downloads\kicad_krt_gloss\.build\progressive_zip_check\plugins\KRT\py_router\check_connected.py:151(add)
+       47    0.002    0.000    0.103    0.002 C:\Users\frant\Downloads\kicad_krt_gloss\.build\progressive_zip_check\plugins\dgloss\topology.py:26(check_local_connectivity)
+       21    0.000    0.000    0.098    0.005 C:\Users\frant\Downloads\kicad_krt_gloss\.build\progressive_zip_check\plugins\dgloss\topology.py:48(__call__)
+        4    0.000    0.000    0.081    0.020 C:\Users\frant\Downloads\kicad_krt_gloss\.build\progressive_zip_check\plugins\dgloss\via_mobile.py:153(move_mobile_vias)
+        2    0.000    0.000    0.064    0.032 C:\Users\frant\Downloads\kicad_krt_gloss\.build\progressive_zip_check\plugins\dgloss\via_mobile.py:321(refine_mobile_vias)
+9109/8918    0.003    0.000    0.059    0.000 {built-in method builtins.all}
+       28    0.002    0.000    0.058    0.002 C:\Users\frant\Downloads\kicad_krt_gloss\.build\progressive_zip_check\plugins\dgloss\pipeline.py:61(_g5_grade)
+    14228    0.017    0.000    0.053    0.000 {built-in method builtins.sum}
+        3    0.000    0.000    0.053    0.018 C:\Users\frant\Downloads\kicad_krt_gloss\.build\progressive_zip_check\plugins\dgloss\reduction_motion.py:115(via)
+        3    0.000    0.000    0.053    0.018 C:\Users\frant\Downloads\kicad_krt_gloss\.build\progressive_zip_check\plugins\dgloss\reduction_motion.py:55(certify)
+        3    0.001    0.000    0.053    0.018 C:\Users\frant\Downloads\kicad_krt_gloss\.build\progressive_zip_check\plugins\dgloss\reduction_motion.py:62(_certify)
+     7384    0.031    0.000    0.053    0.000 C:\Users\frant\Downloads\kicad_krt_gloss\.build\progressive_zip_check\plugins\dgloss\krt_clearance.py:27(_exact_foreign_segment_distance)
+       24    0.000    0.000    0.051    0.002 C:\Users\frant\Downloads\kicad_krt_gloss\.build\progressive_zip_check\plugins\dgloss\pipeline.py:56(_grade)
+     7384    0.003    0.000    0.049    0.000 C:\Users\frant\Downloads\kicad_krt_gloss\.build\progressive_zip_check\plugins\KRT\py_router\single_ended_routing.py:533(_seg_foreign_hole_dist)
+     7384    0.033    0.000    0.048    0.000 C:\Users\frant\Downloads\kicad_krt_gloss\.build\progressive_zip_check\plugins\KRT\py_router\single_ended_routing.py:461(_seg_foreign_via_dist)
+     6739    0.034    0.000    0.048    0.000 D:\kicad\bin\Lib\site-packages\numpy\_core\function_base.py:27(linspace)
+     7384    0.016    0.000    0.046    0.000 C:\Users\frant\Downloads\kicad_krt_gloss\.build\progressive_zip_check\plugins\KRT\py_router\single_ended_routing.py:493(_foreign_hole_capsules)
+        1    0.000    0.000    0.043    0.043 C:\Users\frant\Downloads\kicad_krt_gloss\.build\progressive_zip_check\plugins\dgloss\context.py:125(build_gloss_context)
+     16/8    0.001    0.000    0.041    0.005 C:\Users\frant\Downloads\kicad_krt_gloss\.build\progressive_zip_check\plugins\KRT\py_router\obstacle_cache.py:636(precompute_net_obstacles)
+      353    0.000    0.000    0.041    0.000 C:\Users\frant\Downloads\kicad_krt_gloss\.build\progressive_zip_check\plugins\dgloss\krt_clearance.py:265(connector_clears)
+
+

@@ -1,0 +1,728 @@
+{
+  "board": "C:\\Users\\frant\\Downloads\\kicad_centering\\test_centering1\\test_centering2.kicad_pcb",
+  "sha256": "8556b99dd650bc1e5db02582fed0de45d391357d2b2dee6080d81137770370c4",
+  "g4": false,
+  "runs": [
+    {
+      "corridor": false,
+      "prototype": false,
+      "net": 5,
+      "passes": [
+        {
+          "index": 1,
+          "seconds": 0.15163469989784062,
+          "gain_mm": 106.46904755831224,
+          "length_mm": 238.0935387780043,
+          "vias": [
+            [
+              135.9,
+              74.4
+            ]
+          ],
+          "via_events": [
+            {
+              "old": [
+                97.0,
+                56.1
+              ],
+              "new": [
+                128.0,
+                61.7
+              ]
+            },
+            {
+              "old": [
+                128.0,
+                61.7
+              ],
+              "new": [
+                135.9,
+                74.4
+              ]
+            }
+          ],
+          "stages": {
+            "G3": {
+              "enabled": true,
+              "changes": 1,
+              "saved_mm": 29.5813,
+              "elapsed_ms": 135.191,
+              "label": "nets improved",
+              "skipped_budget": false
+            },
+            "G3.1": {
+              "enabled": true,
+              "changes": 1,
+              "saved_mm": 33.3196,
+              "elapsed_ms": 4.552,
+              "label": "vias moved",
+              "skipped_budget": false
+            },
+            "G3.2": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.679,
+              "label": "pads optimized",
+              "skipped_budget": false
+            },
+            "G3.3": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.019,
+              "label": "T branches moved",
+              "skipped_budget": false
+            },
+            "G3.4": {
+              "enabled": true,
+              "changes": 1,
+              "saved_mm": 43.5681,
+              "elapsed_ms": 2.998,
+              "label": "vias refined",
+              "skipped_budget": false
+            },
+            "G3.5 equal length": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.049,
+              "label": "segments removed at equal length",
+              "skipped_budget": false
+            },
+            "G3.5 segments": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.035,
+              "label": "collinear joints removed",
+              "skipped_budget": false
+            },
+            "G3 local": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.033,
+              "label": "local reductions",
+              "skipped_budget": false
+            }
+          }
+        },
+        {
+          "index": 2,
+          "seconds": 0.0008234998676925898,
+          "gain_mm": 0.0,
+          "length_mm": 238.0935387780043,
+          "vias": [
+            [
+              135.9,
+              74.4
+            ]
+          ],
+          "via_events": [],
+          "stages": {
+            "G3": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.035,
+              "label": "nets improved",
+              "skipped_budget": false
+            },
+            "G3.1": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.006,
+              "label": "vias moved",
+              "skipped_budget": false
+            },
+            "G3.2": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.068,
+              "label": "pads optimized",
+              "skipped_budget": false
+            },
+            "G3.3": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.011,
+              "label": "T branches moved",
+              "skipped_budget": false
+            },
+            "G3.4": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.005,
+              "label": "vias refined",
+              "skipped_budget": false
+            },
+            "G3.5 equal length": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.032,
+              "label": "segments removed at equal length",
+              "skipped_budget": false
+            },
+            "G3.5 segments": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.024,
+              "label": "collinear joints removed",
+              "skipped_budget": false
+            },
+            "G3 local": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.029,
+              "label": "local reductions",
+              "skipped_budget": false
+            }
+          }
+        }
+      ],
+      "status": "fixed_point",
+      "g5_valid": true
+    },
+    {
+      "corridor": false,
+      "prototype": true,
+      "net": 5,
+      "passes": [
+        {
+          "index": 1,
+          "seconds": 0.14666520012542605,
+          "gain_mm": 106.46904755831224,
+          "length_mm": 238.0935387780043,
+          "vias": [
+            [
+              135.9,
+              74.4
+            ]
+          ],
+          "via_events": [
+            {
+              "old": [
+                97.0,
+                56.1
+              ],
+              "new": [
+                128.0,
+                61.7
+              ]
+            },
+            {
+              "old": [
+                128.0,
+                61.7
+              ],
+              "new": [
+                135.9,
+                74.4
+              ]
+            }
+          ],
+          "stages": {
+            "G3": {
+              "enabled": true,
+              "changes": 1,
+              "saved_mm": 29.5813,
+              "elapsed_ms": 135.719,
+              "label": "nets improved",
+              "skipped_budget": false
+            },
+            "G3.1": {
+              "enabled": true,
+              "changes": 1,
+              "saved_mm": 33.3196,
+              "elapsed_ms": 4.203,
+              "label": "vias moved",
+              "skipped_budget": false
+            },
+            "G3.2": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.665,
+              "label": "pads optimized",
+              "skipped_budget": false
+            },
+            "G3.3": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.015,
+              "label": "T branches moved",
+              "skipped_budget": false
+            },
+            "G3.4": {
+              "enabled": true,
+              "changes": 1,
+              "saved_mm": 43.5681,
+              "elapsed_ms": 2.449,
+              "label": "vias refined",
+              "skipped_budget": false
+            },
+            "G3.5 equal length": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.044,
+              "label": "segments removed at equal length",
+              "skipped_budget": false
+            },
+            "G3.5 segments": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.027,
+              "label": "collinear joints removed",
+              "skipped_budget": false
+            },
+            "G3 local": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.031,
+              "label": "local reductions",
+              "skipped_budget": false
+            }
+          }
+        },
+        {
+          "index": 2,
+          "seconds": 0.0008912000339478254,
+          "gain_mm": 0.0,
+          "length_mm": 238.0935387780043,
+          "vias": [
+            [
+              135.9,
+              74.4
+            ]
+          ],
+          "via_events": [],
+          "stages": {
+            "G3": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.039,
+              "label": "nets improved",
+              "skipped_budget": false
+            },
+            "G3.1": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.021,
+              "label": "vias moved",
+              "skipped_budget": false
+            },
+            "G3.2": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.066,
+              "label": "pads optimized",
+              "skipped_budget": false
+            },
+            "G3.3": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.009,
+              "label": "T branches moved",
+              "skipped_budget": false
+            },
+            "G3.4": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.017,
+              "label": "vias refined",
+              "skipped_budget": false
+            },
+            "G3.5 equal length": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.033,
+              "label": "segments removed at equal length",
+              "skipped_budget": false
+            },
+            "G3.5 segments": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.023,
+              "label": "collinear joints removed",
+              "skipped_budget": false
+            },
+            "G3 local": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.033,
+              "label": "local reductions",
+              "skipped_budget": false
+            }
+          }
+        }
+      ],
+      "status": "fixed_point",
+      "g5_valid": true
+    },
+    {
+      "corridor": true,
+      "prototype": false,
+      "net": 5,
+      "passes": [
+        {
+          "index": 1,
+          "seconds": 0.3907369999215007,
+          "gain_mm": 106.46904755831227,
+          "length_mm": 238.09353877800427,
+          "vias": [
+            [
+              135.9,
+              74.4
+            ]
+          ],
+          "via_events": [
+            {
+              "old": [
+                97.0,
+                56.1
+              ],
+              "new": [
+                114.7,
+                63.0
+              ]
+            },
+            {
+              "old": [
+                114.7,
+                63.0
+              ],
+              "new": [
+                135.9,
+                74.4
+              ]
+            }
+          ],
+          "stages": {
+            "G3": {
+              "enabled": true,
+              "changes": 1,
+              "saved_mm": 24.2794,
+              "elapsed_ms": 163.088,
+              "label": "nets improved",
+              "skipped_budget": false
+            },
+            "G3.1": {
+              "enabled": true,
+              "changes": 1,
+              "saved_mm": 20.5581,
+              "elapsed_ms": 13.47,
+              "label": "vias moved",
+              "skipped_budget": false
+            },
+            "G3.2": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 174.579,
+              "label": "pads optimized",
+              "skipped_budget": false
+            },
+            "G3.3": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.021,
+              "label": "T branches moved",
+              "skipped_budget": false
+            },
+            "G3.4": {
+              "enabled": true,
+              "changes": 1,
+              "saved_mm": 61.6316,
+              "elapsed_ms": 32.421,
+              "label": "vias refined",
+              "skipped_budget": false
+            },
+            "G3.5 equal length": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.049,
+              "label": "segments removed at equal length",
+              "skipped_budget": false
+            },
+            "G3.5 segments": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.027,
+              "label": "collinear joints removed",
+              "skipped_budget": false
+            }
+          }
+        },
+        {
+          "index": 2,
+          "seconds": 0.0008036999497562647,
+          "gain_mm": 0.0,
+          "length_mm": 238.09353877800427,
+          "vias": [
+            [
+              135.9,
+              74.4
+            ]
+          ],
+          "via_events": [],
+          "stages": {
+            "G3": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.036,
+              "label": "nets improved",
+              "skipped_budget": false
+            },
+            "G3.1": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.006,
+              "label": "vias moved",
+              "skipped_budget": false
+            },
+            "G3.2": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.074,
+              "label": "pads optimized",
+              "skipped_budget": false
+            },
+            "G3.3": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.009,
+              "label": "T branches moved",
+              "skipped_budget": false
+            },
+            "G3.4": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.005,
+              "label": "vias refined",
+              "skipped_budget": false
+            },
+            "G3.5 equal length": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.033,
+              "label": "segments removed at equal length",
+              "skipped_budget": false
+            },
+            "G3.5 segments": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.021,
+              "label": "collinear joints removed",
+              "skipped_budget": false
+            }
+          }
+        }
+      ],
+      "status": "fixed_point",
+      "g5_valid": true
+    },
+    {
+      "corridor": true,
+      "prototype": true,
+      "net": 5,
+      "passes": [
+        {
+          "index": 1,
+          "seconds": 0.37413359992206097,
+          "gain_mm": 106.46904755831227,
+          "length_mm": 238.09353877800427,
+          "vias": [
+            [
+              135.9,
+              74.4
+            ]
+          ],
+          "via_events": [
+            {
+              "old": [
+                97.0,
+                56.1
+              ],
+              "new": [
+                114.7,
+                63.0
+              ]
+            },
+            {
+              "old": [
+                114.7,
+                63.0
+              ],
+              "new": [
+                135.9,
+                74.4
+              ]
+            }
+          ],
+          "stages": {
+            "G3": {
+              "enabled": true,
+              "changes": 1,
+              "saved_mm": 24.2794,
+              "elapsed_ms": 162.366,
+              "label": "nets improved",
+              "skipped_budget": false
+            },
+            "G3.1": {
+              "enabled": true,
+              "changes": 1,
+              "saved_mm": 20.5581,
+              "elapsed_ms": 5.252,
+              "label": "vias moved",
+              "skipped_budget": false
+            },
+            "G3.2": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 173.29,
+              "label": "pads optimized",
+              "skipped_budget": false
+            },
+            "G3.3": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.02,
+              "label": "T branches moved",
+              "skipped_budget": false
+            },
+            "G3.4": {
+              "enabled": true,
+              "changes": 1,
+              "saved_mm": 61.6316,
+              "elapsed_ms": 29.718,
+              "label": "vias refined",
+              "skipped_budget": false
+            },
+            "G3.5 equal length": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.049,
+              "label": "segments removed at equal length",
+              "skipped_budget": false
+            },
+            "G3.5 segments": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.026,
+              "label": "collinear joints removed",
+              "skipped_budget": false
+            }
+          }
+        },
+        {
+          "index": 2,
+          "seconds": 0.0008425000123679638,
+          "gain_mm": 0.0,
+          "length_mm": 238.09353877800427,
+          "vias": [
+            [
+              135.9,
+              74.4
+            ]
+          ],
+          "via_events": [],
+          "stages": {
+            "G3": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.036,
+              "label": "nets improved",
+              "skipped_budget": false
+            },
+            "G3.1": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.023,
+              "label": "vias moved",
+              "skipped_budget": false
+            },
+            "G3.2": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.071,
+              "label": "pads optimized",
+              "skipped_budget": false
+            },
+            "G3.3": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.008,
+              "label": "T branches moved",
+              "skipped_budget": false
+            },
+            "G3.4": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.017,
+              "label": "vias refined",
+              "skipped_budget": false
+            },
+            "G3.5 equal length": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.032,
+              "label": "segments removed at equal length",
+              "skipped_budget": false
+            },
+            "G3.5 segments": {
+              "enabled": true,
+              "changes": 0,
+              "saved_mm": 0.0,
+              "elapsed_ms": 0.02,
+              "label": "collinear joints removed",
+              "skipped_budget": false
+            }
+          }
+        }
+      ],
+      "status": "fixed_point",
+      "g5_valid": true
+    }
+  ],
+  "source_unchanged": true
+}

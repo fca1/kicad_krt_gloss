@@ -1,0 +1,33 @@
+{
+  "sha256": "8556b99dd650bc1e5db02582fed0de45d391357d2b2dee6080d81137770370c4",
+  "settings": {
+    "scope": "all",
+    "corridor": false,
+    "g4": false,
+    "center": true,
+    "proximity": 1.0,
+    "profile": false,
+    "output": ".build\\modified_all_center.json"
+  },
+  "parse_seconds": 0.010534500004723668,
+  "seconds": 0.6912188001442701,
+  "nets": [
+    2,
+    5,
+    6,
+    7
+  ],
+  "stats": {
+    "nets_changed": 0,
+    "doors_centered": 0,
+    "centering_branches_changed": 0,
+    "cleanup_saved_mm": 0.0,
+    "before_mm": 344.5626,
+    "after_mm": 344.5626,
+    "saved_mm": 0.0,
+    "atomic_rollback": true,
+    "rollback_reason": "no_centering",
+    "budget_expired": false
+  },
+  "log": "Copper-to-hole clearance 0.25mm (from the board's own min_hole_clearance, above the 0.2mm fab floor)\nTrack Gloss G3: 2 nets improved, -30.0477 mm, 281.5 ms\nTrack Gloss G3.1: 1 vias moved, -20.5581 mm, 9.0 ms\nTrack Gloss G3.2: 0 pads optimized, 0.0000 mm, 268.2 ms\nTrack Gloss G3.3: 0 T branches moved, 0.0000 mm, 1.7 ms\nTrack Gloss G3.4: 1 vias refined, -61.6316 mm, 42.6 ms\nTrack Gloss G3.5 equal length: 0 segments removed at equal length, 0.0000 mm, 5.6 ms\nTrack Gloss G3.5 segments: 0 collinear joints removed, 0.0000 mm, 0.2 ms\nTrack Gloss + Centering cancelled; input preserved: no_centering\n"
+}
