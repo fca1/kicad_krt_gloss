@@ -26,12 +26,15 @@ def snapshot(pcb):
 
 
 def main():
-    global TARGET_NET
+    global TARGET_NET, via_module
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--net',type=int,default=59)
+    parser.add_argument('--progressive-via',action='store_true')
     parser.add_argument('--output',type=Path,default=Path('.build/trace_btn4_passes.json'))
     args=parser.parse_args()
     TARGET_NET=args.net
+    if args.progressive_via:
+        import tools.progressive_via as via_module
     pack=json.loads(Path('docs/PACK0.json').read_text())
     entry=next(b for b in pack['boards'] if b['name']=='tildagon_base')
     board=Path(pack['corpus_root'])/entry['path']
@@ -73,6 +76,8 @@ def main():
         data['initial']=snapshot(pcb)
         changes=GlossChanges();results=[]
         with ExitStack() as stack:
+            if args.progressive_via:
+                stack.enter_context(via_module.progressive_via())
             for name in ('shorten_routes','move_mobile_vias','optimize_pad_terminals',
                          'slide_t_nodes','refine_mobile_vias','_merge_collinear_in_scope'):
                 original=getattr(pipeline,name)
