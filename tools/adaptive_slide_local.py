@@ -11,7 +11,8 @@ from dgloss.krt_api import calculate_route_length
 
 
 @stable_copper_search
-def local_replacement(context, chain, net_id, current, vias, deadline=None, *, stats=None):
+def local_replacement(context, chain, net_id, current, vias, deadline=None, *,
+                      stats=None, stay_in_corridor=True):
     from dgloss.algorithm import (_candidate_segments, _touches_other_same_net,
                             _pad_holds_point)
     original = list(chain.segments)
@@ -60,7 +61,8 @@ def local_replacement(context, chain, net_id, current, vias, deadline=None, *, s
                 if (_touches_other_same_net(candidate, outside, vias,
                                             (source_points[0], source_points[-1])) or
                         not context.clearance_adapter.connector_clears(candidate) or
-                        not stays_in_corridor(context, source_points, candidate, deadline) or
+                        (stay_in_corridor and not stays_in_corridor(
+                            context, source_points, candidate, deadline)) or
                         not guard(source, candidate)):
                     continue
                 accepted = size, candidate
@@ -76,7 +78,8 @@ def local_replacement(context, chain, net_id, current, vias, deadline=None, *, s
             guard = ReplacementGuard(context.pcb_data, net_id, fixed + segments, vias)
             candidate = best_slide(context, source, outside, vias,
                                    (points[i], points[i+3]), deadline,
-                                   accept_replacement=guard, stats=stats)
+                                   accept_replacement=guard, stats=stats,
+                                   stay_in_corridor=stay_in_corridor)
             if candidate:
                 accepted = 3, candidate
         if accepted:

@@ -49,7 +49,7 @@ def length_rate(geometry):
 
 def best_slide(context, source, outside, vias, anchors, deadline=None, *,
                accept_replacement=None, stats=None, max_candidates=32,
-               max_probes=512):
+               max_probes=512, stay_in_corridor=True):
     """Return only a shortening, certified incumbent; no geometry mutation."""
     from dgloss.algorithm import _touches_other_same_net
     stats = stats if stats is not None else SearchStats()
@@ -138,7 +138,7 @@ def best_slide(context, source, outside, vias, anchors, deadline=None, *,
         segments = list(slide.segments)
         if _touches_other_same_net(segments, outside, vias, anchors):
             return None
-        if not sweep(low, distance):
+        if stay_in_corridor and not sweep(low, distance):
             return None
         # Also check the rounded emitted geometry, independently of the sweep.
         for segment in segments:
