@@ -21,6 +21,7 @@ from .passes import run_multinet_passes
 from .sliding_nodes import slide_t_nodes
 from .stats import GlossStats
 from .via_mobile import move_mobile_vias, refine_mobile_vias
+from .reduction_motion import MotionCertificate
 
 
 @dataclass
@@ -127,9 +128,18 @@ def _merge_collinear_in_scope(results, context, net_ids):
     return changed, nets, native, added, stats
 
 
+def _configure_motion(context, selected):
+    """Reuse one certificate's counters across passes requiring the corridor."""
+    if not selected.stay_in_corridor:
+        context._reduction_motion = None
+    elif getattr(context, "_reduction_motion", None) is None:
+        context._reduction_motion = MotionCertificate()
+
+
 def _run_optimization_pass(results, context, selected, net_ids, deadline, *, emit_log,
                    skip_smoothed_canonical=False):
     """Apply complementary search strategies under one optimization policy."""
+    _configure_motion(context, selected)
     pcb_data = context.pcb_data
     run_net_ids = [net_id for net_id in net_ids
                    if net_id in context.net_ids]
@@ -531,6 +541,8 @@ def run_centering(results, pcb_data, config, *, net_ids,
             "centering_algorithm_ms": centering["algorithm_ms"],
             "cleanup_saved_mm": round(cleanup["before_length"] - cleanup["after_length"], 4),
             "cleanup_gloss": cleanup["stage_stats"].as_dict(),
+            "corridor_motion": dict(context._reduction_motion.stats)
+                if getattr(context, "_reduction_motion", None) is not None else {},
             "g5_segments_certified": g5["segments_certified"],
             "g5_segments_geometry_preserved": (
                 g5["segments_geometry_preserved"]),
@@ -809,6 +821,8 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
         stats["copper_data_cache"] = dict(context.clearance_adapter.copper_data_stats)
         stats["search_cache"] = dict(context.search_cache.stats)
         stats["zone_invalidations"] = context.zone_invalidations
+        motion = getattr(context, "_reduction_motion", None)
+        stats["corridor_motion"] = dict(motion.stats) if motion is not None else {}
         if _emit_log:
             copper_delta = (f"-{total_saved:.4f}" if total_saved >= 0.0 else
                             f"+{-total_saved:.4f}")

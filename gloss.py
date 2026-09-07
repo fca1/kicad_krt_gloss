@@ -82,7 +82,7 @@ def build_parser():
     parser.add_argument("--no-noncollinear-t-rails", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--no-multipasses", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--stay-in-corridor", action="store_true",
-                        help="Prototype: require a clear deformation for track shortcuts")
+                        help="Require a clear deformation for tracks and mobile junctions")
     return parser
 
 

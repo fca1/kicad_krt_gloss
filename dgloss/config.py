@@ -19,7 +19,7 @@ class GlossConfig:
     # them yet.
     enable_g3_6: bool = False
     centering_proximity_mm: float = 1.0
-    # Prototype restriction for fixed-anchor track shortcuts; opt-in.
+    # Require corridor certificates for track shortcuts and joint motion.
     stay_in_corridor: bool = False
 
     # None migrates existing callers without breaking positional arguments.

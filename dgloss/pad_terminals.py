@@ -127,52 +127,41 @@ def _new_boundary_right_angle(candidate, anchor, outside):
 
 
 @stable_copper_search
-def _best_pad_connector(context, pad, chain, points, outside, net_vias,
-                        foreign, deadline=None, stay_in_corridor=False,
-                        accept_replacement=None):
-    centre = (pad.global_x, pad.global_y)
-    anchor = points[-1]
+def _best_pad_connector(context, pad, chain, points, outside, net_vias, foreign,
+                  deadline=None, stay_in_corridor=False, accept_replacement=None):
+    """Certify each family's first valid contender before enumerating more.
+
+    Families are monotone in length. Stop a family once it cannot beat the
+    certified incumbent, and retain that incumbent on a budget interruption.
+    """
+    centre, anchor = (pad.global_x, pad.global_y), points[-1]
     old_length = calculate_route_length(chain)
-    families = _connector_families(centre, anchor, chain[0],
-                                   context.coord.grid_step)
-    candidates = []
-    sequence = 0
-    for source, family in families:
-        if deadline is not None and perf_counter() >= deadline:
-            break
+    best, score = None, None
+    for source, family in _connector_families(centre, anchor, chain[0], context.coord.grid_step):
         for candidate in family:
             if deadline is not None and perf_counter() >= deadline:
+                return best
+            length = calculate_route_length(candidate)
+            candidate_score = length, len(candidate)
+            if score is not None and candidate_score >= score:
                 break
-            new_length = calculate_route_length(candidate)
-            if old_length - new_length <= context.coord.grid_step + 1e-12:
+            if old_length - length <= context.coord.grid_step + 1e-12:
+                break
+            if not _candidate_clearance(context, foreign, candidate, source, chain, defer_exact=True):
                 continue
-            clearance = _candidate_clearance(
-                context, foreign, candidate, source, chain,
-                defer_exact=True)
-            if not clearance:
+            if (_touches_other_same_net(candidate, outside, net_vias, (centre, anchor)) or
+                    _new_boundary_right_angle(candidate, anchor, outside)):
                 continue
-            if _touches_other_same_net(candidate, outside, net_vias,
-                                       (centre, anchor)):
+            if not context.clearance_adapter.connector_clears(candidate):
                 continue
-            if _new_boundary_right_angle(candidate, anchor, outside):
+            if stay_in_corridor and not stays_in_corridor(context, points, candidate, deadline):
                 continue
-            score = (new_length, len(candidate))
-            candidates.append((score, sequence, candidate,
-                               clearance.exact_segment_ids))
-            sequence += 1
-
-    # Exact KRT geometry is authoritative, but only candidates competitive on
-    # length reach it.  A rejected winner advances to the next-best candidate.
-    for _score, _sequence, candidate, exact_segment_ids in sorted(candidates):
-        if deadline is not None and perf_counter() >= deadline:
+            if accept_replacement is not None and not accept_replacement(chain, candidate):
+                continue
+            best, score = candidate, candidate_score
             break
-        if (all(id(segment) in exact_segment_ids for segment in candidate) or
-                context.clearance_adapter.connector_clears(candidate)):
-            if not stay_in_corridor or stays_in_corridor(
-                    context, points, candidate, deadline):
-                if accept_replacement is None or accept_replacement(chain, candidate):
-                    return candidate
-    return None
+    return best
+
 
 
 def optimize_pad_terminals(context, results, deadline=None, *, net_ids,

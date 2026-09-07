@@ -1,4 +1,4 @@
-"""Synthetic checks of the opt-in prototype; real KRT clearance predicates."""
+"""Synthetic checks of the integrated joint-motion certificate; real KRT clearance predicates."""
 from contextlib import nullcontext
 from types import SimpleNamespace as NS
 from unittest.mock import Mock
@@ -11,7 +11,25 @@ from routing_config import GridRouteConfig
 from dgloss.tests.test_g0_g1_g3 import _pad
 from dgloss.context import build_gloss_context
 from dgloss.sliding_nodes import slide_t_nodes
-from tools.reduction_motion import MotionCertificate, streaming_pad
+from dgloss.reduction_motion import MotionCertificate
+from dgloss.pad_terminals import _best_pad_connector as streaming_pad
+
+
+def test_pipeline_enables_reuses_and_disables_motion_with_corridor_policy():
+    from dgloss import GlossConfig
+    from dgloss.pipeline import _run_optimization_pass
+    from dgloss.execution import perf_counter
+    ctx = board([], [], {1: []})
+    def run(required):
+        _run_optimization_pass([], ctx, GlossConfig(stay_in_corridor=required),
+                               [], perf_counter() + 1., emit_log=False)
+    run(True)
+    certificate = ctx._reduction_motion
+    assert isinstance(certificate, MotionCertificate)
+    run(True)
+    assert ctx._reduction_motion is certificate
+    run(False)
+    assert ctx._reduction_motion is None
 
 
 def board(segments, vias, pads, width=.2, clearance=.1):
@@ -63,7 +81,7 @@ def test_expired_certificate_never_accepts_unchecked_motion():
 def test_streaming_pad_retains_certified_candidate_when_next_family_expires(monkeypatch):
     from dgloss import pad_terminals as p
     from dgloss.algorithm import _ClearanceDecision
-    import tools.reduction_motion as module
+    import dgloss.pad_terminals as module
     now = [0.]
     candidate = [Segment(0,0,5,5,.2,'F.Cu',1)]
     source = [Segment(0,0,0,5,.2,'F.Cu',1),Segment(0,5,5,5,.2,'F.Cu',1)]
