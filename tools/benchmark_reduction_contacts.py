@@ -89,15 +89,18 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--budget', type=float, default=20.)
     parser.add_argument('--repeats', type=int, default=3)
+    parser.add_argument('--modes', nargs='+',
+                        choices=['without_repair', 'repair', 'contacts'],
+                        default=['without_repair', 'repair', 'contacts'])
     args = parser.parse_args()
     digest = hashlib.sha256(args.board.read_bytes()).hexdigest()
     rows = []
-    modes = ['without_repair', 'repair', 'contacts']
+    modes = list(dict.fromkeys(args.modes))
     # Warm the parser/native libraries. Excluded from measured repetitions.
     warmup = run(args.board, 'repair', args.budget)
     print('warmup', round(warmup['gloss_seconds'], 3), flush=True)
     for repeat in range(args.repeats):
-        for mode in modes[repeat % 3:] + modes[:repeat % 3]:
+        for mode in modes[repeat % len(modes):] + modes[:repeat % len(modes)]:
             row = run(args.board, mode, args.budget)
             row['repeat'] = repeat
             rows.append(row)
