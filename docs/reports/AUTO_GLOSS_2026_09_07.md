@@ -1,5 +1,22 @@
 # Prototype auto gloss — tildagon_base — 7 septembre 2026
 
+## Intégration ultérieure demandée par l'utilisateur
+
+L'auto gloss par chaînes complètes est désormais intégré dans
+`dgloss/auto_gloss.py` et appelé directement par `shorten_routes`. La variante
+petites fenêtres et la recherche commune longueur/segments restent expérimentales.
+Le via mobile, KRT, les options G4 et la transaction Gloss/Centering sont inchangés.
+Les objets intermédiaires consommés au sein d'une étape sont exclus des sorties ;
+les compteurs de segments décrivent les suppressions d'entrée et ajouts survivants.
+
+Vérification d'intégration : 36 tests ciblés distincts passent, dont un test de
+deux réductions successives avec certification G5 et contrôle des objets exportés.
+Un appel sur chacun des nets66,141,59 et175 de tildagon_base reproduit le gain du
+premier appel du prototype à 0,000001 mm près ; G5 passe pour chacun. Aucun nouveau
+benchmark complet ni nouvelle mesure comparative de performances n'est revendiqué.
+Les résultats et la conclusion expérimentale ci-dessous restent l'historique
+ayant précédé cette décision d'intégration.
+
 ## Périmètre et protocole
 
 Prototype isolé dans `tools/auto_gloss.py`, activé uniquement par le banc de mesure.

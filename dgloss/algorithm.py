@@ -1,6 +1,6 @@
 """G3: one-pass, fixed-via route-length reduction on KRT's grid."""
 
-from collections import defaultdict
+from collections import defaultdict, Counter
 from dataclasses import dataclass
 import math
 from .execution import perf_counter
@@ -685,10 +685,15 @@ def _best_chain_replacement(context, chain, net_id, foreign_obstacles,
     return removed, added
 
 
+def _scheduled_chains(pcb, net, allowed_segment_ids=None):
+    from .auto_gloss import revisit_chains
+    return revisit_chains(_simple_chains, pcb, net, allowed_segment_ids, Counter())
+
+
 def shorten_routes(context, results, deadline=None, *, net_ids,
                    objective="shorter", stage="G3",
                    include_canonical=True, stay_in_corridor=False, local_only=False):
-    """Run one deterministic dgloss pass, net by net, with fixed vias."""
+    """Reduce with fixed vias, revisiting changed complete chains locally."""
     changes = GlossChanges()
     strips = []
     added_all = []
@@ -709,7 +714,7 @@ def shorten_routes(context, results, deadline=None, *, net_ids,
 
         removed_net = []
         added_net = []
-        for chain in _simple_chains(
+        for chain in _scheduled_chains(
                 context.pcb_data, net_id, context.editable_segment_ids):
             if deadline is not None and perf_counter() >= deadline:
                 break
@@ -775,6 +780,12 @@ def shorten_routes(context, results, deadline=None, *, net_ids,
         if not removed_net:
             continue
 
+        # A chain can be edited several times before result custody is emitted.
+        # Keep only the stage's input removals and its surviving output copper.
+        input_ids = {id(segment) for segment in net_segments}
+        final_ids = {id(segment) for segment in after_segments}
+        removed_net = [segment for segment in removed_net if id(segment) in input_ids]
+        added_net = [segment for segment in added_net if id(segment) in final_ids]
         native_segments, _native_vias = release_result_custody(
             results, removed_net)
         strips.extend(native_segments)
