@@ -16,7 +16,7 @@ import zipfile
 ROOT = Path(__file__).resolve().parent
 PLUGIN = ROOT / "kicad_krt_gloss"
 KRT = ROOT / "KRT"
-VERSION = "0.1.1"
+VERSION = "0.1.3"
 KRT_VERSION = (KRT / "VERSION").read_text(encoding="utf-8").strip()
 BINARIES = (
     "grid_router-linux-x86_64.so",
@@ -55,7 +55,7 @@ def build(output_dir):
         plugins.mkdir()
         for name in ("__init__.py", "action_plugin.py", "board_adapter.py",
                      "debug_overlay.py", "gloss_visualization.py", "runtime.py", "selection.py",
-                     "settings_dialog.py", "version.py", "icon_24.png", "icon_64.png",
+                     "settings_dialog.py", "progress_dialog.py", "version.py", "icon_24.png", "icon_64.png",
                      "icon_24_dark.png", "centering_illustration.png",
                      "selection_scope_illustration.png"):
             shutil.copy2(PLUGIN / name, plugins / name)

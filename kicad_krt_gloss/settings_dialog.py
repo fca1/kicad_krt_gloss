@@ -447,6 +447,11 @@ class GlossSettingsDialog(wx.Dialog):
                     self.centering_status.SetLabel(
                         "No eligible door for the selected nets at "
                         f"Proxi {proximity:.2f} mm.")
+                cleanup_saved = float(result.get("cleanup_saved_mm", 0.0))
+                if cleanup_saved > 0:
+                    self.centering_status.SetLabel(
+                        self.centering_status.GetLabel() +
+                        f" Cleanup: {cleanup_saved:.4f} mm saved.")
             elif result is False:
                 self.centering_status.SetLabel(
                     "Centering failed; see the Log tab.")
