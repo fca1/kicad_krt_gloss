@@ -339,12 +339,17 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                 print(f"Doors centered: {stats.get('doors_centered', 0)}")
                 print("Length delta: "
                       f"{stats.get('centering_length_delta_mm', 0.0):+.4f} mm")
+                print("Corridor cleanup saved: "
+                      f"{stats.get('cleanup_saved_mm', 0.0):.4f} mm")
+                print("Final length delta: "
+                      f"{stats.get('after_mm', 0.0) - stats.get('before_mm', 0.0):+.4f} mm")
                 print(f"Tracks replaced: {removed} -> {added}")
                 print(f"G5 valid: {bool(stats.get('g5_valid', False))}")
                 if debug_layer:
                     print(f"Differences: {debug_layer} (TrackGloss Changes)")
             return {
                 "doors_centered": stats.get("doors_centered", 0),
+                "cleanup_saved_mm": stats.get("cleanup_saved_mm", 0.0),
                 "centering_proximity_mm": values[
                     "centering_proximity_mm"],
             }

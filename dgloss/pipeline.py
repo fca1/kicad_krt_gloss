@@ -434,7 +434,7 @@ def run_final_gloss(results, pcb_data, config, gloss_config=None, *,
 def run_centering(results, pcb_data, config, *, net_ids,
                   proximity_mm=1.0, budget_seconds=20.0,
                   excluded_net_ids=None, seed_segments=None, _emit_log=True):
-    """Run the independent G3.6 action without the ordinary gloss stages."""
+    """Atomically clean and center; publish only certified, effective Centering."""
     baseline_segments = list(pcb_data.segments)
     baseline_vias = list(pcb_data.vias)
     baseline_count = len(results)
@@ -458,11 +458,37 @@ def run_centering(results, pcb_data, config, *, net_ids,
             if segment.net_id in scope_net_ids])
         before_grades = {net_id: _g5_grade(pcb_data, net_id)
                          for net_id in scope_net_ids}
+        cleanup = _run_optimization_pass(
+            results, context,
+            GlossConfig(stay_in_corridor=True, enable_g3_6=False,
+                        repeat_until_stable=False),
+            scope_net_ids, deadline, emit_log=_emit_log)
+        for net_id in cleanup["changed_net_ids"]:
+            context.refresh_net_obstacles(net_id)
         strips, added, changes, centering = center_interpad_routes(
             context, results, deadline=deadline, net_ids=scope_net_ids,
             proximity_mm=float(proximity_mm),
             build_new_segments=True, build_multi_door_path=True)
+        # The requested operation is the pair, not a standalone cleanup.
+        # A no-op or unfinished Centering must not publish the preceding Gloss.
+        if centering["branches_centered"] == 0 or perf_counter() >= deadline:
+            reason = "budget" if perf_counter() >= deadline else "no_centering"
+            _restore(results, baseline_count, baseline_results, pcb_data,
+                     baseline_segments, baseline_vias)
+            if _emit_log:
+                print(f"Track Gloss + Centering cancelled; input preserved: {reason}")
+            return GlossOutcome(stats={
+                "nets_changed": 0, "doors_centered": 0,
+                "centering_branches_changed": 0, "cleanup_saved_mm": 0.0,
+                "before_mm": round(before_length, 4),
+                "after_mm": round(before_length, 4), "saved_mm": 0.0,
+                "atomic_rollback": True, "rollback_reason": reason,
+                "budget_expired": reason == "budget",
+            })
         _append_result(results, "track_gloss_g3_6", added, [], changes)
+        strips = cleanup["segment_strips"] + strips
+        changes.segments[:0] = cleanup["changes"].segments
+        changes.vias[:0] = cleanup["changes"].vias
         certified_started = perf_counter()
         g5 = _certify_g5_copper(context, before_grades, changes)
         g5_ms = (perf_counter() - certified_started) * 1000.0
@@ -484,12 +510,14 @@ def run_centering(results, pcb_data, config, *, net_ids,
             "config": {
                 "centering_proximity_mm": float(proximity_mm),
                 "budget_seconds": float(budget_seconds),
+                "cleanup_stay_in_corridor": True,
             },
             "nets_processed": len(scope_net_ids),
             "nets_excluded": len(excluded),
             "excluded_net_ids": sorted(excluded),
             "exclusion_reasons": dict(exclusion_reasons),
-            "nets_changed": len(centering["net_ids_changed"]),
+            "nets_changed": len(set(centering["net_ids_changed"]) |
+                                cleanup["changed_net_ids"]),
             "elementary_branches": int(branch_count),
             "branch_scoped": context.branch_scoped,
             "before_mm": round(before_length, 4),
@@ -501,6 +529,8 @@ def run_centering(results, pcb_data, config, *, net_ids,
             "centering_length_delta_mm": centering["length_delta_mm"],
             "centering_candidates_tested": centering["candidates_tested"],
             "centering_algorithm_ms": centering["algorithm_ms"],
+            "cleanup_saved_mm": round(cleanup["before_length"] - cleanup["after_length"], 4),
+            "cleanup_gloss": cleanup["stage_stats"].as_dict(),
             "g5_segments_certified": g5["segments_certified"],
             "g5_segments_geometry_preserved": (
                 g5["segments_geometry_preserved"]),
@@ -517,7 +547,8 @@ def run_centering(results, pcb_data, config, *, net_ids,
                   f"{stats['centering_length_delta_mm']:+.4f} mm, "
                   f"{elapsed_ms:.1f} ms")
         return GlossOutcome(
-            input_strip_segments=strips, changes=changes.as_dict(),
+            input_strip_segments=strips, input_strip_vias=cleanup["via_strips"],
+            changes=changes.as_dict(),
             visual_changes=final_visual.as_dict(), stats=stats)
     except Exception as exc:
         _restore(results, baseline_count, baseline_results, pcb_data,
@@ -527,6 +558,8 @@ def run_centering(results, pcb_data, config, *, net_ids,
         return GlossOutcome(stats={
             "nets_changed": 0, "doors_centered": 0,
             "centering_errors": 1,
+            "atomic_rollback": True, "rollback_reason": "error",
+            "cleanup_saved_mm": 0.0,
         })
 
 
