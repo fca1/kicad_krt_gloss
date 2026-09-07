@@ -122,7 +122,7 @@ def add_changes_to_board(board, changes, stage="G4"):
             board.SetModified()
         return 0
 
-    from kicad_parser import mm_to_iu
+    from dgloss.krt_api import mm_to_iu
 
     layer_id = add_layer_user(board, pcbnew, stage=stage)
     if layer_id is None:

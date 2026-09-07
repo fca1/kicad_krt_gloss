@@ -5,9 +5,9 @@ from .execution import perf_counter
 
 from .topology import ReplacementGuard
 from .krt_clearance import stable_copper_search
-from check_drc import point_to_pad_distance
-from net_queries import calculate_route_length
-from routing_utils import pos_key
+from dgloss.krt_api import point_to_pad_distance
+from dgloss.krt_api import calculate_route_length
+from dgloss.krt_api import pos_key
 
 from .algorithm import (_candidate_clearance, _connector_families,
                         _edge_directions,

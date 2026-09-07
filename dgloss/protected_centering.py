@@ -7,8 +7,8 @@ No board rules or copper are mutated by the search.
 import math
 from time import perf_counter
 
-from kicad_parser import Segment
-from net_queries import calculate_route_length
+from dgloss.krt_api import Segment
+from dgloss.krt_api import calculate_route_length
 
 # KRT's rounded-pad distance primitives use numerical approximations.
 DISTANCE_TOLERANCE = 2e-4

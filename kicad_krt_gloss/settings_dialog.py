@@ -324,7 +324,7 @@ class GlossSettingsDialog(wx.Dialog):
 
         net_box = wx.StaticBox(panel, label="Net Selection")
         net_sizer = wx.StaticBoxSizer(net_box, wx.VERTICAL)
-        from kicad_routing_plugin.fanout_gui import NetSelectionPanel
+        from dgloss.krt_api import NetSelectionPanel
         if pcb_data is None:
             pcb_data = SimpleNamespace(nets={}, pads_by_net={}, footprints={})
         self.centering_net_panel = NetSelectionPanel(

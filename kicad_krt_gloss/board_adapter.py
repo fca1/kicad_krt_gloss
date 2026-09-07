@@ -34,8 +34,8 @@ def _refill_and_rebuild(board, pcbnew):
 def build_krt_config(board, pcb_data, grid_step, net_ids=None):
     """Build GridRouteConfig from live native rules plus the standalone grid."""
     import pcbnew
-    from routing_config import GridRouteConfig
-    from design_rules import DesignRules
+    from dgloss.krt_api import GridRouteConfig
+    from dgloss.krt_api import DesignRules
 
     settings = board.GetDesignSettings()
     net_settings = getattr(settings, "m_NetSettings", None)
@@ -128,7 +128,7 @@ def _krt_via_key(via):
 def apply_gloss(board, results, outcome):
     """Apply prevalidated KRT objects to the live board and render overlays."""
     import pcbnew
-    from kicad_parser import mm_to_iu
+    from dgloss.krt_api import mm_to_iu
     from .debug_overlay import LAYER_NAME, USER_LAYER_NAMES
     from .gloss_visualization import (add_changes_to_board,
                                       disable_intermediate_layers)

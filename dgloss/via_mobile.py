@@ -6,9 +6,9 @@ from dataclasses import replace
 from .execution import perf_counter
 
 from .topology import check_local_connectivity as check_net_connectivity
-from kicad_parser import Segment
-from net_queries import calculate_route_length
-from routing_utils import pos_key
+from dgloss.krt_api import Segment
+from dgloss.krt_api import calculate_route_length
+from dgloss.krt_api import pos_key
 
 from .algorithm import (_clears_krt_grid, _connectivity_worse, _right_angle,
                         _touches_other_same_net)

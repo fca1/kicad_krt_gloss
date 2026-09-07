@@ -9,8 +9,8 @@ acceptance policy.
 from dataclasses import dataclass
 import math
 
-from kicad_parser import Segment
-from net_queries import calculate_route_length
+from dgloss.krt_api import Segment
+from dgloss.krt_api import calculate_route_length
 
 
 _EPS = 1e-8

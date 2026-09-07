@@ -10,11 +10,11 @@ import heapq
 import math
 from time import perf_counter
 
-from check_connected import check_net_connectivity
-from check_drc import (SpatialIndex, _segment_to_polys_distance,
+from dgloss.krt_api import check_net_connectivity
+from dgloss.krt_api import (SpatialIndex, _segment_to_polys_distance,
                        pad_copper_layers, point_to_pad_distance,
                        segment_to_rect_distance)
-from kicad_parser import Segment
+from dgloss.krt_api import Segment
 
 from .changes import GlossChanges, release_result_custody
 
@@ -366,7 +366,7 @@ def center_with_sliding_neighbors(pcb_data, door, *,
                         (segment.end_x, segment.end_y))
                             for segment in candidate_segments)):
                 continue
-            from net_queries import calculate_route_length
+            from dgloss.krt_api import calculate_route_length
             alternatives.append((calculate_route_length(candidate_segments),
                                  candidate_segments))
         if not alternatives:
@@ -383,7 +383,7 @@ def center_with_sliding_neighbors(pcb_data, door, *,
             (segment.end_x, segment.end_y)) for segment in built):
         return None
 
-    from net_queries import calculate_route_length
+    from dgloss.krt_api import calculate_route_length
     return InterpadCandidate(
         old, built, translation, calculate_route_length(old),
         calculate_route_length(built))
@@ -509,7 +509,7 @@ def center_across_multiple_doors(pcb_data, doors, *,
                                 (segment.end_x, segment.end_y))
                     for segment in built):
         return None
-    from net_queries import calculate_route_length
+    from dgloss.krt_api import calculate_route_length
     translation = (ordered[0].axis[0] - ordered[0].crossing[0],
                    ordered[0].axis[1] - ordered[0].crossing[1])
     return InterpadCandidate(
@@ -748,7 +748,7 @@ def center_across_branch_doors(pcb_data, doors, *,
                                 (segment.end_x, segment.end_y))
                     for segment in built):
         return None
-    from net_queries import calculate_route_length
+    from dgloss.krt_api import calculate_route_length
     first_door = ordered_doors[0]
     translation = (first_door.axis[0] - first_door.crossing[0],
                    first_door.axis[1] - first_door.crossing[1])

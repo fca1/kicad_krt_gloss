@@ -7,16 +7,16 @@ from contextlib import contextmanager, nullcontext
 
 import numpy as np
 
-from check_drc import (board_edge_geometry, check_pad_drill_via_overlap,
+from dgloss.krt_api import (board_edge_geometry, check_pad_drill_via_overlap,
                        check_pad_via_overlap, check_via_board_edge,
                        check_via_drill_overlap,
                        check_via_board_edge_poly, check_via_segment_overlap,
                        check_via_via_overlap, pad_copper_layers,
                        pads_shared_layer_clearance, _point_on_board,
                        _segment_to_rings_distance)
-from obstacle_map import point_in_polygon, point_to_polygon_edge_distance
-from routing_defaults import HOLE_TO_HOLE_CLEARANCE, NPTH_TO_TRACK_CLEARANCE
-from single_ended_routing import (_FOREIGN_PAD_WINDOW,
+from dgloss.krt_api import point_in_polygon, point_to_polygon_edge_distance
+from dgloss.krt_api import HOLE_TO_HOLE_CLEARANCE, NPTH_TO_TRACK_CLEARANCE
+from dgloss.krt_api import (_FOREIGN_PAD_WINDOW,
                                   _foreign_seg_arrays,
                                   _seg_capsule_axis_dist,
                                   _seg_foreign_hole_dist,

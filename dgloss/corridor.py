@@ -8,7 +8,7 @@ Intermediate lines need not be octolinear; only emitted copper must be.
 import math
 from .execution import perf_counter
 
-from kicad_parser import Segment
+from dgloss.krt_api import Segment
 
 
 def _parameterize(points):

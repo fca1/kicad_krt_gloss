@@ -1,6 +1,6 @@
 """Install KRT's rule channels consistently for both Gloss entry points."""
 
-from kicad_dru import install_layer_clearances, install_track_clearances
+from dgloss.krt_api import install_layer_clearances, install_track_clearances
 
 
 def install_gloss_rules(config, pcb_data, net_ids, *, source_path=None,

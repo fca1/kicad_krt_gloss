@@ -97,7 +97,7 @@ def choose_user_layer(layer_names, occupied, requested="auto"):
 
 def _matching_paren(text, start):
     """Use KRT's S-expression boundary helper."""
-    from kicad_parser import find_matching_paren
+    from dgloss.krt_api import find_matching_paren
     return find_matching_paren(text, start)
 
 
@@ -201,7 +201,7 @@ def write_cli_debug_overlay(path, changes, requested="auto"):
         if name != layer_name:
             content = _set_file_layer_name(content, name)
     content = _name_file_layer(content, layer_name)
-    from kicad_writer import generate_gr_line_sexpr
+    from dgloss.krt_api import generate_gr_line_sexpr
     graphics = [generate_gr_line_sexpr(start, end, width, layer_name)
                 for start, end, width in overlay_lines(changes)]
     # KiCad calls the requested "trait mixte" dash-dot. KRT's writer emits

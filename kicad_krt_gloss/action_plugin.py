@@ -103,7 +103,7 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
             return None
         try:
             wx.BeginBusyCursor()
-            from kicad_parser import build_pcb_data_from_board
+            from dgloss.krt_api import build_pcb_data_from_board
 
             pcb_data = build_pcb_data_from_board(board)
             seed_segments = selected_seed_segments(board, pcb_data)
@@ -154,7 +154,7 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                 if not ensure_krt_dependencies(parent):
                     print("Track Gloss cancelled: dependencies are unavailable.")
                     return False
-                from kicad_parser import build_pcb_data_from_board
+                from dgloss.krt_api import build_pcb_data_from_board
                 from dgloss import GlossConfig, run_final_gloss
                 from .board_adapter import apply_gloss, build_krt_config
 
@@ -303,7 +303,7 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                 if not ensure_krt_dependencies(parent):
                     print("Centering cancelled: dependencies are unavailable.")
                     return False
-                from kicad_parser import build_pcb_data_from_board
+                from dgloss.krt_api import build_pcb_data_from_board
                 from dgloss import run_centering
                 from .board_adapter import apply_gloss, build_krt_config
 

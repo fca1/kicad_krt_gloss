@@ -7,11 +7,11 @@ from .execution import perf_counter
 
 from .topology import ReplacementGuard
 from .krt_clearance import stable_copper_search
-from check_drc import point_to_pad_distance
-from geometry_utils import point_to_segment_distance, segments_intersect
-from kicad_parser import Segment
-from net_queries import calculate_route_length
-from routing_utils import pos_key
+from dgloss.krt_api import point_to_pad_distance
+from dgloss.krt_api import point_to_segment_distance, segments_intersect
+from dgloss.krt_api import Segment
+from dgloss.krt_api import calculate_route_length
+from dgloss.krt_api import pos_key
 
 from .algorithm import (
                         _candidate_clearance, _connector_families,
@@ -137,7 +137,7 @@ def _walk_branch_chain(pcb_data, net_id, node, branch):
 
 def _candidate_meets_only_rail_end(candidate, point, rails):
     """The moved branch may meet its rail once, at its final endpoint only."""
-    from geometry_utils import segments_intersect
+    from dgloss.krt_api import segments_intersect
     last = candidate[-1]
     lv = (last.end_x - last.start_x, last.end_y - last.start_y)
     rv = _vector_from(point, rails[0])

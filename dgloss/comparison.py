@@ -3,9 +3,9 @@
 from copy import deepcopy
 from time import perf_counter
 
-from check_connected import check_net_connectivity
-from net_queries import net_copper_length
-from pcb_modification import smooth_octolinear_chains
+from dgloss.krt_api import check_net_connectivity
+from dgloss.krt_api import net_copper_length
+from dgloss.krt_api import smooth_octolinear_chains
 
 from .algorithm import shorten_routes
 from .context import build_gloss_context

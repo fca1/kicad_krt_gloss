@@ -14,20 +14,20 @@ from kicad_krt_gloss.runtime import configure_krt_runtime
 
 configure_krt_runtime()
 
-import routing_defaults as defaults
-from copy_board import copy_board
+from dgloss.krt_api import routing_defaults as defaults
+from dgloss.krt_api import copy_board
 from dgloss import GlossConfig, run_final_gloss
 from dgloss.rules import install_gloss_rules
-from kicad_parser import parse_kicad_pcb
-from list_nets import (board_default_netclass_clearance,
+from dgloss.krt_api import parse_kicad_pcb
+from dgloss.krt_api import (board_default_netclass_clearance,
                        board_default_netclass_param,
                        net_clearance_map_by_id, resolve_cli_floor)
-from net_queries import (expand_net_patterns, nets_for_components,
+from dgloss.krt_api import (expand_net_patterns, nets_for_components,
                          suggest_component_refs)
-from output_writer import write_routed_output
-from routing_common import resolve_net_ids
-from routing_config import GridRouteConfig
-from routing_constants import POWER_NET_EXCLUSION_PATTERNS
+from dgloss.krt_api import write_routed_output
+from dgloss.krt_api import resolve_net_ids
+from dgloss.krt_api import GridRouteConfig
+from dgloss.krt_api import POWER_NET_EXCLUSION_PATTERNS
 
 
 def build_parser():
@@ -87,9 +87,9 @@ def build_parser():
 
 
 def list_groups(pcb_data, sources):
-    import _placer_path  # noqa: F401
-    from group_routing import block_net_names
-    from placement.groups import derive_groups, parse_sources, short_name
+    from dgloss.krt_api import _placer_path  # noqa: F401
+    from dgloss.krt_api import block_net_names
+    from dgloss.krt_api import derive_groups, parse_sources, short_name
 
     groups = derive_groups(pcb_data, parse_sources(sources))
     print(f"{len(groups)} placement block(s) from {sources!r}:")
@@ -133,10 +133,10 @@ def resolve_scope(parser, args, pcb_data):
     if args.group:
         if not args.group.strip():
             parser.error("--group was given an empty name")
-        import _placer_path  # noqa: F401
-        from group_routing import (GroupRoutingError, block_net_names,
+        from dgloss.krt_api import _placer_path  # noqa: F401
+        from dgloss.krt_api import (GroupRoutingError, block_net_names,
                                    block_refs, describe_scope, resolved_name)
-        from placement.groups import GroupError, parse_sources
+        from dgloss.krt_api import GroupError, parse_sources
         try:
             sources = parse_sources(args.group_by)
             refs = block_refs(pcb_data, args.group, sources)
@@ -259,7 +259,7 @@ def write_output(args, pcb_data, results, outcome):
 
 def main(argv=None):
     try:
-        from redo_record import record_invocation
+        from dgloss.krt_api import record_invocation
         record_invocation()
     except Exception:
         pass

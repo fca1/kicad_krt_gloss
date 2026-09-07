@@ -2,9 +2,9 @@
 
 from collections import defaultdict
 
-from check_drc import point_to_pad_distance
-from connectivity import COINCIDENCE_TOL, via_copper_layers
-from routing_utils import pos_key
+from dgloss.krt_api import point_to_pad_distance
+from dgloss.krt_api import COINCIDENCE_TOL, via_copper_layers
+from dgloss.krt_api import pos_key
 
 
 def _pad_stops(pcb_data, net_id, point, layer, half_width):

@@ -4,11 +4,11 @@ import math
 from dataclasses import dataclass, field
 from .execution import perf_counter
 
-from check_connected import check_net_connectivity
+from dgloss.krt_api import check_net_connectivity
 from .topology import terminal_partition as _terminal_partition
 from .zone_models import prepare_zone_models
-from net_queries import calculate_route_length
-from pcb_modification import merge_collinear_segments
+from dgloss.krt_api import calculate_route_length
+from dgloss.krt_api import merge_collinear_segments
 
 from .algorithm import _connectivity_worse, shorten_routes
 from .branches import elementary_branch_segment_ids

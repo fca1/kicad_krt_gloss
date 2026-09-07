@@ -1,7 +1,7 @@
 """Local electrical certificates using the same KRT graph as final validation."""
 
-from check_connected import check_net_connectivity as _check
-from geometry_utils import UnionFind
+from dgloss.krt_api import check_net_connectivity as _check
+from dgloss.krt_api import UnionFind
 from .zone_models import prepare_zone_models
 
 

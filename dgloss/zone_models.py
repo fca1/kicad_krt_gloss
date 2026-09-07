@@ -5,7 +5,7 @@ zone lookup receive the same wrapper; no module/class monkey-patch or shadow
 module is installed. Keep knowledge of KRT's private cache layout in this file.
 """
 
-import plane_fill_model as krt
+from dgloss.krt_api import plane_fill_model as krt
 
 
 class CachedZoneModel:

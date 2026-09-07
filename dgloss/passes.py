@@ -2,7 +2,7 @@
 
 from .execution import perf_counter
 
-from net_queries import calculate_route_length
+from dgloss.krt_api import calculate_route_length
 
 from .changes import GlossChanges
 

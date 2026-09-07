@@ -7,7 +7,7 @@ from .segment_sliding import slide_interval, slide_segment
 from .topology import ReplacementGuard
 from .krt_clearance import stable_copper_search
 from .local_candidates import micro_free_candidates
-from net_queries import calculate_route_length
+from dgloss.krt_api import calculate_route_length
 
 
 @stable_copper_search

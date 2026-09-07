@@ -1,8 +1,8 @@
 """Bounded repairs of short octolinear connectors, with fixed endpoints."""
 import math
 
-from kicad_parser import Segment
-from net_queries import calculate_route_length
+from dgloss.krt_api import Segment
+from dgloss.krt_api import calculate_route_length
 
 
 def micro_free_candidates(candidate, minimum_length):

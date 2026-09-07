@@ -6,13 +6,13 @@ import math
 from .execution import perf_counter
 
 from .topology import terminal_partition, ReplacementGuard
-from check_drc import point_to_pad_distance
-from geometry_utils import point_to_segment_distance, segments_intersect
-from kicad_parser import Segment
-from net_queries import calculate_route_length
-from pcb_modification import _octolinear_bends
-from routing_utils import pos_key
-from single_ended_routing import _segment_fits_wide
+from dgloss.krt_api import point_to_pad_distance
+from dgloss.krt_api import point_to_segment_distance, segments_intersect
+from dgloss.krt_api import Segment
+from dgloss.krt_api import calculate_route_length
+from dgloss.krt_api import _octolinear_bends
+from dgloss.krt_api import pos_key
+from dgloss.krt_api import _segment_fits_wide
 from .changes import GlossChanges, release_result_custody
 from .segment_sliding import slide_interval, slide_segment
 from .corridor import stays_in_corridor

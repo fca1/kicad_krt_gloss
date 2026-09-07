@@ -3,15 +3,15 @@
 from dataclasses import dataclass, replace
 from collections import Counter
 
-from cleanup_pipeline import _smooth_skip_net_ids
-from obstacle_cache import (build_working_obstacle_map,
+from dgloss.krt_api import _smooth_skip_net_ids
+from dgloss.krt_api import (build_working_obstacle_map,
                             precompute_all_net_obstacles,
                             add_net_obstacles_from_cache,
                             precompute_net_obstacles,
                             remove_net_obstacles_from_cache)
-from obstacle_map import build_base_obstacle_map
-from routing_config import GridCoord
-from routing_utils import build_layer_map
+from dgloss.krt_api import build_base_obstacle_map
+from dgloss.krt_api import GridCoord
+from dgloss.krt_api import build_layer_map
 
 from .krt_clearance import KrtClearanceAdapter
 from .search_cache import SearchCache
