@@ -107,12 +107,18 @@ def _layer_map(pcbnew):
 
 
 def _native_via_key(board, pcbnew, via):
+    # Match KRT's native importer: padstack-aware KiCad 9/10 vias require
+    # GetFrontWidth first. A layerless GetWidth can trigger a native assertion.
+    try:
+        diameter = via.GetFrontWidth()
+    except Exception:
+        diameter = via.GetWidth()  # Compatibility with older native bindings.
     layers = tuple(sorted((board.GetLayerName(via.TopLayer()),
                            board.GetLayerName(via.BottomLayer()))))
     return (round(_mm(pcbnew, via.GetPosition().x), POSITION_DECIMALS),
             round(_mm(pcbnew, via.GetPosition().y), POSITION_DECIMALS),
             int(via.GetNetCode()),
-            round(_mm(pcbnew, via.GetWidth()), POSITION_DECIMALS),
+            round(_mm(pcbnew, diameter), POSITION_DECIMALS),
             round(_mm(pcbnew, via.GetDrillValue()), POSITION_DECIMALS),
             layers)
 

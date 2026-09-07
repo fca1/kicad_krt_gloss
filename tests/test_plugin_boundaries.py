@@ -571,6 +571,13 @@ def test_native_keys_distinguish_width_and_via_geometry():
         layers=["F.Cu", "B.Cu"])
     assert _native_via_key(board, pcbnew, NativeVia()) == _krt_via_key(via)
 
+    class PadstackVia(NativeVia):
+        def GetFrontWidth(self): return 0.4
+        def GetWidth(self):
+            raise AssertionError("KiCad 10 layerless via width must not be called")
+
+    assert _native_via_key(board, pcbnew, PadstackVia()) == _krt_via_key(via)
+
 
 def test_rust_binary_resolution_keeps_krt_submodule_immutable(
         tmp_path, monkeypatch):

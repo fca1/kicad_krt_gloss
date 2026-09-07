@@ -100,3 +100,34 @@ Aucun correctif de production et aucun nouveau ZIP pendant cette analyse.
 Les mesures ne permettent pas d'exclure un autre coût lié à une configuration ou
 à un état non sauvegardé différent de ceux testés. Les scripts et les profils
 sont conservés pour reproduire le diagnostic.
+
+
+## Correctif appliqué et re-test demandé
+
+`_native_via_key` utilise maintenant `GetFrontWidth()` en priorité, comme
+l'importeur KRT, puis `GetWidth()` en repli pour les anciennes liaisons natives.
+KRT est inchangé. Aucun appel F.Cu forcé ou masquage d'assertion n'est utilisé.
+Le test unitaire couvre un via moderne dont `GetWidth()` interdit l'appel, ainsi
+que le cas ancien ne proposant pas `GetFrontWidth()`. 46 tests ciblés passent.
+
+Le package expérimental a été extrait dans un autre dossier de diagnostic et
+son adaptateur remplacé par le fichier corrigé, sans modifier le ZIP livré.
+Test natif complet sous KiCad 10.0.5, sur la même carte modifiée, quatre nets,
+corridor et G4 activés, sans profileur et sans substitution de fonction :
+
+| Phase | Temps |
+|---|---:|
+| Chargement natif | 0,0209 s |
+| Export KRT | 0,0056 s |
+| Configuration | 0,0412 s |
+| Gloss et validation | 0,9201 s |
+| Application native, visualisation et reconstruction | 0,0233 s |
+
+Total des phases : environ 1,01 s, hors démarrage Python/imports. G5 valide,
+112,2373 mm économisés, aucune assertion et aucun blocage. Le fichier source
+est resté inchangé ; les mutations natives visent seulement la copie chargée
+en mémoire. Le résultat ne doit pas être interprété comme une mesure de toute
+la latence de l'interface utilisateur.
+
+Le correctif est dans le dépôt. Le ZIP antérieur reste inchangé et doit être
+régénéré pour distribuer cette correction à l'installation KiCad.

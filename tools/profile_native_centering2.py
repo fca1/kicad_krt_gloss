@@ -9,8 +9,9 @@ parser.add_argument('--corridor',action='store_true')
 parser.add_argument('--profile',action='store_true')
 parser.add_argument('--layer-width',action='store_true',help='Diagnostic only: supply F.Cu to the native via GetWidth call')
 parser.add_argument('--scope',default='all')
+parser.add_argument('--package-dir',type=Path,default=root/'.build/progressive_zip_check/plugins')
 args=parser.parse_args()
-package=root/'.build/progressive_zip_check/plugins'
+package=args.package_dir.resolve()
 sys.path.insert(0,str(package))
 import runtime
 runtime.configure_krt_runtime()
