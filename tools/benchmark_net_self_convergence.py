@@ -25,8 +25,11 @@ def main():
     parser.add_argument('--max-passes', type=int, default=50)
     parser.add_argument('--net-budget', type=float, default=120.)
     parser.add_argument('--auto-gloss', action='store_true', help='Experimental changed-chain queue; G4 remains disabled')
+    parser.add_argument('--joint-gloss', action='store_true', help='Common length/segment DAG; no changed-chain queue, no G4')
     parser.add_argument('--output', type=Path, default=Path('.build/net_self_convergence_tildagon.json'))
     args = parser.parse_args()
+    if args.auto_gloss and args.joint_gloss:
+        parser.error('Choose one prototype')
     pack = json.loads(Path('docs/PACK0.json').read_text(encoding='utf-8'))
     entry = next(b for b in pack['boards'] if b['name']=='tildagon_base')
     board = Path(pack['corpus_root']) / entry['path']
@@ -56,6 +59,10 @@ def main():
     if args.auto_gloss:
         from tools.auto_gloss import auto_gloss
         data['protocol']=data['protocol'].replace('full production chain per call', 'production stages with auto gloss changed-chain queue per call')
+    if args.joint_gloss:
+        from tools.joint_gloss import joint_gloss
+        data['variant']='joint_gloss'
+        data['protocol']=data['protocol'].replace('full production chain per call', 'common length/segment DAG in G3 and G3.5, production remaining stages')
     for index,net in enumerate(scope):
         row=dict(net_id=net,name=pcb.nets[net].name,passes=[],status='pass_limit',
                  initial_segments=sum(s.net_id==net for s in original_segments),
@@ -75,7 +82,9 @@ def main():
                         row['status']='budget'
                         break
                     tick=perf_counter()
-                    with auto_gloss() if args.auto_gloss else nullcontext() as auto_stats:
+                    experiment = (joint_gloss() if args.joint_gloss else
+                                  auto_gloss() if args.auto_gloss else nullcontext())
+                    with experiment as auto_stats:
                         outcome=_run_optimization_pass(results,context,selected,[net],deadline,emit_log=False)
                     elapsed=perf_counter()-tick
                     live_segments={id(s) for s in pcb.segments}
