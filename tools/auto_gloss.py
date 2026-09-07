@@ -74,14 +74,14 @@ def revisit_chains(original, pcb, net, allowed, stats):
 
 
 @contextmanager
-def auto_gloss():
+def auto_gloss(scheduler=revisit_chains):
     """Enable the experimental scheduler, restoring production on every exit."""
     stats = Counter()
     original = algorithm._simple_chains
     original_shorten = pipeline.shorten_routes
 
     def scheduled(pcb, net, allowed_segment_ids=None):
-        return revisit_chains(original, pcb, net, allowed_segment_ids, stats)
+        return scheduler(original, pcb, net, allowed_segment_ids, stats)
 
     def shorten(context, results, *args, **kwargs):
         before_ids = {id(s) for s in context.pcb_data.segments}

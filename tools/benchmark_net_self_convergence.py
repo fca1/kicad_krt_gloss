@@ -26,9 +26,10 @@ def main():
     parser.add_argument('--net-budget', type=float, default=120.)
     parser.add_argument('--auto-gloss', action='store_true', help='Experimental changed-chain queue; G4 remains disabled')
     parser.add_argument('--joint-gloss', action='store_true', help='Common length/segment DAG; no changed-chain queue, no G4')
+    parser.add_argument('--window-auto-gloss', action='store_true', help='Auto gloss with at most three segments per revisit; no G4')
     parser.add_argument('--output', type=Path, default=Path('.build/net_self_convergence_tildagon.json'))
     args = parser.parse_args()
-    if args.auto_gloss and args.joint_gloss:
+    if sum((args.auto_gloss, args.joint_gloss, args.window_auto_gloss)) > 1:
         parser.error('Choose one prototype')
     pack = json.loads(Path('docs/PACK0.json').read_text(encoding='utf-8'))
     entry = next(b for b in pack['boards'] if b['name']=='tildagon_base')
@@ -63,6 +64,10 @@ def main():
         from tools.joint_gloss import joint_gloss
         data['variant']='joint_gloss'
         data['protocol']=data['protocol'].replace('full production chain per call', 'common length/segment DAG in G3 and G3.5, production remaining stages')
+    if args.window_auto_gloss:
+        from tools.window_auto_gloss import window_auto_gloss
+        data['variant']='window_auto_gloss'
+        data['protocol']=data['protocol'].replace('full production chain per call', 'production stages with auto gloss revisiting windows of at most three segments')
     for index,net in enumerate(scope):
         row=dict(net_id=net,name=pcb.nets[net].name,passes=[],status='pass_limit',
                  initial_segments=sum(s.net_id==net for s in original_segments),
@@ -82,7 +87,8 @@ def main():
                         row['status']='budget'
                         break
                     tick=perf_counter()
-                    experiment = (joint_gloss() if args.joint_gloss else
+                    experiment = (window_auto_gloss() if args.window_auto_gloss else
+                                  joint_gloss() if args.joint_gloss else
                                   auto_gloss() if args.auto_gloss else nullcontext())
                     with experiment as auto_stats:
                         outcome=_run_optimization_pass(results,context,selected,[net],deadline,emit_log=False)
