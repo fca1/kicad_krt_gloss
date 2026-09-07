@@ -1,4 +1,6 @@
-# Cinq nouvelles cartes de référence : production intégrée
+# PACK0 — cinq cartes de référence : production intégrée
+
+Ce groupe est enregistré dans le projet sous le nom [PACK0](../PACK0.md).
 
 Version testée : main `ed30b605a2f87880b432f49a78dbcb6d348bd87e`.
 KRT : `0aff32c04fa51b4d53ecabc843b09b356aaef94b`, inchangé.

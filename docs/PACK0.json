@@ -1,0 +1,39 @@
+{
+  "pack_id": "PACK0",
+  "created": "2026-09-07",
+  "corpus_root": "C:/Users/frant/Documents/kicad_track_gloss_stress/sources",
+  "initial_report": "reports/FIVE_REFERENCE_BOARDS_2026_09_07.md",
+  "initial_measurements": "reports/data/five_reference_boards_2026_09_07.json",
+  "boards": [
+    {
+      "name": "micro_dmm",
+      "class": "legere",
+      "path": "set23/micro_dmm.kicad_pcb",
+      "sha256": "e4c246f797d22445c3821edc722a0a02b92039e07b9f2257c3b2b4c8b34e05a9"
+    },
+    {
+      "name": "chart_plotter_hat",
+      "class": "moyenne",
+      "path": "set18/chart_plotter_hat.kicad_pcb",
+      "sha256": "e5c8a670216dddc3e3e5e28555eecb3543b1515e7aebbff1785cb5998a1e8598"
+    },
+    {
+      "name": "environment_sensor",
+      "class": "moyenne",
+      "path": "set26/environment_sensor.kicad_pcb",
+      "sha256": "493b0ee9eb319d68ea5c16f3ffa0dfcabeb585e1d0c35b6c45223b357ea2febc"
+    },
+    {
+      "name": "azukar_fpga",
+      "class": "complexe",
+      "path": "set23/azukar_fpga.kicad_pcb",
+      "sha256": "8534f62e77e04c7169aa2f3ffaee795f1da493b7d1de4813620cde6f770d13fe"
+    },
+    {
+      "name": "tildagon_base",
+      "class": "complexe",
+      "path": "set15/tildagon_base.kicad_pcb",
+      "sha256": "d751d4b1aa20c047496b231f3f0bd5041d5e3c936fafa7fca779883d09777e91"
+    }
+  ]
+}

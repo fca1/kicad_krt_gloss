@@ -1,5 +1,8 @@
 # Documentation layout
 
+- [PACK0](PACK0.md) defines the project's five reference boards for runtime
+  measurements and regression checks; [PACK0.json](PACK0.json) records their hashes.
+
 The repository keeps only its user-facing `README.md` at the root.
 
 - `dgloss/doc_fr/` contains the French gloss specification, implementation
