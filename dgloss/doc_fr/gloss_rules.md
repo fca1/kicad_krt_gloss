@@ -29,6 +29,28 @@ L'ordre impératif des objectifs est :
   ou le modifier. Une mobilité n'est autorisée que lorsqu'une règle la prévoit
   explicitement et que toutes ses conditions sont satisfaites.
 
+### Corridor admissible
+
+Un corridor admissible est l'ensemble des positions accessibles à un élément
+électrique depuis sa géométrie initiale par une déformation continue qui
+respecte, à chaque instant, les clearances, l'épaisseur du cuivre, la
+connectivité, les ancres fixes et le périmètre modifiable.
+
+**L'élément ne peut ni traverser un obstacle, ni le sauter pour passer d'un côté
+à l'autre**, même si les géométries initiale et finale sont toutes deux valides.
+Cette interdiction concerne tout le déplacement : une piste, un via mobile ou
+une jonction mobile doivent la respecter avec leurs segments incidents.
+
+Un contournement n'est admissible que s'il existe une déformation continue
+entièrement autorisée. Vérifier uniquement la destination ne démontre donc pas
+le respect du corridor. Le corridor n'est ni une bande de largeur fixe autour
+de la piste, ni une région définie par la grille : ses limites proviennent des
+obstacles et des contraintes applicables, dont KRT reste l'autorité.
+
+Lorsqu'un certificat ne teste qu'une déformation particulière, son échec
+signifie que cette déformation n'est pas certifiée ; il ne prouve pas qu'aucune
+autre déformation admissible n'existe.
+
 ## Exclusion
 
 Avant toute transformation, les nets suivants sont exclus intégralement de la

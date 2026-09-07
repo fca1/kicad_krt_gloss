@@ -28,6 +28,28 @@ The mandatory order of objectives is:
   allowed only when a rule explicitly provides for it and all its conditions
   are met.
 
+### Admissible corridor
+
+An admissible corridor is the set of positions an electrical element can reach
+from its initial geometry through a continuous deformation that respects
+clearances, copper thickness, connectivity, fixed anchors, and the modifiable
+scope at every instant.
+
+**The element must neither cross an obstacle nor jump over it from one side to
+the other**, even when both the initial and final geometries are valid. This
+prohibition applies throughout the movement: a track, movable via, or movable
+junction must respect it together with its incident segments.
+
+Going around an obstacle is admissible only if an entirely permitted continuous
+deformation exists. Checking the destination alone therefore does not establish
+corridor compliance. The corridor is neither a fixed-width band around the track
+nor a region defined by the grid: its boundaries follow from obstacles and
+applicable constraints, for which KRT remains authoritative.
+
+When a certificate tests only one particular deformation, failure means that
+this deformation is not certified; it does not prove that no other admissible
+deformation exists.
+
 ## Exclusion
 
 Before any transformation, the following nets are excluded in full from the
