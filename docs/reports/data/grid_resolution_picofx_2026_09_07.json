@@ -1,0 +1,796 @@
+{
+  "board": "C:\\Users\\frant\\Documents\\kicad_track_gloss_stress\\sources\\set21\\picofx_pump.kicad_pcb",
+  "sha256": "d4859e08476fe28504782f41ace60e3e16802430394b8e1dceb76de55e538328",
+  "source_unchanged": true,
+  "protocol": "one instrumented run; identical envelopes and board revisions for all grids; no grid verdict used for acceptance; 1200s instrumentation budget; per-search caches; timings are single samples",
+  "queries": 1999,
+  "exact_seconds": 0.33688380499370396,
+  "costs": {
+    "0.1": {
+      "build_seconds": 0.10081429989077151,
+      "update_seconds": 0.22090630000457168,
+      "selection_seconds": 0.09482939983718097,
+      "builds": 1,
+      "updates": 47
+    },
+    "0.05": {
+      "build_seconds": 0.542000399902463,
+      "update_seconds": 1.2159378002397716,
+      "selection_seconds": 0.4353437009267509,
+      "builds": 1,
+      "updates": 47
+    },
+    "0.025": {
+      "build_seconds": 2.6868527000769973,
+      "update_seconds": 6.020263500278816,
+      "selection_seconds": 2.0127713019028306,
+      "builds": 1,
+      "updates": 47
+    }
+  },
+  "rows": {
+    "0.1/guard": {
+      "queries": 1999,
+      "seconds": 0.019260105676949024,
+      "native_seconds": 0.007461502216756344,
+      "calls": 1114,
+      "hits": 885,
+      "free": 135,
+      "free_exact_blocked": 0,
+      "blocked_exact_free": 697,
+      "exact_seconds_on_free": 0.03715410106815398,
+      "exact_seconds_on_agreeing_free": 0.03715410106815398
+    },
+    "0.05/plain": {
+      "queries": 1999,
+      "seconds": 0.03473300067707896,
+      "native_seconds": 0.029056397499516606,
+      "calls": 1241,
+      "hits": 758,
+      "free": 262,
+      "free_exact_blocked": 4,
+      "blocked_exact_free": 574,
+      "exact_seconds_on_free": 0.06165610230527818,
+      "exact_seconds_on_agreeing_free": 0.06104070250876248
+    },
+    "0.05/guard": {
+      "queries": 1999,
+      "seconds": 0.0373874984215945,
+      "native_seconds": 0.0260612980928272,
+      "calls": 1332,
+      "hits": 667,
+      "free": 178,
+      "free_exact_blocked": 0,
+      "blocked_exact_free": 654,
+      "exact_seconds_on_free": 0.046092802193015814,
+      "exact_seconds_on_agreeing_free": 0.046092802193015814
+    },
+    "0.025/plain": {
+      "queries": 1999,
+      "seconds": 0.11862908815965056,
+      "native_seconds": 0.1125895925797522,
+      "calls": 1507,
+      "hits": 492,
+      "free": 273,
+      "free_exact_blocked": 0,
+      "blocked_exact_free": 559,
+      "exact_seconds_on_free": 0.0640774026978761,
+      "exact_seconds_on_agreeing_free": 0.0640774026978761
+    },
+    "0.025/guard": {
+      "queries": 1999,
+      "seconds": 0.11472360091283917,
+      "native_seconds": 0.10266070137731731,
+      "calls": 1539,
+      "hits": 460,
+      "free": 206,
+      "free_exact_blocked": 0,
+      "blocked_exact_free": 626,
+      "exact_seconds_on_free": 0.053121802397072315,
+      "exact_seconds_on_agreeing_free": 0.053121802397072315
+    },
+    "0.1/plain": {
+      "queries": 1999,
+      "seconds": 0.013116301968693733,
+      "native_seconds": 0.007311099441722035,
+      "calls": 983,
+      "hits": 1016,
+      "free": 290,
+      "free_exact_blocked": 32,
+      "blocked_exact_free": 574,
+      "exact_seconds_on_free": 0.06153000355698168,
+      "exact_seconds_on_agreeing_free": 0.058783203130587935
+    }
+  },
+  "stats": {
+    "nets_changed": 33,
+    "segments_removed": 267,
+    "segments_added": 184,
+    "saved_mm": 96.6173,
+    "algorithm_ms": 9532.842,
+    "per_net": [
+      {
+        "net_id": 1,
+        "before_mm": 408.4333548456079,
+        "after_mm": 395.36555343501954,
+        "saved_mm": 13.067801410588345,
+        "algorithm_ms": 3989.569899858907
+      },
+      {
+        "net_id": 3,
+        "before_mm": 90.64080206980914,
+        "after_mm": 89.46606035428076,
+        "saved_mm": 1.1747417155283841,
+        "algorithm_ms": 169.17419992387295
+      },
+      {
+        "net_id": 4,
+        "before_mm": 83.26477723092265,
+        "after_mm": 81.31187575380642,
+        "saved_mm": 1.952901477116228,
+        "algorithm_ms": 115.058199968189
+      },
+      {
+        "net_id": 5,
+        "before_mm": 87.79404538800084,
+        "after_mm": 87.7242055858067,
+        "saved_mm": 0.06983980219413866,
+        "algorithm_ms": 7.975599961355329
+      },
+      {
+        "net_id": 6,
+        "before_mm": 88.83136465430916,
+        "after_mm": 81.4011762561448,
+        "saved_mm": 7.430188398164361,
+        "algorithm_ms": 92.90140005759895
+      },
+      {
+        "net_id": 7,
+        "before_mm": 123.661658437917,
+        "after_mm": 120.1413361014928,
+        "saved_mm": 3.5203223364242007,
+        "algorithm_ms": 211.92370005883276
+      },
+      {
+        "net_id": 8,
+        "before_mm": 129.52189849756377,
+        "after_mm": 128.18264670860728,
+        "saved_mm": 1.3392517889564886,
+        "algorithm_ms": 160.23959987796843
+      },
+      {
+        "net_id": 9,
+        "before_mm": 135.94188810176587,
+        "after_mm": 128.58395219848515,
+        "saved_mm": 7.357935903280719,
+        "algorithm_ms": 311.9822998996824
+      },
+      {
+        "net_id": 10,
+        "before_mm": 87.05330730701964,
+        "after_mm": 82.16648183605903,
+        "saved_mm": 4.886825470960602,
+        "algorithm_ms": 229.59650005213916
+      },
+      {
+        "net_id": 11,
+        "before_mm": 81.7493998968043,
+        "after_mm": 75.13404854327597,
+        "saved_mm": 6.6153513535283395,
+        "algorithm_ms": 201.2855000793934
+      },
+      {
+        "net_id": 12,
+        "before_mm": 18.820944273532767,
+        "after_mm": 18.427441648270445,
+        "saved_mm": 0.3935026252623217,
+        "algorithm_ms": 73.67020007222891
+      },
+      {
+        "net_id": 13,
+        "before_mm": 9.496305444509684,
+        "after_mm": 9.496291386127654,
+        "saved_mm": 1.4058382030057714e-05,
+        "algorithm_ms": 8.251399965956807
+      },
+      {
+        "net_id": 14,
+        "before_mm": 15.820959117151174,
+        "after_mm": 15.820944472585545,
+        "saved_mm": 1.4644565629495787e-05,
+        "algorithm_ms": 2.6612000074237585
+      },
+      {
+        "net_id": 15,
+        "before_mm": 19.105927513520207,
+        "after_mm": 18.484583010703144,
+        "saved_mm": 0.6213445028170632,
+        "algorithm_ms": 72.61859998106956
+      },
+      {
+        "net_id": 16,
+        "before_mm": 50.23199012607505,
+        "after_mm": 47.94971840260223,
+        "saved_mm": 2.2822717234728174,
+        "algorithm_ms": 105.34520004875958
+      },
+      {
+        "net_id": 17,
+        "before_mm": 15.449894913555564,
+        "after_mm": 15.449893499343553,
+        "saved_mm": 1.4142120114968293e-06,
+        "algorithm_ms": 19.615700002759695
+      },
+      {
+        "net_id": 18,
+        "before_mm": 28.41328943833711,
+        "after_mm": 26.777764355424257,
+        "saved_mm": 1.635525082912853,
+        "algorithm_ms": 37.05930011346936
+      },
+      {
+        "net_id": 19,
+        "before_mm": 41.139565721175636,
+        "after_mm": 40.095210223990634,
+        "saved_mm": 1.044355497185002,
+        "algorithm_ms": 69.05100005678833
+      },
+      {
+        "net_id": 20,
+        "before_mm": 46.47573595023793,
+        "after_mm": 46.00955945856893,
+        "saved_mm": 0.4661764916690032,
+        "algorithm_ms": 14.103000052273273
+      },
+      {
+        "net_id": 28,
+        "before_mm": 28.755512242138323,
+        "after_mm": 28.75547630133564,
+        "saved_mm": 3.5940802682432604e-05,
+        "algorithm_ms": 5.175799829885364
+      },
+      {
+        "net_id": 29,
+        "before_mm": 126.22358647923666,
+        "after_mm": 119.8283709230854,
+        "saved_mm": 6.395215556151257,
+        "algorithm_ms": 444.7424001991749
+      },
+      {
+        "net_id": 32,
+        "before_mm": 50.77956966678569,
+        "after_mm": 45.92931737030722,
+        "saved_mm": 4.850252296478473,
+        "algorithm_ms": 139.03049984946847
+      },
+      {
+        "net_id": 33,
+        "before_mm": 38.342321690865596,
+        "after_mm": 36.40804370224867,
+        "saved_mm": 1.9342779886169268,
+        "algorithm_ms": 117.32800002209842
+      },
+      {
+        "net_id": 34,
+        "before_mm": 117.63142346162475,
+        "after_mm": 116.83402167340515,
+        "saved_mm": 0.7974017882196023,
+        "algorithm_ms": 215.45720007270575
+      },
+      {
+        "net_id": 35,
+        "before_mm": 8.2341751596087,
+        "after_mm": 6.746335943870891,
+        "saved_mm": 1.487839215737809,
+        "algorithm_ms": 70.6865000538528
+      },
+      {
+        "net_id": 36,
+        "before_mm": 3.898123935394878,
+        "after_mm": 3.898123935394878,
+        "saved_mm": 0.0,
+        "algorithm_ms": 0.3418000414967537
+      },
+      {
+        "net_id": 37,
+        "before_mm": 4.472551060141063,
+        "after_mm": 4.472501062465841,
+        "saved_mm": 4.9997675222179794e-05,
+        "algorithm_ms": 1.976399915292859
+      },
+      {
+        "net_id": 38,
+        "before_mm": 4.726551060141068,
+        "after_mm": 4.726530350627591,
+        "saved_mm": 2.0709513476546704e-05,
+        "algorithm_ms": 2.148199826478958
+      },
+      {
+        "net_id": 39,
+        "before_mm": 3.869232539419355,
+        "after_mm": 3.869232539419355,
+        "saved_mm": 0.0,
+        "algorithm_ms": 0.2888001035898924
+      },
+      {
+        "net_id": 40,
+        "before_mm": 4.292780446102852,
+        "after_mm": 4.292780446102852,
+        "saved_mm": 0.0,
+        "algorithm_ms": 0.2055999357253313
+      },
+      {
+        "net_id": 41,
+        "before_mm": 3.8955351006300485,
+        "after_mm": 3.8955351006300485,
+        "saved_mm": 0.0,
+        "algorithm_ms": 0.16990001313388348
+      },
+      {
+        "net_id": 42,
+        "before_mm": 13.293535100630029,
+        "after_mm": 13.293535100630029,
+        "saved_mm": 0.0,
+        "algorithm_ms": 0.25180005468428135
+      },
+      {
+        "net_id": 43,
+        "before_mm": 6.432672470219012,
+        "after_mm": 4.930462225376234,
+        "saved_mm": 1.5022102448427788,
+        "algorithm_ms": 12.748299865052104
+      },
+      {
+        "net_id": 44,
+        "before_mm": 2.873500000000007,
+        "after_mm": 2.873500000000007,
+        "saved_mm": 0.0,
+        "algorithm_ms": 0.24550012312829494
+      },
+      {
+        "net_id": 46,
+        "before_mm": 68.45276946552886,
+        "after_mm": 67.09729286188349,
+        "saved_mm": 1.3554766036453714,
+        "algorithm_ms": 111.4839999936521
+      },
+      {
+        "net_id": 47,
+        "before_mm": 56.314683543168925,
+        "after_mm": 54.88621540060701,
+        "saved_mm": 1.4284681425619183,
+        "algorithm_ms": 94.27929995581508
+      },
+      {
+        "net_id": 48,
+        "before_mm": 60.857473298326106,
+        "after_mm": 59.94364645562814,
+        "saved_mm": 0.913826842697965,
+        "algorithm_ms": 50.10069999843836
+      },
+      {
+        "net_id": 49,
+        "before_mm": 55.71662099219805,
+        "after_mm": 52.85854559162729,
+        "saved_mm": 2.858075400570762,
+        "algorithm_ms": 101.74190020188689
+      },
+      {
+        "net_id": 50,
+        "before_mm": 70.40453172679882,
+        "after_mm": 67.60486160242804,
+        "saved_mm": 2.7996701243707776,
+        "algorithm_ms": 130.20229991525412
+      }
+    ],
+    "config": {
+      "enable_g3_1": true,
+      "enable_g3_2": true,
+      "enable_g3_3": true,
+      "enable_g3_4": true,
+      "budget_seconds": 1200,
+      "enable_noncollinear_t_rails": true,
+      "enable_multipasses": true,
+      "enable_g3_6": false,
+      "centering_proximity_mm": 1.0,
+      "stay_in_corridor": true,
+      "move_vias": true,
+      "optimize_pad_approaches": true,
+      "move_junctions": true,
+      "repeat_until_stable": true
+    },
+    "gloss": {
+      "budget_seconds": 1199.80356270005,
+      "budget_expired": false,
+      "stages": {
+        "G3": {
+          "enabled": true,
+          "changes": 33,
+          "saved_mm": 80.1812,
+          "elapsed_ms": 7390.687,
+          "label": "nets improved",
+          "skipped_budget": false
+        },
+        "G3.1": {
+          "enabled": true,
+          "changes": 2,
+          "saved_mm": 0.4244,
+          "elapsed_ms": 832.551,
+          "label": "vias moved",
+          "skipped_budget": false
+        },
+        "G3.2": {
+          "enabled": true,
+          "changes": 2,
+          "saved_mm": 1.8,
+          "elapsed_ms": 372.929,
+          "label": "pads optimized",
+          "skipped_budget": false
+        },
+        "G3.3": {
+          "enabled": true,
+          "changes": 3,
+          "saved_mm": 6.3425,
+          "elapsed_ms": 710.012,
+          "label": "T branches moved",
+          "skipped_budget": false
+        },
+        "G3.4": {
+          "enabled": true,
+          "changes": 0,
+          "saved_mm": 0.0,
+          "elapsed_ms": 60.924,
+          "label": "vias refined",
+          "skipped_budget": false
+        },
+        "G3.5 equal length": {
+          "enabled": true,
+          "changes": 2,
+          "saved_mm": 0.0,
+          "elapsed_ms": 89.042,
+          "label": "segments removed at equal length",
+          "skipped_budget": false
+        },
+        "G3.5 segments": {
+          "enabled": true,
+          "changes": 2,
+          "saved_mm": 0.0,
+          "elapsed_ms": 1.454,
+          "label": "collinear joints removed",
+          "skipped_budget": false
+        },
+        "G4": {
+          "enabled": true,
+          "changes": 7,
+          "saved_mm": 7.8692,
+          "elapsed_ms": 4002.788,
+          "label": "multi-net transformations",
+          "skipped_budget": false
+        },
+        "G3.6": {
+          "enabled": false,
+          "changes": 0,
+          "saved_mm": 0.0,
+          "elapsed_ms": 0.0,
+          "label": "doors centered",
+          "skipped_budget": false
+        },
+        "G5": {
+          "enabled": true,
+          "changes": 168,
+          "saved_mm": 0.0,
+          "elapsed_ms": 46.895,
+          "label": "final objects certified",
+          "skipped_budget": false
+        }
+      }
+    },
+    "nets_processed": 39,
+    "nets_excluded": 0,
+    "excluded_net_ids": [],
+    "exclusion_reasons": {},
+    "elementary_branches": 0,
+    "branch_scoped": false,
+    "editable_layers": [
+      "F.Cu",
+      "B.Cu"
+    ],
+    "segment_changes": 495,
+    "via_changes": 2,
+    "doors_centered": 0,
+    "centering_branches_changed": 0,
+    "centering_segments_added": 0,
+    "centering_length_delta_mm": 0.0,
+    "centering_candidates_tested": 0,
+    "centering_algorithm_ms": 0.0,
+    "before_mm": 2243.9143,
+    "krt_after_mm": 2243.9143,
+    "after_mm": 2147.2969,
+    "total_ms": 18282.813,
+    "krt_baseline_ms": 0.0,
+    "krt_baseline_saved_mm": 0.0,
+    "post_krt_saved_mm": 96.6173,
+    "vias_moved": 2,
+    "via_algorithm_ms": 897.3810000000001,
+    "pads_changed": 2,
+    "pad_algorithm_ms": 446.73499999999996,
+    "pad_saved_mm": 1.8,
+    "t_branches_slid": 3,
+    "noncollinear_t_slid": 2,
+    "right_angles_cleaned": 0,
+    "node_algorithm_ms": 768.6099999999999,
+    "node_saved_mm": 6.3425,
+    "vias_refined": 0,
+    "refine_via_algorithm_ms": 168.145,
+    "refine_via_saved_mm": 0.0,
+    "equal_length_nets_changed": 2,
+    "equal_length_segments_removed": 6,
+    "equal_length_segments_added": 4,
+    "equal_length_segment_reduction": 2,
+    "equal_length_algorithm_ms": 169.799,
+    "segments_merged": 2,
+    "merge_nets_changed": 2,
+    "merge_joints": 2,
+    "merge_segments_removed": 7,
+    "merge_segments_added": 5,
+    "merge_nets_skipped_large": 0,
+    "merge_algorithm_ms": 4.016,
+    "g4_passes": [
+      {
+        "index": 1,
+        "direction": "forward",
+        "net_ids": [
+          1,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          28,
+          29,
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38,
+          39,
+          40,
+          41,
+          42,
+          43,
+          44,
+          46,
+          47,
+          48,
+          49,
+          50
+        ],
+        "changes": 7,
+        "segment_reduction": 0,
+        "saved_mm": 7.8692,
+        "elapsed_ms": 3062.495,
+        "completed": true,
+        "operations": {
+          "G3": {
+            "enabled": true,
+            "changes": 7,
+            "saved_mm": 7.8692,
+            "elapsed_ms": 1401.097,
+            "label": "nets improved",
+            "skipped_budget": false
+          },
+          "G3.1": {
+            "enabled": true,
+            "changes": 0,
+            "saved_mm": 0.0,
+            "elapsed_ms": 35.81,
+            "label": "vias moved",
+            "skipped_budget": false
+          },
+          "G3.2": {
+            "enabled": true,
+            "changes": 0,
+            "saved_mm": 0.0,
+            "elapsed_ms": 42.649,
+            "label": "pads optimized",
+            "skipped_budget": false
+          },
+          "G3.3": {
+            "enabled": true,
+            "changes": 0,
+            "saved_mm": 0.0,
+            "elapsed_ms": 30.542,
+            "label": "T branches moved",
+            "skipped_budget": false
+          },
+          "G3.4": {
+            "enabled": true,
+            "changes": 0,
+            "saved_mm": 0.0,
+            "elapsed_ms": 55.545,
+            "label": "vias refined",
+            "skipped_budget": false
+          },
+          "G3.5 equal length": {
+            "enabled": true,
+            "changes": 0,
+            "saved_mm": 0.0,
+            "elapsed_ms": 49.242,
+            "label": "segments removed at equal length",
+            "skipped_budget": false
+          },
+          "G3.5 segments": {
+            "enabled": true,
+            "changes": 0,
+            "saved_mm": 0.0,
+            "elapsed_ms": 1.288,
+            "label": "collinear joints removed",
+            "skipped_budget": false
+          }
+        }
+      },
+      {
+        "index": 2,
+        "direction": "reverse",
+        "net_ids": [
+          50,
+          49,
+          48,
+          47,
+          46,
+          44,
+          43,
+          42,
+          41,
+          40,
+          39,
+          38,
+          37,
+          36,
+          35,
+          34,
+          33,
+          32,
+          29,
+          28,
+          20,
+          19,
+          18,
+          17,
+          16,
+          15,
+          14,
+          13,
+          12,
+          11,
+          10,
+          9,
+          8,
+          7,
+          6,
+          5,
+          4,
+          3,
+          1
+        ],
+        "changes": 0,
+        "segment_reduction": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 940.204,
+        "completed": true,
+        "operations": {
+          "G3": {
+            "enabled": true,
+            "changes": 0,
+            "saved_mm": 0.0,
+            "elapsed_ms": 741.058,
+            "label": "nets improved",
+            "skipped_budget": false
+          },
+          "G3.1": {
+            "enabled": true,
+            "changes": 0,
+            "saved_mm": 0.0,
+            "elapsed_ms": 29.02,
+            "label": "vias moved",
+            "skipped_budget": false
+          },
+          "G3.2": {
+            "enabled": true,
+            "changes": 0,
+            "saved_mm": 0.0,
+            "elapsed_ms": 31.157,
+            "label": "pads optimized",
+            "skipped_budget": false
+          },
+          "G3.3": {
+            "enabled": true,
+            "changes": 0,
+            "saved_mm": 0.0,
+            "elapsed_ms": 28.056,
+            "label": "T branches moved",
+            "skipped_budget": false
+          },
+          "G3.4": {
+            "enabled": true,
+            "changes": 0,
+            "saved_mm": 0.0,
+            "elapsed_ms": 51.676,
+            "label": "vias refined",
+            "skipped_budget": false
+          },
+          "G3.5 equal length": {
+            "enabled": true,
+            "changes": 0,
+            "saved_mm": 0.0,
+            "elapsed_ms": 31.515,
+            "label": "segments removed at equal length",
+            "skipped_budget": false
+          },
+          "G3.5 segments": {
+            "enabled": true,
+            "changes": 0,
+            "saved_mm": 0.0,
+            "elapsed_ms": 1.274,
+            "label": "collinear joints removed",
+            "skipped_budget": false
+          }
+        }
+      }
+    ],
+    "g4_passes_completed": 2,
+    "g4_transformations": 7,
+    "g4_segment_reduction": 0,
+    "g4_saved_mm": 7.8692,
+    "g4_algorithm_ms": 4002.788,
+    "g4_stop_reason": "converged",
+    "g5_segments_certified": 166,
+    "g5_segments_geometry_preserved": 5,
+    "g5_vias_certified": 2,
+    "g5_algorithm_ms": 46.895,
+    "g5_valid": true,
+    "connectivity_regressions": 0,
+    "pad_distance_cache": {
+      "hits": 2616,
+      "misses": 10089,
+      "maxsize": 8192,
+      "currsize": 8192
+    },
+    "copper_data_cache": {
+      "builds": 151,
+      "reuses": 12366,
+      "certificate_hits": 4179
+    },
+    "search_cache": {
+      "hits": 93,
+      "misses": 303,
+      "invalidations": 100
+    },
+    "zone_invalidations": 0,
+    "corridor_motion": {
+      "via_checks": 11,
+      "junction_checks": 3,
+      "rejected": 9,
+      "intervals": 108,
+      "segment_probes": 284,
+      "via_probes": 2,
+      "capped": 0,
+      "seconds": 0.04204799956642091
+    }
+  }
+}

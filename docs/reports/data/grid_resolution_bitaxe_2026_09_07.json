@@ -1,0 +1,996 @@
+{
+  "board": "C:\\Users\\frant\\Documents\\kicad_track_gloss_stress\\sources\\set1\\bitaxe_ultra.kicad_pcb",
+  "sha256": "267a1aa4475efa098e13af90b2f5280f69b5e9ed2fc7f71da87dccb56a8adec9",
+  "source_unchanged": true,
+  "protocol": "one instrumented run; identical envelopes and board revisions for all grids; no grid verdict used for acceptance; 1200s instrumentation budget; per-search caches; timings are single samples",
+  "queries": 8681,
+  "exact_seconds": 1.7513107140548527,
+  "costs": {
+    "0.1": {
+      "build_seconds": 0.1901143998838961,
+      "update_seconds": 0.7164885012898594,
+      "selection_seconds": 0.15969820087775588,
+      "builds": 1,
+      "updates": 84
+    },
+    "0.05": {
+      "build_seconds": 0.9621668001636863,
+      "update_seconds": 3.319358300184831,
+      "selection_seconds": 0.7628884019795805,
+      "builds": 1,
+      "updates": 84
+    },
+    "0.025": {
+      "build_seconds": 3.9565081999171525,
+      "update_seconds": 15.30591489863582,
+      "selection_seconds": 3.666949100093916,
+      "builds": 1,
+      "updates": 84
+    }
+  },
+  "rows": {
+    "0.1/guard": {
+      "queries": 8681,
+      "seconds": 0.04054681002162397,
+      "native_seconds": 0.002716397400945425,
+      "calls": 1178,
+      "hits": 7503,
+      "free": 59,
+      "free_exact_blocked": 0,
+      "blocked_exact_free": 3987,
+      "exact_seconds_on_free": 0.01447009900584817,
+      "exact_seconds_on_agreeing_free": 0.01447009900584817
+    },
+    "0.05/plain": {
+      "queries": 8681,
+      "seconds": 0.02367589855566621,
+      "native_seconds": 0.0075916016940027475,
+      "calls": 1268,
+      "hits": 7413,
+      "free": 167,
+      "free_exact_blocked": 2,
+      "blocked_exact_free": 3881,
+      "exact_seconds_on_free": 0.03675840003415942,
+      "exact_seconds_on_agreeing_free": 0.03663860005326569
+    },
+    "0.05/guard": {
+      "queries": 8681,
+      "seconds": 0.04544219118542969,
+      "native_seconds": 0.008017799817025661,
+      "calls": 1380,
+      "hits": 7301,
+      "free": 80,
+      "free_exact_blocked": 0,
+      "blocked_exact_free": 3966,
+      "exact_seconds_on_free": 0.019099999219179153,
+      "exact_seconds_on_agreeing_free": 0.019099999219179153
+    },
+    "0.025/plain": {
+      "queries": 8681,
+      "seconds": 0.04574698768556118,
+      "native_seconds": 0.02866130182519555,
+      "calls": 1488,
+      "hits": 7193,
+      "free": 211,
+      "free_exact_blocked": 2,
+      "blocked_exact_free": 3837,
+      "exact_seconds_on_free": 0.049511299934238195,
+      "exact_seconds_on_agreeing_free": 0.04915819992311299
+    },
+    "0.025/guard": {
+      "queries": 8681,
+      "seconds": 0.06531080510467291,
+      "native_seconds": 0.026440396206453443,
+      "calls": 1605,
+      "hits": 7076,
+      "free": 109,
+      "free_exact_blocked": 0,
+      "blocked_exact_free": 3937,
+      "exact_seconds_on_free": 0.027584300143644214,
+      "exact_seconds_on_agreeing_free": 0.027584300143644214
+    },
+    "0.1/plain": {
+      "queries": 8681,
+      "seconds": 0.018972006859257817,
+      "native_seconds": 0.0028620033990591764,
+      "calls": 1007,
+      "hits": 7674,
+      "free": 119,
+      "free_exact_blocked": 0,
+      "blocked_exact_free": 3927,
+      "exact_seconds_on_free": 0.028478799620643258,
+      "exact_seconds_on_agreeing_free": 0.028478799620643258
+    }
+  },
+  "stats": {
+    "nets_changed": 52,
+    "segments_removed": 429,
+    "segments_added": 336,
+    "saved_mm": 77.1097,
+    "algorithm_ms": 17532.399999999998,
+    "per_net": [
+      {
+        "net_id": 1,
+        "before_mm": 279.4007158427824,
+        "after_mm": 277.0409826368587,
+        "saved_mm": 2.3597332059237033,
+        "algorithm_ms": 6096.4585999026895
+      },
+      {
+        "net_id": 2,
+        "before_mm": 25.22347763108501,
+        "after_mm": 25.22347763108501,
+        "saved_mm": 0.0,
+        "algorithm_ms": 10.83220005966723
+      },
+      {
+        "net_id": 3,
+        "before_mm": 100.41445763996836,
+        "after_mm": 96.98779844529324,
+        "saved_mm": 3.426659194675125,
+        "algorithm_ms": 373.1359001249075
+      },
+      {
+        "net_id": 4,
+        "before_mm": 15.622313488034708,
+        "after_mm": 15.622302944033857,
+        "saved_mm": 1.054400085109819e-05,
+        "algorithm_ms": 4.527400014922023
+      },
+      {
+        "net_id": 5,
+        "before_mm": 95.1525259332187,
+        "after_mm": 91.79085455844354,
+        "saved_mm": 3.361671374775156,
+        "algorithm_ms": 401.6937999986112
+      },
+      {
+        "net_id": 6,
+        "before_mm": 85.70855389464676,
+        "after_mm": 85.48009776975975,
+        "saved_mm": 0.2284561248870034,
+        "algorithm_ms": 107.10659995675087
+      },
+      {
+        "net_id": 7,
+        "before_mm": 228.63109525344882,
+        "after_mm": 217.64143218070322,
+        "saved_mm": 10.9896630727456,
+        "algorithm_ms": 570.4687999095768
+      },
+      {
+        "net_id": 8,
+        "before_mm": 98.01388503306899,
+        "after_mm": 96.78113897799808,
+        "saved_mm": 1.2327460550709048,
+        "algorithm_ms": 280.729099875316
+      },
+      {
+        "net_id": 9,
+        "before_mm": 41.9492566392818,
+        "after_mm": 41.90313004240579,
+        "saved_mm": 0.0461265968760074,
+        "algorithm_ms": 208.17220001481473
+      },
+      {
+        "net_id": 10,
+        "before_mm": 27.312787546287993,
+        "after_mm": 26.974202985339645,
+        "saved_mm": 0.3385845609483482,
+        "algorithm_ms": 140.08700009435415
+      },
+      {
+        "net_id": 11,
+        "before_mm": 16.349048983495983,
+        "after_mm": 15.667110308977595,
+        "saved_mm": 0.6819386745183884,
+        "algorithm_ms": 17.862199805676937
+      },
+      {
+        "net_id": 12,
+        "before_mm": 22.306780371764475,
+        "after_mm": 21.291902439643664,
+        "saved_mm": 1.014877932120811,
+        "algorithm_ms": 79.9380000680685
+      },
+      {
+        "net_id": 13,
+        "before_mm": 47.74652960886045,
+        "after_mm": 47.56295585506619,
+        "saved_mm": 0.18357375379425633,
+        "algorithm_ms": 59.22389985062182
+      },
+      {
+        "net_id": 14,
+        "before_mm": 18.674549841232817,
+        "after_mm": 18.674512562663274,
+        "saved_mm": 3.727856954327535e-05,
+        "algorithm_ms": 8.277500048279762
+      },
+      {
+        "net_id": 15,
+        "before_mm": 40.62917157710173,
+        "after_mm": 40.38061741244544,
+        "saved_mm": 0.24855416465629077,
+        "algorithm_ms": 263.0986000876874
+      },
+      {
+        "net_id": 16,
+        "before_mm": 131.2542341252125,
+        "after_mm": 130.19471923635754,
+        "saved_mm": 1.0595148888549488,
+        "algorithm_ms": 181.3427999150008
+      },
+      {
+        "net_id": 17,
+        "before_mm": 51.85813895961877,
+        "after_mm": 51.136652989957355,
+        "saved_mm": 0.7214859696614155,
+        "algorithm_ms": 141.21589995920658
+      },
+      {
+        "net_id": 18,
+        "before_mm": 59.01571613793995,
+        "after_mm": 58.261014373445924,
+        "saved_mm": 0.7547017644940226,
+        "algorithm_ms": 128.16060008481145
+      },
+      {
+        "net_id": 19,
+        "before_mm": 5.4118746322981455,
+        "after_mm": 5.4118746322981455,
+        "saved_mm": 0.0,
+        "algorithm_ms": 2.643899992108345
+      },
+      {
+        "net_id": 20,
+        "before_mm": 27.672601820815345,
+        "after_mm": 25.565704326389543,
+        "saved_mm": 2.1068974944258017,
+        "algorithm_ms": 90.33800009638071
+      },
+      {
+        "net_id": 21,
+        "before_mm": 17.756226114619395,
+        "after_mm": 16.0692616793173,
+        "saved_mm": 1.6869644353020945,
+        "algorithm_ms": 33.867300022393465
+      },
+      {
+        "net_id": 22,
+        "before_mm": 26.793439631640204,
+        "after_mm": 24.674107231443337,
+        "saved_mm": 2.1193324001968676,
+        "algorithm_ms": 107.01909987255931
+      },
+      {
+        "net_id": 23,
+        "before_mm": 21.868012487673838,
+        "after_mm": 20.631367952889576,
+        "saved_mm": 1.2366445347842614,
+        "algorithm_ms": 84.37569998204708
+      },
+      {
+        "net_id": 24,
+        "before_mm": 22.38896016412714,
+        "after_mm": 22.38894962005032,
+        "saved_mm": 1.0544076822327497e-05,
+        "algorithm_ms": 3.8982999976724386
+      },
+      {
+        "net_id": 25,
+        "before_mm": 26.69389490569492,
+        "after_mm": 26.220338289084864,
+        "saved_mm": 0.473556616610054,
+        "algorithm_ms": 56.27429997548461
+      },
+      {
+        "net_id": 26,
+        "before_mm": 5.287175133645356,
+        "after_mm": 5.28717140574237,
+        "saved_mm": 3.727902985417586e-06,
+        "algorithm_ms": 12.921599904075265
+      },
+      {
+        "net_id": 27,
+        "before_mm": 11.87343666588883,
+        "after_mm": 11.566133100709749,
+        "saved_mm": 0.3073035651790814,
+        "algorithm_ms": 19.750799983739853
+      },
+      {
+        "net_id": 28,
+        "before_mm": 1.8636130003898843,
+        "after_mm": 1.8636130003898843,
+        "saved_mm": 0.0,
+        "algorithm_ms": 0.6692998576909304
+      },
+      {
+        "net_id": 29,
+        "before_mm": 12.28222699162993,
+        "after_mm": 11.413764363769763,
+        "saved_mm": 0.8684626278601666,
+        "algorithm_ms": 408.3364000543952
+      },
+      {
+        "net_id": 30,
+        "before_mm": 70.61860392752436,
+        "after_mm": 69.86290444792117,
+        "saved_mm": 0.7556994796031944,
+        "algorithm_ms": 462.5504999421537
+      },
+      {
+        "net_id": 31,
+        "before_mm": 2.6308250327051415,
+        "after_mm": 2.6308250327051415,
+        "saved_mm": 0.0,
+        "algorithm_ms": 1.339899841696024
+      },
+      {
+        "net_id": 32,
+        "before_mm": 69.3243662156232,
+        "after_mm": 69.32436580141,
+        "saved_mm": 4.14213204180669e-07,
+        "algorithm_ms": 145.44049999676645
+      },
+      {
+        "net_id": 33,
+        "before_mm": 65.23636003064027,
+        "after_mm": 65.22712567841046,
+        "saved_mm": 0.009234352229810838,
+        "algorithm_ms": 16.656099818646908
+      },
+      {
+        "net_id": 34,
+        "before_mm": 11.87325114222215,
+        "after_mm": 11.103659272310763,
+        "saved_mm": 0.7695918699113875,
+        "algorithm_ms": 67.62510002590716
+      },
+      {
+        "net_id": 35,
+        "before_mm": 21.124783368109128,
+        "after_mm": 20.77471739298329,
+        "saved_mm": 0.3500659751258368,
+        "algorithm_ms": 17.849799944087863
+      },
+      {
+        "net_id": 36,
+        "before_mm": 17.67279377824577,
+        "after_mm": 17.67279377824577,
+        "saved_mm": 0.0,
+        "algorithm_ms": 1.0176999494433403
+      },
+      {
+        "net_id": 37,
+        "before_mm": 4.507878425849297,
+        "after_mm": 1.6699747468305826,
+        "saved_mm": 2.8379036790187144,
+        "algorithm_ms": 36.48519981652498
+      },
+      {
+        "net_id": 38,
+        "before_mm": 27.547459677910396,
+        "after_mm": 26.473821277964273,
+        "saved_mm": 1.0736383999461232,
+        "algorithm_ms": 324.39800002612174
+      },
+      {
+        "net_id": 39,
+        "before_mm": 27.768652013502738,
+        "after_mm": 27.08245709417508,
+        "saved_mm": 0.686194919327658,
+        "algorithm_ms": 169.0665001515299
+      },
+      {
+        "net_id": 44,
+        "before_mm": 16.921843642104605,
+        "after_mm": 16.921843642104605,
+        "saved_mm": 0.0,
+        "algorithm_ms": 1.1847000569105148
+      },
+      {
+        "net_id": 45,
+        "before_mm": 18.105516100006824,
+        "after_mm": 18.105516100006824,
+        "saved_mm": 0.0,
+        "algorithm_ms": 4.128600005060434
+      },
+      {
+        "net_id": 46,
+        "before_mm": 15.294220643135093,
+        "after_mm": 15.294197509796772,
+        "saved_mm": 2.3133338320491248e-05,
+        "algorithm_ms": 7.88960000500083
+      },
+      {
+        "net_id": 47,
+        "before_mm": 14.94051584259218,
+        "after_mm": 14.94051584259218,
+        "saved_mm": 0.0,
+        "algorithm_ms": 0.9190000128000975
+      },
+      {
+        "net_id": 48,
+        "before_mm": 17.63531615947754,
+        "after_mm": 17.63531615947754,
+        "saved_mm": 0.0,
+        "algorithm_ms": 1.545000122860074
+      },
+      {
+        "net_id": 49,
+        "before_mm": 14.158481231335987,
+        "after_mm": 13.15384002370155,
+        "saved_mm": 1.004641207634437,
+        "algorithm_ms": 44.68049993738532
+      },
+      {
+        "net_id": 50,
+        "before_mm": 13.760661966467309,
+        "after_mm": 13.594976541518067,
+        "saved_mm": 0.16568542494924188,
+        "algorithm_ms": 26.408800156787038
+      },
+      {
+        "net_id": 51,
+        "before_mm": 96.77081485082044,
+        "after_mm": 94.22006021903124,
+        "saved_mm": 2.5507546317892036,
+        "algorithm_ms": 261.2582000438124
+      },
+      {
+        "net_id": 52,
+        "before_mm": 12.457293245621798,
+        "after_mm": 12.457279991236916,
+        "saved_mm": 1.3254384882088743e-05,
+        "algorithm_ms": 11.659299954771996
+      },
+      {
+        "net_id": 54,
+        "before_mm": 14.565925465981017,
+        "after_mm": 14.565914922069643,
+        "saved_mm": 1.0543911374227832e-05,
+        "algorithm_ms": 3.2605999149382114
+      },
+      {
+        "net_id": 55,
+        "before_mm": 10.809944039110631,
+        "after_mm": 10.809930784768927,
+        "saved_mm": 1.3254341704183048e-05,
+        "algorithm_ms": 3.496799850836396
+      },
+      {
+        "net_id": 56,
+        "before_mm": 28.7631480369199,
+        "after_mm": 27.304796913086022,
+        "saved_mm": 1.4583511238338787,
+        "algorithm_ms": 174.70559990033507
+      },
+      {
+        "net_id": 62,
+        "before_mm": 12.491113734934174,
+        "after_mm": 12.18410208949015,
+        "saved_mm": 0.3070116454440246,
+        "algorithm_ms": 34.759500063955784
+      },
+      {
+        "net_id": 64,
+        "before_mm": 135.89124435371664,
+        "after_mm": 133.42505090199214,
+        "saved_mm": 2.466193451724507,
+        "algorithm_ms": 457.27179991081357
+      },
+      {
+        "net_id": 78,
+        "before_mm": 19.753832911350315,
+        "after_mm": 19.295162130688453,
+        "saved_mm": 0.45867078066186195,
+        "algorithm_ms": 9.810400195419788
+      },
+      {
+        "net_id": 79,
+        "before_mm": 43.14768115377427,
+        "after_mm": 42.15101942250436,
+        "saved_mm": 0.99666173126991,
+        "algorithm_ms": 86.62949991412461
+      },
+      {
+        "net_id": 80,
+        "before_mm": 17.314163414971745,
+        "after_mm": 17.314155214126334,
+        "saved_mm": 8.200845410755164e-06,
+        "algorithm_ms": 99.02259986847639
+      },
+      {
+        "net_id": 81,
+        "before_mm": 19.21090403795621,
+        "after_mm": 19.21090403795621,
+        "saved_mm": 0.0,
+        "algorithm_ms": 1.1185999028384686
+      },
+      {
+        "net_id": 87,
+        "before_mm": 10.43692633253279,
+        "after_mm": 9.706450644812039,
+        "saved_mm": 0.7304756877207517,
+        "algorithm_ms": 12.773599941283464
+      },
+      {
+        "net_id": 88,
+        "before_mm": 9.914467022202984,
+        "after_mm": 9.914467022202984,
+        "saved_mm": 0.0,
+        "algorithm_ms": 0.7559000514447689
+      },
+      {
+        "net_id": 92,
+        "before_mm": 7.237616449178425,
+        "after_mm": 6.568648337408498,
+        "saved_mm": 0.6689681117699271,
+        "algorithm_ms": 12.242200085893273
+      },
+      {
+        "net_id": 93,
+        "before_mm": 11.428776187682358,
+        "after_mm": 10.562314864758024,
+        "saved_mm": 0.8664613229243336,
+        "algorithm_ms": 41.89689992927015
+      }
+    ],
+    "config": {
+      "enable_g3_1": true,
+      "enable_g3_2": true,
+      "enable_g3_3": true,
+      "enable_g3_4": true,
+      "budget_seconds": 1200,
+      "enable_noncollinear_t_rails": true,
+      "enable_multipasses": true,
+      "enable_g3_6": false,
+      "centering_proximity_mm": 1.0,
+      "stay_in_corridor": true,
+      "move_vias": true,
+      "optimize_pad_approaches": true,
+      "move_junctions": true,
+      "repeat_until_stable": true
+    },
+    "gloss": {
+      "budget_seconds": 1199.4362242000643,
+      "budget_expired": false,
+      "stages": {
+        "G3": {
+          "enabled": true,
+          "changes": 50,
+          "saved_mm": 53.6038,
+          "elapsed_ms": 12432.273,
+          "label": "nets improved",
+          "skipped_budget": false
+        },
+        "G3.1": {
+          "enabled": true,
+          "changes": 10,
+          "saved_mm": 6.791,
+          "elapsed_ms": 3775.637,
+          "label": "vias moved",
+          "skipped_budget": false
+        },
+        "G3.2": {
+          "enabled": true,
+          "changes": 6,
+          "saved_mm": 3.0007,
+          "elapsed_ms": 4018.594,
+          "label": "pads optimized",
+          "skipped_budget": false
+        },
+        "G3.3": {
+          "enabled": true,
+          "changes": 8,
+          "saved_mm": 3.3094,
+          "elapsed_ms": 3445.142,
+          "label": "T branches moved",
+          "skipped_budget": false
+        },
+        "G3.4": {
+          "enabled": true,
+          "changes": 7,
+          "saved_mm": 8.8188,
+          "elapsed_ms": 862.671,
+          "label": "vias refined",
+          "skipped_budget": false
+        },
+        "G3.5 equal length": {
+          "enabled": true,
+          "changes": 3,
+          "saved_mm": 0.0,
+          "elapsed_ms": 200.403,
+          "label": "segments removed at equal length",
+          "skipped_budget": false
+        },
+        "G3.5 segments": {
+          "enabled": true,
+          "changes": 11,
+          "saved_mm": 0.0,
+          "elapsed_ms": 5.161,
+          "label": "collinear joints removed",
+          "skipped_budget": false
+        },
+        "G4": {
+          "enabled": true,
+          "changes": 5,
+          "saved_mm": 1.586,
+          "elapsed_ms": 9702.335,
+          "label": "multi-net transformations",
+          "skipped_budget": false
+        },
+        "G3.6": {
+          "enabled": false,
+          "changes": 0,
+          "saved_mm": 0.0,
+          "elapsed_ms": 0.0,
+          "label": "doors centered",
+          "skipped_budget": false
+        },
+        "G5": {
+          "enabled": true,
+          "changes": 338,
+          "saved_mm": 0.0,
+          "elapsed_ms": 153.56,
+          "label": "final objects certified",
+          "skipped_budget": false
+        }
+      }
+    },
+    "nets_processed": 61,
+    "nets_excluded": 0,
+    "excluded_net_ids": [],
+    "exclusion_reasons": {},
+    "elementary_branches": 0,
+    "branch_scoped": false,
+    "editable_layers": [
+      "F.Cu",
+      "In1.Cu",
+      "In2.Cu",
+      "B.Cu"
+    ],
+    "segment_changes": 1008,
+    "via_changes": 17,
+    "doors_centered": 0,
+    "centering_branches_changed": 0,
+    "centering_segments_added": 0,
+    "centering_length_delta_mm": 0.0,
+    "centering_candidates_tested": 0,
+    "centering_algorithm_ms": 0.0,
+    "before_mm": 2126.8901,
+    "krt_after_mm": 2126.8901,
+    "after_mm": 2049.7804,
+    "total_ms": 43006.299,
+    "krt_baseline_ms": 0.0,
+    "krt_baseline_saved_mm": 0.0,
+    "post_krt_saved_mm": 77.1097,
+    "vias_moved": 10,
+    "via_algorithm_ms": 3963.485,
+    "pads_changed": 6,
+    "pad_algorithm_ms": 5310.972,
+    "pad_saved_mm": 3.0007,
+    "t_branches_slid": 8,
+    "noncollinear_t_slid": 1,
+    "right_angles_cleaned": 0,
+    "node_algorithm_ms": 3595.361,
+    "node_saved_mm": 3.3094,
+    "vias_refined": 7,
+    "refine_via_algorithm_ms": 1065.7,
+    "refine_via_saved_mm": 8.8188,
+    "equal_length_nets_changed": 3,
+    "equal_length_segments_removed": 9,
+    "equal_length_segments_added": 6,
+    "equal_length_segment_reduction": 3,
+    "equal_length_algorithm_ms": 393.70399999999995,
+    "segments_merged": 11,
+    "merge_nets_changed": 10,
+    "merge_joints": 11,
+    "merge_segments_removed": 51,
+    "merge_segments_added": 40,
+    "merge_nets_skipped_large": 0,
+    "merge_algorithm_ms": 12.877,
+    "g4_passes": [
+      {
+        "index": 1,
+        "direction": "forward",
+        "net_ids": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38,
+          39,
+          44,
+          45,
+          46,
+          47,
+          48,
+          49,
+          50,
+          51,
+          52,
+          54,
+          55,
+          56,
+          62,
+          64,
+          78,
+          79,
+          80,
+          81,
+          87,
+          88,
+          92,
+          93
+        ],
+        "changes": 5,
+        "segment_reduction": 0,
+        "saved_mm": 1.586,
+        "elapsed_ms": 7896.276,
+        "completed": true,
+        "operations": {
+          "G3": {
+            "enabled": true,
+            "changes": 5,
+            "saved_mm": 1.586,
+            "elapsed_ms": 3787.363,
+            "label": "nets improved",
+            "skipped_budget": false
+          },
+          "G3.1": {
+            "enabled": true,
+            "changes": 0,
+            "saved_mm": 0.0,
+            "elapsed_ms": 95.027,
+            "label": "vias moved",
+            "skipped_budget": false
+          },
+          "G3.2": {
+            "enabled": true,
+            "changes": 0,
+            "saved_mm": 0.0,
+            "elapsed_ms": 1197.919,
+            "label": "pads optimized",
+            "skipped_budget": false
+          },
+          "G3.3": {
+            "enabled": true,
+            "changes": 0,
+            "saved_mm": 0.0,
+            "elapsed_ms": 79.757,
+            "label": "T branches moved",
+            "skipped_budget": false
+          },
+          "G3.4": {
+            "enabled": true,
+            "changes": 0,
+            "saved_mm": 0.0,
+            "elapsed_ms": 104.463,
+            "label": "vias refined",
+            "skipped_budget": false
+          },
+          "G3.5 equal length": {
+            "enabled": true,
+            "changes": 0,
+            "saved_mm": 0.0,
+            "elapsed_ms": 122.317,
+            "label": "segments removed at equal length",
+            "skipped_budget": false
+          },
+          "G3.5 segments": {
+            "enabled": true,
+            "changes": 0,
+            "saved_mm": 0.0,
+            "elapsed_ms": 3.78,
+            "label": "collinear joints removed",
+            "skipped_budget": false
+          }
+        }
+      },
+      {
+        "index": 2,
+        "direction": "reverse",
+        "net_ids": [
+          93,
+          92,
+          88,
+          87,
+          81,
+          80,
+          79,
+          78,
+          64,
+          62,
+          56,
+          55,
+          54,
+          52,
+          51,
+          50,
+          49,
+          48,
+          47,
+          46,
+          45,
+          44,
+          39,
+          38,
+          37,
+          36,
+          35,
+          34,
+          33,
+          32,
+          31,
+          30,
+          29,
+          28,
+          27,
+          26,
+          25,
+          24,
+          23,
+          22,
+          21,
+          20,
+          19,
+          18,
+          17,
+          16,
+          15,
+          14,
+          13,
+          12,
+          11,
+          10,
+          9,
+          8,
+          7,
+          6,
+          5,
+          4,
+          3,
+          2,
+          1
+        ],
+        "changes": 0,
+        "segment_reduction": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 1805.819,
+        "completed": true,
+        "operations": {
+          "G3": {
+            "enabled": true,
+            "changes": 0,
+            "saved_mm": 0.0,
+            "elapsed_ms": 1312.764,
+            "label": "nets improved",
+            "skipped_budget": false
+          },
+          "G3.1": {
+            "enabled": true,
+            "changes": 0,
+            "saved_mm": 0.0,
+            "elapsed_ms": 92.821,
+            "label": "vias moved",
+            "skipped_budget": false
+          },
+          "G3.2": {
+            "enabled": true,
+            "changes": 0,
+            "saved_mm": 0.0,
+            "elapsed_ms": 94.459,
+            "label": "pads optimized",
+            "skipped_budget": false
+          },
+          "G3.3": {
+            "enabled": true,
+            "changes": 0,
+            "saved_mm": 0.0,
+            "elapsed_ms": 70.462,
+            "label": "T branches moved",
+            "skipped_budget": false
+          },
+          "G3.4": {
+            "enabled": true,
+            "changes": 0,
+            "saved_mm": 0.0,
+            "elapsed_ms": 98.566,
+            "label": "vias refined",
+            "skipped_budget": false
+          },
+          "G3.5 equal length": {
+            "enabled": true,
+            "changes": 0,
+            "saved_mm": 0.0,
+            "elapsed_ms": 70.984,
+            "label": "segments removed at equal length",
+            "skipped_budget": false
+          },
+          "G3.5 segments": {
+            "enabled": true,
+            "changes": 0,
+            "saved_mm": 0.0,
+            "elapsed_ms": 3.935,
+            "label": "collinear joints removed",
+            "skipped_budget": false
+          }
+        }
+      }
+    ],
+    "g4_passes_completed": 2,
+    "g4_transformations": 5,
+    "g4_segment_reduction": 0,
+    "g4_saved_mm": 1.586,
+    "g4_algorithm_ms": 9702.335,
+    "g4_stop_reason": "converged",
+    "g5_segments_certified": 322,
+    "g5_segments_geometry_preserved": 40,
+    "g5_vias_certified": 16,
+    "g5_algorithm_ms": 153.56,
+    "g5_valid": true,
+    "connectivity_regressions": 0,
+    "pad_distance_cache": {
+      "hits": 5800,
+      "misses": 25361,
+      "maxsize": 8192,
+      "currsize": 8192
+    },
+    "copper_data_cache": {
+      "builds": 395,
+      "reuses": 30239,
+      "certificate_hits": 9877
+    },
+    "search_cache": {
+      "hits": 507,
+      "misses": 1335,
+      "invalidations": 547
+    },
+    "zone_invalidations": 20,
+    "corridor_motion": {
+      "via_checks": 23,
+      "junction_checks": 8,
+      "rejected": 0,
+      "intervals": 111,
+      "segment_probes": 237,
+      "via_probes": 60,
+      "capped": 0,
+      "seconds": 0.15006869891658425
+    }
+  }
+}
