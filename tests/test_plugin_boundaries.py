@@ -425,7 +425,8 @@ def test_dialog_exposes_the_integrated_gloss_options_by_public_name():
     assert 'label="Proximity max"' in source
     assert 'label="G4 passes:"' in source
     assert "can take significant time" in source
-    assert "if selected_count == 1:" in source
+    assert "self._selected_count = selected_count" in source
+    assert "if self._selected_count == 1:" in source
     assert "def _create_gloss_illustration" in source
     assert 'label="G3.3' not in source
     assert 'label="G3.4' not in source

@@ -48,6 +48,7 @@ class GlossSettingsDialog(wx.Dialog):
         self._on_centering_callback = on_centering
         self._on_import_centering_callback = on_import_centering
         self._on_refresh_proximity_callback = on_refresh_proximity
+        self._selected_count = selected_count
         wx.ToolTip.SetDelay(250)
         wx.ToolTip.SetAutoPop(15000)
         wx.ToolTip.SetReshow(50)
@@ -292,7 +293,7 @@ class GlossSettingsDialog(wx.Dialog):
         self.g4_max_passes.SetToolTip(g4_passes_help)
         g4_passes.Add(self.g4_max_passes, 0)
         operations.Add(g4_passes, 0, wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
-        if selected_count == 1:
+        if self._selected_count == 1:
             repeat.Disable()
             self.g4_max_passes.Disable()
         content.Add(operations, 0, wx.EXPAND | wx.ALL, 8)
