@@ -28,7 +28,7 @@ class GlossConfig:
     move_junctions: bool = None
     repeat_until_stable: bool = None
     # Internal G4 limits: additional passes after the time-budgeted first pass.
-    # From total pass 3, compare its gain with the previous pass's gain.
+    # From the first G4 pass, compare its gain with the previous pass's gain.
     g4_min_gain_percent: float = 10.0
     g4_max_passes: int = 2
 

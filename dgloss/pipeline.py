@@ -668,7 +668,9 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
         g4_started = perf_counter()
         g4 = run_multinet_passes(
             context, selected, list(context.net_ids), results,
-            deadline, _run_optimization_pass) if run else {
+            deadline, _run_optimization_pass,
+            initial_gain=max(0.0, initial["before_length"] -
+                             initial["after_length"])) if run else {
                 "segment_strips": [], "via_strips": [],
                 "changes": GlossChanges(), "passes": [],
                 "passes_completed": 0, "transformations": 0,

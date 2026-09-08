@@ -9,15 +9,18 @@ class _Board:
     segments = []
 
 
-@pytest.mark.parametrize('gains,limit,threshold,expected,count', [
-    ([10., 1., 5.], 5, 10., 'marginal_gain', 2),
-    ([10., 1.001, 5.], 2, 10., 'max_passes', 2),
-    ([10., 1., .01], 5, 5., 'marginal_gain', 3),
-    ([0., 0., 0.], 2, 10., 'max_passes', 2),
-    ([10.], 0, 10., 'max_passes', 0),
+@pytest.mark.parametrize('initial,gains,limit,threshold,expected,count', [
+    (20., [10., 1., 5.], 5, 10., 'marginal_gain', 2),
+    (20., [10., 1.001, 5.], 2, 10., 'max_passes', 2),
+    (20., [10., 1., .01], 5, 5., 'marginal_gain', 3),
+    (0., [0., 0., 0.], 2, 10., 'max_passes', 2),
+    (20., [10.], 0, 10., 'max_passes', 0),
+    (100., [10., 5.], 2, 10., 'marginal_gain', 1),
+    (100., [9., 5.], 2, 10., 'marginal_gain', 1),
+    (100., [10.001, 5.], 2, 10., 'max_passes', 2),
 ])
 def test_g4_limits_and_unrounded_gain_with_expired_initial_budget(
-        monkeypatch, gains, limit, threshold, expected, count):
+        monkeypatch, initial, gains, limit, threshold, expected, count):
     length = [100.]
     calls = []
     monkeypatch.setitem(run_multinet_passes.__globals__, 'calculate_route_length',
@@ -36,7 +39,7 @@ def test_g4_limits_and_unrounded_gain_with_expired_initial_budget(
     out = run_multinet_passes(
         SimpleNamespace(pcb_data=_Board(), net_ids=[1]),
         GlossConfig(g4_max_passes=limit, g4_min_gain_percent=threshold),
-        [1], [], 0., run)
+        [1], [], 0., run, initial_gain=initial)
     assert out['stop_reason'] == expected
     assert out['passes_completed'] == count
 
