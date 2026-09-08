@@ -11,7 +11,7 @@ import wx
 
 from .runtime import configure_krt_runtime, ensure_krt_dependencies
 from .selection import (native_arc_net_ids, selected_net_ids,
-                        selected_seed_segments)
+                        selected_pad_pair_distance_mm, selected_seed_segments)
 from .settings_dialog import DEFAULTS, GlossSettingsDialog
 from .version import __version__
 
@@ -43,6 +43,10 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
         parent = wx.GetTopLevelWindows()[0] if wx.GetTopLevelWindows() else None
         values = dict(self.__class__._settings)
         if len(net_ids) != 1:
+            pad_spacing = selected_pad_pair_distance_mm(board)
+            open_centering = pad_spacing is not None and 0.0 <= pad_spacing <= 5.0
+            if open_centering:
+                values["centering_proximity_mm"] = pad_spacing
             prepared = self._prepare_selection(board, parent)
             if prepared is None:
                 return
@@ -73,6 +77,7 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                 on_centering=center_from_dialog, pcb_data=prepared[0],
                 centering_nets=centering_nets,
                 preselected_centering_nets=preselected_names,
+                initial_tab="Centering" if open_centering else None,
                 initial_log=self.__class__._last_log)
             try:
                 dialog.ShowModal()

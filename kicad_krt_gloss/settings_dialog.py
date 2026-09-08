@@ -33,7 +33,8 @@ DEFAULTS = GENERAL_DEFAULTS | GLOSS_DEFAULTS | CENTERING_DEFAULTS
 class GlossSettingsDialog(wx.Dialog):
     def __init__(self, parent, values, selected_count, *, on_gloss=None,
                  on_centering=None, pcb_data=None, centering_nets=(),
-                 preselected_centering_nets=(), initial_log=""):
+                 preselected_centering_nets=(), initial_tab=None,
+                 initial_log=""):
         super().__init__(parent, title="KiCad KRT Gloss")
         values = dict(values or {})
         if "move_vias" not in values and "enable_g3_1" in values:
@@ -223,6 +224,11 @@ class GlossSettingsDialog(wx.Dialog):
         outer.Add(buttons, 0, wx.EXPAND | wx.ALL, 10)
         self.SetSizerAndFit(outer)
         self.SetMinSize(self.GetSize())
+        if initial_tab:
+            for index in range(self.notebook.GetPageCount()):
+                if self.notebook.GetPageText(index) == initial_tab:
+                    self.notebook.SetSelection(index)
+                    break
 
     def _create_gloss_tab(self, values):
         """Build the page containing options used only by the Gloss action."""

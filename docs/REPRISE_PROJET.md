@@ -58,6 +58,12 @@ Le Centering peut augmenter la longueur. Actuellement ses portes sont pad–pad 
 les vias restent des obstacles, mais ne définissent pas de portes via–via ou
 pad–via. Cette limitation a été explicitement conservée.
 
+**Raccourci DHM Centering.** Avec exactement deux pads sélectionnés et aucun
+autre objet, le plugin mesure leur entraxe centre-à-centre. Si cet entraxe est
+dans la plage Proxi admise (0 à 5 mm), le dialogue s'ouvre sur Centering et
+préremplit Proxi avec cette valeur. Ce raccourci ne choisit aucun net :
+l'utilisateur désigne ensuite les pistes à centrer dans la liste.
+
 **Longueur et segments.** Leur découpage logiciel ne doit pas devenir une
 frontière algorithmique : une réduction peut créer un coude, sa simplification
 peut permettre une nouvelle réduction. L'autogloss intégré réexamine les chaînes

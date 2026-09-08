@@ -1,9 +1,55 @@
-"""Convert selected copper segments to complete KRT net identifiers."""
+"""Convert native KiCad selections to KRT-oriented selection data."""
 
 from collections import defaultdict
+import math
 
 
 POSITION_DECIMALS = 6
+
+
+def selected_pad_pair_distance_mm(board):
+    """Return the centre spacing of an exclusive two-pad selection in mm.
+
+    ``None`` deliberately covers every other selection shape.  The plugin uses
+    this only as a UI shortcut: it must not turn selected copper, a footprint,
+    or another board item into an implicit Centering request.
+    """
+    selected = getattr(board, "GetSelectedItems", None)
+    if callable(selected):
+        try:
+            items = list(selected())
+        except (AttributeError, TypeError):
+            items = None
+        if items is not None:
+            pads = [item for item in items
+                    if getattr(item, "GetClass", lambda: "")() == "PCB_PAD"]
+            return _pad_pair_distance_mm(pads) if len(items) == len(pads) else None
+
+    # KiCad versions without BOARD.GetSelectedItems need a conservative
+    # fallback.  It covers pads and the other selectable board collections.
+    pads = [pad for footprint in board.GetFootprints()
+            for pad in footprint.Pads() if pad.IsSelected()]
+    others = [item for item in board.GetTracks() if item.IsSelected()]
+    others.extend(footprint for footprint in board.GetFootprints()
+                  if footprint.IsSelected())
+    for getter in ("GetDrawings", "Zones"):
+        collection = getattr(board, getter, None)
+        if callable(collection):
+            others.extend(item for item in collection() if item.IsSelected())
+    return _pad_pair_distance_mm(pads) if not others else None
+
+
+def _pad_pair_distance_mm(pads):
+    if len(pads) != 2:
+        return None
+    try:
+        first, second = (pad.GetPosition() for pad in pads)
+        import pcbnew
+        dx = float(pcbnew.ToMM(first.x) - pcbnew.ToMM(second.x))
+        dy = float(pcbnew.ToMM(first.y) - pcbnew.ToMM(second.y))
+    except (AttributeError, TypeError, ValueError):
+        return None
+    return math.hypot(dx, dy)
 
 
 def selected_net_ids(board):

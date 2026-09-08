@@ -15,7 +15,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from kicad_krt_gloss.selection import (
-    native_arc_net_ids, selected_net_ids, selected_seed_segments)
+    native_arc_net_ids, selected_net_ids, selected_pad_pair_distance_mm,
+    selected_seed_segments)
 from kicad_krt_gloss.board_adapter import (
     _krt_via_key, _native_segment_key, _native_via_key, _segment_key,
     _refill_and_rebuild, build_krt_config)
@@ -107,6 +108,7 @@ def test_plugin_run_accepts_two_item_preparation_for_multiple_selected_nets():
             "pcbnew": types.SimpleNamespace(GetBoard=lambda: object()),
             "wx": types.SimpleNamespace(GetTopLevelWindows=lambda: []),
             "selected_net_ids": lambda board: net_ids,
+            "selected_pad_pair_distance_mm": lambda board: None,
             "GlossSettingsDialog": Dialog,
         }
         exec(compile(ast.Module(body=[run], type_ignores=[]),
@@ -189,6 +191,30 @@ def test_pad_or_footprint_selection_does_not_designate_a_net():
     board.tracks = []
 
     assert selected_net_ids(board) == []
+
+
+def test_exclusive_two_pad_selection_returns_centre_spacing_in_mm():
+    class Pad:
+        def __init__(self, x, y, selected=True):
+            self.point = types.SimpleNamespace(x=x, y=y)
+            self.selected = selected
+
+        def GetClass(self): return "PCB_PAD"
+        def IsSelected(self): return self.selected
+        def GetPosition(self): return self.point
+
+    first, second = Pad(1_000_000, 2_000_000), Pad(4_000_000, 6_000_000)
+    board = types.SimpleNamespace(GetSelectedItems=lambda: [first, second])
+    with patch.dict(sys.modules, {"pcbnew": types.SimpleNamespace(
+            ToMM=lambda value: value / 1_000_000)}):
+        assert selected_pad_pair_distance_mm(board) == pytest.approx(5.0)
+
+
+def test_pad_pair_shortcut_rejects_any_non_pad_selection():
+    pad = types.SimpleNamespace(GetClass=lambda: "PCB_PAD")
+    track = types.SimpleNamespace(GetClass=lambda: "PCB_TRACK")
+    board = types.SimpleNamespace(GetSelectedItems=lambda: [pad, pad, track])
+    assert selected_pad_pair_distance_mm(board) is None
 
 
 def test_selected_straight_track_maps_to_its_krt_segment_seed():
@@ -410,6 +436,16 @@ def test_settings_dialog_is_shown_unless_exactly_one_net_is_selected():
     assert "if len(net_ids) != 1:" in source
     assert source.index("if len(net_ids) != 1:") < source.index(
         "dialog = GlossSettingsDialog")
+
+
+def test_exclusive_pad_pair_opens_centering_with_its_spacing_as_proxi():
+    action = (ROOT / "kicad_krt_gloss" / "action_plugin.py").read_text(
+        encoding="utf-8")
+    dialog = (ROOT / "kicad_krt_gloss" / "settings_dialog.py").read_text(
+        encoding="utf-8")
+    assert 'values["centering_proximity_mm"] = pad_spacing' in action
+    assert 'initial_tab="Centering" if open_centering else None' in action
+    assert 'if self.notebook.GetPageText(index) == initial_tab:' in dialog
 
 
 def test_plugin_selection_mode_defaults_to_be_and_cli_stays_net_only():
