@@ -267,6 +267,14 @@ hors intégration et nécessitent une nouvelle décision pour être reprises.
 
 ## Validation disponible et limites connues
 
+La campagne hors PACK0 sur `4d14d3b` ne valide pas une absence globale
+d'artefacts : coude résiduel après glissement local sur `usbc_power_adapter`
+(`/USB PD/CC2`), exclusion des arcs non effective sur `usb_dali` (`/USB+`,
+application native refusée), six alertes complémentaires de clearance à
+qualifier sur `bitaxe_ultra`. Les budgets expirés restaurent les entrées.
+Ces points ne sont pas corrigés dans le ZIP issu de cette campagne.
+Voir le [bilan hors PACK0](reports/CENTERING_OUTSIDE_PACK0_2026_09_08.md).
+
 La campagne historique du 8 septembre après refonte a donné **299 tests réussis et quatre
 échecs préexistants**, reproduits avant modification : ancien inventaire refusant
 `AGENTS.md`, explication française sans traduction anglaise, contrôle textuel de
