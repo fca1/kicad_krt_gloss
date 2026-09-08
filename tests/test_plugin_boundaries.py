@@ -483,8 +483,6 @@ def test_dialog_keeps_a_post_run_log_with_krt_style_controls():
     assert "on_import_centering" in source
     assert 'wx.EVT_LISTBOX, self._on_centering_net_row_selected' in source
     assert 'wx.EVT_CHECKLISTBOX, self._on_centering_net_checked' in source
-    assert 'self._highlight_timer = wx.Timer(self)' in source
-    assert 'wx.CallLater(180, self._simulate_net_selection_for_highlight)' in source
     assert "def _on_centering_net_row_selected" in source
     assert "def _on_centering_net_checked" in source
     assert 'label="Refresh"' in source
@@ -537,7 +535,7 @@ def test_clicking_centering_row_forwards_clicked_net_to_highlighter():
     queued = []
     dialog = types.SimpleNamespace(
         centering_net_panel=types.SimpleNamespace(net_list=net_list),
-        _queue_net_highlight=queued.append)
+        _on_net_selection_changed=queued.append)
 
     handler(dialog, event)
 
@@ -558,40 +556,6 @@ def test_checking_centering_row_highlights_updated_checked_scope():
 
     assert queued == [dialog._sync_net_selection]
     assert event.skipped
-
-
-def test_highlight_timer_replays_selection_and_checks_native_result():
-    handler = _dialog_method("_on_highlight_timer")
-    calls = []
-    status = []
-    dialog = types.SimpleNamespace(
-        _pending_highlight_names=("N2",),
-        _on_net_selection_changed=lambda names: calls.append(names) or True,
-        centering_status=types.SimpleNamespace(SetLabel=status.append))
-
-    handler(dialog, None)
-
-    assert calls == [("N2",)]
-    assert dialog._pending_highlight_names == ()
-    assert not status
-
-
-def test_initial_highlight_probe_simulates_a_list_selection():
-    handler = _dialog_method("_simulate_net_selection_for_highlight")
-    selected = []
-    queued = []
-    net_list = types.SimpleNamespace(
-        GetCount=lambda: 2,
-        SetSelection=selected.append,
-        GetString=lambda index: ("N1", "N2")[index])
-    dialog = types.SimpleNamespace(
-        centering_net_panel=types.SimpleNamespace(net_list=net_list),
-        _queue_net_highlight=queued.append)
-
-    handler(dialog)
-
-    assert selected == [0]
-    assert queued == [("N1",)]
 
 
 def test_about_tab_uses_project_versions_and_attribution():

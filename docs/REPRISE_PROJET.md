@@ -85,9 +85,11 @@ sélectionnées ; « Clear selection » vide les coches. Elles pilotent aussi la
 surbrillance native des nets sur le PCB, sans modifier la sélection des objets.
 La fermeture du dialogue retire cette surbrillance. La sélection visuelle des
 lignes de liste est annulée à son ouverture.
-Pour diagnostiquer l'intégration KiCad, une sonde unique après l'affichage
-sélectionne la première ligne visible et rejoue sa surbrillance via un timer ;
-elle vérifie ensuite l'état natif `BOARD.IsHighLightNetON()`.
+Le highlight reste défectueux dans l'éditeur : `BOARD.IsHighLightNetON()`
+ne prouve pas la surbrillance graphique. Les essais sur carte détachée ne
+valident pas le rendu. Toute simulation temporisée de clic doit rester dans
+un outil de test séparé ; aucun timer de highlight ni clic automatique ne
+doit être intégré au dialogue de production.
 Les deux actions reconstruisent leurs données depuis la carte courante. En mode
 branches élémentaires, les pistes natives désignent les branches uniquement de
 leurs nets cochés ; un net coché sans graine native désigne tout son cuivre.
