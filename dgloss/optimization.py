@@ -196,10 +196,20 @@ def run_optimization_pass(results, context, selected, net_ids, deadline, *, oper
             for r in merge['rejections'])
         print(f"Track Gloss G3.5: merge proposals not applied ({reasons})")
 
-    if not selected.stay_in_corridor:
+    # Downstream transformations can expose another local reduction. A first
+    # corridor pass does not certify convergence after vias/pads/nodes/merges.
+    revisit_nets = set()
+    for row in (via, pad, node, refine):
+        revisit_nets.update(row['net_ids_changed'])
+    revisit_nets.update(s.net_id for s in merge_removed)
+    revisit_nets.update(entry['old'].net_id for entry in equal_changes.segments
+                        if 'old' in entry)
+    local_net_ids = (sorted(revisit_nets) if selected.stay_in_corridor else run_net_ids)
+    if local_net_ids:
         local_strips, local_added, local_changes, local_stats = operations.shorten_routes(
-            context, results, deadline=deadline, net_ids=run_net_ids,
-            local_only=True, stage="G3 local")
+            context, results, deadline=deadline, net_ids=local_net_ids,
+            local_only=True, stage="G3 local",
+            stay_in_corridor=selected.stay_in_corridor)
         _append_result(results, "track_gloss_local", local_added, [], local_changes)
         strips.extend(local_strips)
         changes.segments.extend(local_changes.segments)
@@ -217,7 +227,7 @@ def run_optimization_pass(results, context, selected, net_ids, deadline, *, oper
         entry["old"].net_id for entry in equal_changes.segments
         if "old" in entry)
     changed_net_ids.update(segment.net_id for segment in merge_removed)
-    if not selected.stay_in_corridor:
+    if local_net_ids:
         changed_net_ids.update(entry["old"].net_id for entry in local_changes.segments
                                if "old" in entry)
 

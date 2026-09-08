@@ -19,7 +19,7 @@ runtime.configure_krt_runtime()
 package = types.ModuleType('_corridor_probe')
 package.__path__ = [str(ROOT / 'kicad_krt_gloss')]
 sys.modules[package.__name__] = package
-from _corridor_probe.board_adapter import build_krt_config
+from _corridor_probe.board_adapter import build_krt_config, apply_gloss
 import pcbnew
 from dgloss.krt_api import build_pcb_data_from_board, calculate_route_length
 from dgloss.config import GlossConfig
@@ -45,6 +45,19 @@ def overlap_pairs(segments):
     return count
 
 
+def acute_joints(segments):
+    """Independent joint audit: directions alone do not detect a sharp fold."""
+    joints = {}
+    for s in segments:
+        a, b = (s.start_x, s.start_y), (s.end_x, s.end_y)
+        joints.setdefault((s.layer, a), []).append(b)
+        joints.setdefault((s.layer, b), []).append(a)
+    return sum((a[0]-point[0])*(b[0]-point[0]) +
+               (a[1]-point[1])*(b[1]-point[1]) > 1e-7
+               for (_, point), ends in joints.items() if len(ends) == 2
+               for a, b in [ends])
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('board', type=Path)
@@ -55,10 +68,19 @@ def main():
     pcb = build_pcb_data_from_board(board)
     config = build_krt_config(board, pcb, .1, net_ids={args.net_id})
     before = [s for s in pcb.segments if s.net_id == args.net_id]
-    outcome = run_final_gloss([], pcb, config,
+    results = []
+    outcome = run_final_gloss(results, pcb, config,
                              GlossConfig(stay_in_corridor=True, g4_max_passes=1),
                              net_ids={args.net_id})
     after = [s for s in pcb.segments if s.net_id == args.net_id]
+    applied = apply_gloss(board, results, outcome)
+    native_octolinear = True
+    for track in board.GetTracks():
+        if track.GetNetCode() != args.net_id:
+            continue
+        a, b = track.GetStart(), track.GetEnd()
+        dx, dy = abs(b.x-a.x), abs(b.y-a.y)
+        native_octolinear &= min(dx, dy, abs(dx-dy)) <= 1  # native 1 nm lattice
     octolinear = all(min(abs(s.end_x-s.start_x), abs(s.end_y-s.start_y),
                         abs(abs(s.end_x-s.start_x)-abs(s.end_y-s.start_y))) <= 1e-7
                     for s in after)
@@ -69,11 +91,15 @@ def main():
                   before_segments=len(before), after_segments=len(after),
                   before_overlap_pairs=overlap_pairs(before),
                   after_overlap_pairs=overlap_pairs(after), octolinear=octolinear,
+                  before_acute_joints=acute_joints(before),
+                  after_acute_joints=acute_joints(after),
+                  native_octolinear=native_octolinear, applied=applied,
                   g5_valid=outcome.stats.get('g5_valid'),
                   connectivity_regressions=outcome.stats.get('connectivity_regressions'),
                   total_ms=outcome.stats.get('total_ms'))
     print(json.dumps(report, indent=2))
     assert unchanged and octolinear and report['g5_valid']
+    assert native_octolinear and report['after_acute_joints'] == 0
     assert report['connectivity_regressions'] == 0
     assert report['before_overlap_pairs'] > 0 and report['after_overlap_pairs'] == 0
     assert report['after_mm'] < report['before_mm']

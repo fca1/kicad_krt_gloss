@@ -26,6 +26,7 @@ KRT.
 | `board_views` | Vues par net et requêtes de contact pad indexées par KRT |
 | `chain_topology` | Construction et parcours des chaînes, indépendants des stratégies |
 | `route_geometry` | Primitives partagées par pistes, pads, vias et jonctions |
+| `corner_reduction` | Réductions locales par supports octolinéaires, contact KRT et certificat de surfaces emboîtées |
 | `topology` | Politique électrique et réutilisation des certificats de référence |
 | `algorithm`, `local_gloss`, `via_mobile`, `pad_terminals`, `sliding_nodes` | Recherche et sélection des transformations |
 | `interpad_detection` | Détection des portes pad–pad |

@@ -19,6 +19,14 @@ L'ordre impératif des objectifs est :
 4. conserver une sortie exclusivement octolinéaire : 0°, 45° ou 90° ;
 5. ne produire ni micro-segment, ni décrochement, ni détour inutile.
 
+La réduction de longueur peut augmenter le nombre de segments : le second
+objectif ne doit pas bloquer le premier. Une destination plus courte mais
+inaccessible dans le corridor ne prouve pas qu'une réduction intermédiaire est
+impossible. Les raccordements entre segments doivent être examinés en plus de
+leurs directions individuelles. Les transformations de vias, pads ou jonctions
+peuvent rendre une nouvelle réduction locale possible ; les nets concernés sont
+réexaminés avant la certification finale, indépendamment de l'activation de G4.
+
 ## Définition
 
 - Une graine est un segment KRT explicitement désigné comme point de départ

@@ -9,6 +9,28 @@ from pathlib import Path
 from time import perf_counter
 
 
+def acute_chain_joints(signature, pads):
+    """Independent bend audit, excluding fixed pad/via and branch anchors."""
+    from collections import defaultdict
+    from dgloss.krt_api import point_to_pad_distance
+    joints = defaultdict(list)
+    for layer, a, b, width, *_ in signature[0]:
+        joints[layer, tuple(a)].append((b, width))
+        joints[layer, tuple(b)].append((a, width))
+    via_points = {(v[0], v[1]) for v in signature[1]}
+    found = set()
+    for (layer, point), ends in joints.items():
+        if len(ends) != 2 or ends[0][1] != ends[1][1] or point in via_points:
+            continue
+        if any((layer in p.layers or '*.Cu' in p.layers) and
+               point_to_pad_distance(*point, p) <= ends[0][1]/2+1e-6 for p in pads):
+            continue
+        a, b = ends[0][0], ends[1][0]
+        if sum((a[i]-point[i])*(b[i]-point[i]) for i in (0, 1)) > 1e-7:
+            found.add((layer, point))
+    return found
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--engine-root', type=Path)
@@ -16,6 +38,7 @@ def main():
     parser.add_argument('--boards', nargs='*')
     parser.add_argument('--budget', type=float, default=120.)
     parser.add_argument('--corridor', action='store_true')
+    parser.add_argument('--no-g4', action='store_true')
     parser.add_argument('--details', action='store_true')
     parser.add_argument('--audit-clearance', action='store_true')
     args = parser.parse_args()
@@ -48,10 +71,19 @@ def main():
             original_ids = {id(s) for s in pcb.segments}
             start = perf_counter()
             out = run_final_gloss([], pcb, cfg, GlossConfig(
-                budget_seconds=args.budget, repeat_until_stable=True,
+                budget_seconds=args.budget, repeat_until_stable=not args.no_g4,
+                enable_multipasses=not args.no_g4,
                 stay_in_corridor=args.corridor), net_ids=ids)
             elapsed = perf_counter() - start
         geometry = [_route_signature(pcb, net) for net in ids]
+        joint_audit = []
+        for net, before, after in zip(ids, before_geometry, geometry):
+            pads = pcb.pads_by_net.get(net, [])
+            old = acute_chain_joints(before, pads)
+            new = acute_chain_joints(after, pads)
+            if old or new:
+                joint_audit.append(dict(net=net, before=len(old), after=len(new),
+                                        new_positions=sorted(new-old)))
         row = dict(board=entry['name'], sha256=entry['sha256'], seconds=elapsed,
                    load_seconds=load_seconds, corridor=args.corridor,
                    budget_seconds=args.budget, grid_mm=cfg.grid_step,
@@ -61,6 +93,9 @@ def main():
                    geometry_sha256=hashlib.sha256(json.dumps(geometry).encode()).hexdigest(),
                    budget_expired=out.stats.get('gloss', {}).get('budget_expired'),
                    g4_passes=out.stats.get('g4_passes_completed'),
+                   g4_enabled=not args.no_g4,
+                   stages=out.stats.get('gloss', {}).get('stages', {}),
+                   acute_joint_audit=joint_audit,
                    connectivity_regressions=out.stats.get('connectivity_regressions'),
                    corridor_motion=out.stats.get('corridor_motion'),
                    log=log.getvalue().splitlines(),
@@ -98,11 +133,16 @@ def main():
         for detail in row['non_octolinear_details']:
             detail['stages'] = [{k: v for k, v in e.items() if k != 'new'} for e in detail['stages']]
         failed |= not row['g5'] or not row['input_unchanged'] or bool(row['new_non_octolinear'])
+        failed |= any(joint['new_positions'] for joint in joint_audit)
+        failed |= any(not all(stage.get('geometry_preserving') for stage in entry['stages'])
+                      for entry in row.get('clearance_audit', []))
         rows.append(row)
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(rows, indent=2), encoding='utf-8')
         assert hashlib.sha256(board.read_bytes()).hexdigest() == entry['sha256']
-        print(json.dumps(row), flush=True)
+        print(json.dumps({k: v for k, v in row.items() if k not in
+                          ('per_net_geometry', 'log', 'clearance_audit',
+                           'non_octolinear_details')}), flush=True)
     return int(failed)
 
 

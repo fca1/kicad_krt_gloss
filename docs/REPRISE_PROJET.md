@@ -138,6 +138,15 @@ peut permettre une nouvelle réduction. L'autogloss intégré réexamine les cha
 complètes localement. Il reste actif quand G4 est désactivé ; il ne garantit pas
 l'optimum global. La réduction locale part d'un pad et progresse dans un seul sens.
 
+Après `a49a833`, une famille de réductions de coudes par raccords successifs à
+45° complète les raccourcis directs. Ses supports progressent jusqu'au contact
+physique KRT ou à une extrémité, avec certificat de surfaces emboîtées, sans
+largeur de contrôle ni taille de chanfrein imposée. Elle peut ajouter des segments
+pour diminuer la longueur. Avec corridor, les nets modifiés par les étapes
+vias/pads/T/fusions sont désormais réexaminés localement avant G5, même sans G4.
+Les directions octolinéaires seules ne prouvent pas l'absence de pointe : auditer
+aussi les raccordements. Voir [correction et temps PACK0 G3](reports/CORNER_REDUCTION_2026_09_08.md).
+
 **Via mobile.** Le via et les segments incidents des différentes couches doivent
 être considérés ensemble. Le corridor de leurs déplacements et le volume du via
 doivent être validés. L'absorption d'un segment permet de poursuivre avec le suivant,
@@ -194,7 +203,10 @@ hors intégration et nécessitent une nouvelle décision pour être reprises.
   restait à 63,4121 mm après le seul garde-fou anti-recouvrement. Le remplacement
   ultérieur du certificat de corridor répare maintenant cet instantané :
   60,5921 mm, 8 → 7 pistes, zéro paire en recouvrement, sortie octolinéaire et
-  G5 valide. Le test natif est reproductible par `tools/reproduce_corridor_fold.py`.
+  G5 valide. Ce premier résultat conservait toutefois une pointe : le correctif
+  suivant atteint 54,594283 mm, 9 pistes, zéro recouvrement et zéro pointe sur `/A`.
+  Le test natif est reproductible par `tools/reproduce_corridor_fold.py` et vérifie
+  désormais les raccordements et les coordonnées après application native.
   Le fichier source n'est pas sauvegardé ; ce n'est pas une validation visuelle.
 - Demande de sauvegarde après simple ouverture : KiCad 10
   `PCB_EDIT_FRAME::RunActionPlugin` appelle `OnModify()` lorsque son instantané
@@ -239,6 +251,11 @@ dépendance refusant l'accès optionnel à `NetSelectionPanel`, et
 `test_a_later_gloss_completely_removes_a_longer_centering_path` sans porte centrée.
 La revue corridor donne désormais **369 réussites et un échec préexistant**,
 le test Centering sans porte centrée. Ne pas annoncer une suite entièrement verte.
+
+La correction des pointes donne ensuite **399 réussites et le même échec
+Centering**. PACK0 sans G4 passe les dix configurations avec/sans corridor,
+sans nouvelle pointe détectée hors ancres. Un raccord aigu préexistant subsiste
+sur tildagon net 150 ; aucune garantie d'absence globale d'artefacts n'est revendiquée.
 
 PACK0 contient cinq cartes fixes avec empreintes dans [PACK0.json](PACK0.json).
 La comparaison de refonte conserve exactement les géométries sur les quatre

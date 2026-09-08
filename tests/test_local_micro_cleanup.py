@@ -61,10 +61,17 @@ def test_existing_micro_segment_is_absorbed_with_its_neighbours():
     assert len(final) < 3
 
 
-def test_obstacle_rejects_repaired_candidate_without_removing_input():
-    result, final = run_example([(1., 1.), (3., 1.), (3., 2.99)], blocked=True)
-    assert result is None
-    assert len(final) == 2
+def test_obstacle_rejects_direct_repair_but_allows_partial_corner_reduction():
+    points = [(1., 1.), (3., 1.), (3., 2.99)]
+    context, _, _ = make_example(points, blocked=True)
+    from dgloss.route_geometry import _candidate_segments
+    assert not any(context.clearance_adapter.connector_clears(c)
+                   for c in _candidate_segments(points[0], points[-1], 'F.Cu', .2, 1))
+    result, final = run_example(points, blocked=True)
+    assert result is not None
+    assert len(final) == 3
+    assert calculate_route_length(final) < 3.99
+    assert min(calculate_route_length([s]) for s in final) >= .1-1e-9
 
 
 def test_small_example_rotations_keep_valid_micro_free_results():
@@ -100,6 +107,8 @@ def test_local_delta_excludes_unchanged_segments(monkeypatch):
     context, config, original = make_example(points)
     generate = algorithm._candidate_segments
     monkeypatch.setattr(local_gloss, 'slide_interval', lambda *a, **k: None)
+    # This test isolates result custody, not the competing corner family.
+    monkeypatch.setattr(local_gloss, 'reduce_corner', lambda *a, **k: None)
     from dgloss import route_geometry
     monkeypatch.setattr(route_geometry, '_candidate_segments',
                         lambda a, b, *rest: generate(a, b, *rest)

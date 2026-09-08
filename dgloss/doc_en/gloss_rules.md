@@ -18,6 +18,13 @@ The mandatory order of objectives is:
 4. keep an exclusively octilinear output: 0, 45, or 90 degrees;
 5. create no micro-segment, jog, or unnecessary detour.
 
+Length reduction may increase the segment count: the secondary objective must
+not block the primary one. An unreachable shorter destination in the corridor
+does not prove that an intermediate reduction is impossible. Joints must be
+examined as well as individual segment directions. Via, pad or junction changes
+may expose another local reduction; affected nets are revisited before final
+certification, independently of whether G4 is enabled.
+
 ## Definition
 
 - A seed is a KRT segment explicitly designated as the starting point of a

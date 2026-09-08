@@ -7,6 +7,7 @@ from .segment_sliding import slide_interval, slide_segment
 from .topology import ReplacementGuard
 from .krt_clearance import stable_copper_search
 from .local_candidates import micro_free_candidates
+from .corner_reduction import reduce_corner
 from dgloss.krt_api import calculate_route_length
 
 
@@ -69,6 +70,23 @@ def local_replacement(context, chain, net_id, current, vias, deadline=None):
                 break
             if accepted:
                 break
+        if accepted is None:
+            # A blocked shortest connector is not proof that the local corner
+            # cannot shrink. This family has its own continuous cap certificate;
+            # do not replace it with an unrelated vertex-matching deformation.
+            source = segments[i:i + 2]
+            source_points = points[i:i + 3]
+            outside = fixed + segments[:i] + segments[i + 2:]
+            candidate = reduce_corner(context, source_points, source[0], deadline,
+                                      outside=outside, vias=vias)
+            if candidate:
+                guard = ReplacementGuard(context.pcb_data, net_id, fixed + segments, vias)
+                if (calculate_route_length(source)-calculate_route_length(candidate) > 1e-7
+                        and not _touches_other_same_net(
+                            candidate, outside, vias,
+                            (source_points[0], source_points[-1]))
+                        and guard(source, candidate)):
+                    accepted = 2, candidate
         if accepted:
             size, candidate = accepted
             segments[i:i + size] = candidate
