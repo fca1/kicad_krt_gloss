@@ -4,6 +4,7 @@ import os
 from types import SimpleNamespace
 import wx
 import wx.adv
+from wx.lib.buttons import GenButton
 
 from .version import __version__
 
@@ -59,6 +60,7 @@ class GlossSettingsDialog(wx.Dialog):
 
         general_columns = wx.BoxSizer(wx.HORIZONTAL)
         left_column = wx.BoxSizer(wx.VERTICAL)
+        right_column = wx.BoxSizer(wx.VERTICAL)
         right_box = wx.StaticBox(panel, label="Select branch")
         selection = wx.StaticBoxSizer(right_box, wx.VERTICAL)
         selection_label = "Selected Net" if selected_count <= 1 else \
@@ -91,7 +93,7 @@ class GlossSettingsDialog(wx.Dialog):
             selection.Add(illustration, 0, wx.ALIGN_CENTER | wx.ALL, 8)
         selection.Add(control, 0, wx.ALIGN_CENTER | wx.ALL, 8)
 
-        calculation_box = wx.StaticBox(panel, label="Calculation Settings")
+        calculation_box = wx.StaticBox(panel, label="Calculation Settings / Execution Limit")
         calculation = wx.StaticBoxSizer(calculation_box, wx.VERTICAL)
         row = wx.BoxSizer(wx.HORIZONTAL)
         grid_label = wx.StaticText(panel, label="KRT grid step (mm):")
@@ -111,8 +113,6 @@ class GlossSettingsDialog(wx.Dialog):
         calculation.Add(row, 0, wx.ALL, 8)
 
 
-        budget_box = wx.StaticBox(panel, label="Execution Limit")
-        budget = wx.StaticBoxSizer(budget_box, wx.VERTICAL)
         budget_row = wx.BoxSizer(wx.HORIZONTAL)
         budget_label = wx.StaticText(panel, label="Time budget:")
         budget_row.Add(budget_label, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 8)
@@ -132,14 +132,14 @@ class GlossSettingsDialog(wx.Dialog):
         budget_unit = wx.StaticText(panel, label="s")
         budget_unit.SetToolTip(budget_help)
         budget_row.Add(budget_unit, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
-        budget.Add(budget_row, 0, wx.ALL, 8)
+        calculation.Add(budget_row, 0, wx.ALL, 8)
         centering_selection = self._create_centering_selection(
             panel, pcb_data, centering_nets, preselected_centering_nets)
         left_column.Add(centering_selection, 1, wx.EXPAND | wx.BOTTOM, 8)
-        left_column.Add(calculation, 0, wx.EXPAND | wx.BOTTOM, 8)
-        left_column.Add(budget, 0, wx.EXPAND)
+        right_column.Add(selection, 0, wx.EXPAND | wx.BOTTOM, 8)
+        right_column.Add(calculation, 0, wx.EXPAND)
         general_columns.Add(left_column, 1, wx.EXPAND | wx.ALL, 8)
-        general_columns.Add(selection, 0, wx.EXPAND | wx.TOP | wx.RIGHT | wx.BOTTOM, 8)
+        general_columns.Add(right_column, 0, wx.EXPAND | wx.TOP | wx.RIGHT | wx.BOTTOM, 8)
         content.Add(general_columns, 1, wx.EXPAND)
         panel.SetSizer(content)
         self.notebook.AddPage(panel, "General")
@@ -226,10 +226,17 @@ class GlossSettingsDialog(wx.Dialog):
         self.gloss_button = wx.Button(self, label="Gloss")
         self.gloss_button.SetToolTip("Run Track Gloss with these settings.")
         self.gloss_button.Bind(wx.EVT_BUTTON, self._on_gloss)
+        self.centering_button = GenButton(self, label="Centering")
+        self.centering_button.SetBackgroundColour(wx.Colour(205, 229, 250))
+        self.centering_button.SetForegroundColour(wx.Colour(20, 45, 65))
+        self.centering_button.SetToolTip(
+            "Run corridor Gloss followed by Centering on the checked nets.")
+        self.centering_button.Bind(wx.EVT_BUTTON, self._on_centering)
         close_button = wx.Button(self, label="Close")
         close_button.SetToolTip("Close this dialog.")
         close_button.Bind(wx.EVT_BUTTON, lambda _event: self.Close())
         buttons.Add(self.gloss_button, 1, wx.RIGHT, 5)
+        buttons.Add(self.centering_button, 1, wx.RIGHT, 5)
         buttons.Add(close_button, 1)
         outer.Add(buttons, 0, wx.EXPAND | wx.ALL, 10)
         self.SetSizerAndFit(outer)
@@ -239,6 +246,7 @@ class GlossSettingsDialog(wx.Dialog):
                 if self.notebook.GetPageText(index) == initial_tab:
                     self.notebook.SetSelection(index)
                     break
+        self.Bind(wx.EVT_SHOW, self._on_initial_show)
 
     def _create_gloss_tab(self, values):
         """Build the page containing options used only by the Gloss action."""
@@ -403,12 +411,6 @@ class GlossSettingsDialog(wx.Dialog):
         options.AddStretchSpacer()
         content.Add(options, 1, wx.ALIGN_CENTER | wx.ALL, 8)
 
-        self.centering_button = wx.Button(panel, label="Centering")
-        self.centering_button.SetToolTip(
-            "Run only the G3.6 centering action on the checked nets.")
-        self.centering_button.Bind(wx.EVT_BUTTON, self._on_centering)
-        content.Add(self.centering_button, 0,
-                    wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
         self.centering_status = wx.StaticText(panel, label="Ready.")
         content.Add(self.centering_status, 0,
                     wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
@@ -444,6 +446,22 @@ class GlossSettingsDialog(wx.Dialog):
         for index in net_list.GetSelections():
             net_list.Deselect(index)
 
+    def _on_initial_show(self, event):
+        if event.IsShown():
+            self.Unbind(wx.EVT_SHOW, handler=self._on_initial_show)
+            wx.CallAfter(self._center_net_list_scroll)
+        event.Skip()
+
+    def _center_net_list_scroll(self):
+        """Start halfway through the scrollable range without checking a net."""
+        if not self:
+            return
+        net_list = self.centering_net_panel.net_list
+        count = net_list.GetCount()
+        if count:
+            visible = max(1, net_list.GetCountPerPage())
+            net_list.SetFirstItem(max(0, (count - visible) // 2))
+
     def _on_refresh_proximity(self, _event):
         """Refresh Proxi only from one exclusive native two-pad selection."""
         if self._on_refresh_proximity_callback is None:
@@ -476,10 +494,12 @@ class GlossSettingsDialog(wx.Dialog):
             self.EndModal(wx.ID_OK)
             return
         self.gloss_button.Disable()
+        self.centering_button.Disable()
         try:
             self._on_gloss_callback(self.values(), self.append_log)
         finally:
             self.gloss_button.Enable()
+            self.centering_button.Enable()
             for index in range(self.notebook.GetPageCount()):
                 if self.notebook.GetPageText(index) == "Log":
                     self.notebook.SetSelection(index)

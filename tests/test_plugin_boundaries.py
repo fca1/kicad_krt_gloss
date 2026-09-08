@@ -466,8 +466,7 @@ def test_dialog_exposes_the_integrated_gloss_options_by_public_name():
     assert 'label="Select branch"' in source
     assert "wx.STAY_ON_TOP" in source
     assert 'label="Gloss Operations"' in source
-    assert 'label="Calculation Settings"' in source
-    assert 'label="Execution Limit"' in source
+    assert 'label="Calculation Settings / Execution Limit"' in source
     assert '_DIALOG_IMAGES, "selection_scope_illustration.png"' in source
     assert "wx.ToolTip.SetDelay(250)" in source
     assert "must save strictly more than this value" in source
