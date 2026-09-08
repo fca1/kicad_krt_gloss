@@ -1,4 +1,4 @@
-"""Additional clearances belong to the whole replacement, including connectors."""
+"""Center the crossing without inflating the clearance of its approaches."""
 
 from types import SimpleNamespace
 import math
@@ -30,7 +30,7 @@ def test_finite_distance_uses_copper_edges():
     assert _segment_pad_distance((2, -3), (2, 3), pad) == pytest.approx(1.5, abs=2e-4)
 
 
-def test_connector_cannot_spend_acquired_clearance():
+def test_connector_must_respect_the_required_clearance():
     pad = _pad('P', 0, 0, 2, size=1)
     protected = ((), ((pad, 1.4),))
     centered = Segment(2, -3, 2, 3, .2, 'F.Cu', 1)
@@ -39,7 +39,7 @@ def test_connector_cannot_spend_acquired_clearance():
     assert not respects_passages([centered, connector], protected)
 
 
-def test_shared_obstacle_uses_minimum_acquired_distance():
+def test_shared_obstacle_keeps_regulatory_not_acquired_distance():
     shared = _pad('P', 0, 0, 2, size=1)
     other_a = _pad('A', 4, 0, 3, size=1)
     other_b = _pad('B', 6, 2, 4, size=1)
@@ -54,7 +54,7 @@ def test_shared_obstacle_uses_minimum_acquired_distance():
     candidate = InterpadCandidate((first, second), (first, second), (0, 0), 0, 0)
     constraints = passage_constraints(candidate, doors)
     distance = next(value for pad, value in constraints[1] if pad is shared)
-    assert distance == pytest.approx(1.4, abs=2e-4)
+    assert distance == pytest.approx(.2)
 
 
 def test_center_must_keep_crossing_direction():

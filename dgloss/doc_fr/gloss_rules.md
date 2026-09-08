@@ -109,9 +109,8 @@ suivantes, mais ce détail ne remplace jamais le total complet.
 
 **M01 — Porte de centering.** Un obstacle isolé ne provoque aucune
 transformation. Deux obstacles forment une porte lorsqu'ils encadrent le
-segment, que la droite reliant leurs limites cuivre croise ce segment, qu'au
-moins l'un d'eux se trouve à une distance strictement inférieure à `Proxi` et
-que leur distance cuivre est strictement inférieure à `2 × Proxi`. `Proxi`
+segment, que la droite reliant leurs limites cuivre croise ce segment, et que
+leur distance **centre-à-centre est inférieure ou égale à `Proxi`**. `Proxi`
 est une distance absolue exprimée en millimètres. Elle vaut `1 mm` par défaut,
 peut être choisie par l'utilisateur entre `0 mm` et `5 mm`; la valeur `0 mm`
 ne sélectionne aucune porte lors de l'action de centering. La netlist présente
@@ -119,7 +118,9 @@ les nets modifiables indépendamment de la valeur de `Proxi`.
 
 Le centering place la piste sur l'axe admissible de la porte, pondéré par les
 clearances effectives. Plusieurs portes peuvent conduire à décomposer la
-piste en plusieurs segments. Toute géométrie produite reste octolinéaire et
+piste en plusieurs segments. La marge supplémentaire au centre de la porte
+n'est pas imposée aux approches : elles respectent les clearances réglementaires
+à la largeur réelle, sans réserve d'élargissement. Toute géométrie produite reste octolinéaire et
 est validée contre l'ensemble des obstacles par les contrôles KRT.
 
 L'option `build_new_segments` autorise l'augmentation du nombre de segments.

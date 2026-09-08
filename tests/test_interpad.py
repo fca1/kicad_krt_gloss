@@ -41,7 +41,7 @@ def test_finds_one_weighted_door():
     config = GridRouteConfig(
         clearance=0.2, layers=["F.Cu"], net_clearances={3: 0.4})
 
-    scan = find_interpad_doors(pcb, config, proximity_mm=1.1)
+    scan = find_interpad_doors(pcb, config, proximity_mm=3.0)
 
     assert len(scan.doors) == 1
     door = scan.doors[0]
@@ -49,8 +49,8 @@ def test_finds_one_weighted_door():
     assert round(door.admissible_width, 6) == 1.4
     assert round(door.axis[0], 6) == 1.4
     assert round(door.offset, 6) == 0.2
-    assert door.distance_a < door.proximity_mm
-    assert door.copper_gap < 2.0 * door.proximity_mm
+    assert door.proximity_mm == 3.0  # centre-to-centre, equality included
+    assert not find_interpad_doors(pcb, config, proximity_mm=2.999999).doors
 
 
 def test_rejects_obstacle_pair_outside_centering_reach():
@@ -65,7 +65,7 @@ def test_rejects_obstacle_pair_outside_centering_reach():
 
     assert find_interpad_doors(pcb, config, proximity_mm=1.0).doors == ()
     assert len(find_interpad_doors(
-        pcb, config, proximity_mm=2.0).doors) == 1
+        pcb, config, proximity_mm=4.0).doors) == 1
 
 
 def test_zero_proximity_returns_no_net_candidate():

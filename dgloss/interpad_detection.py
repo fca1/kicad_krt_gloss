@@ -15,9 +15,8 @@ def find_interpad_doors(pcb_data, config, *, net_id=None,
     The measured interval is the space between the real KRT pad boundaries.
     Its axis is the midpoint after applying the clearance independently on
     each side.  A gate is returned only when the sole crossing segment still
-    fits at its current width. At least one obstacle must be strictly closer
-    to the segment than ``proximity_mm`` and the copper gap must be strictly
-    smaller than ``2 * proximity_mm``. The gate must cross the track. The
+    fits at its current width. Pad centre-to-centre distance must be less than
+    or equal to ``proximity_mm``. The gate must cross the track. The
     function is read-only; zero proximity deliberately returns no doors.
     """
     if not 0.0 <= proximity_mm <= 5.0:
@@ -83,7 +82,7 @@ def find_interpad_doors(pcb_data, config, *, net_id=None,
         ca = (pad_a.global_x, pad_a.global_y)
         cb = (pad_b.global_x, pad_b.global_y)
         centre_distance = math.dist(ca, cb)
-        if centre_distance <= 1e-9:
+        if centre_distance <= 1e-9 or centre_distance > proximity_mm + 1e-12:
             continue
         pad_pairs += 1
         edge_a = _edge_towards(pad_a, cb)
@@ -117,11 +116,6 @@ def find_interpad_doors(pcb_data, config, *, net_id=None,
         clearance_b = _pair_clearance(config, segment.net_id, pad_b, layer)
         distance_a = math.dist(edge_a, crossing)
         distance_b = math.dist(edge_b, crossing)
-        if (distance_a + 1e-9 >= proximity_mm and
-                distance_b + 1e-9 >= proximity_mm):
-            continue
-        if copper_gap + 1e-9 >= 2.0 * proximity_mm:
-            continue
         admissible_width = copper_gap - clearance_a - clearance_b
         if admissible_width + 1e-9 < segment.width:
             continue

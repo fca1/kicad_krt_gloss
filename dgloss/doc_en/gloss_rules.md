@@ -109,6 +109,16 @@ to the transaction policy.
 
 ## Fixed points and topology
 
+### Centering gates
+
+A gate is crossed by the track between two copper pads whose centre-to-centre
+distance is less than or equal to Proxi (0 to 5 mm; zero disables detection).
+There is no `2 * Proxi` copper-gap threshold or track-to-pad proximity condition.
+The track width and regulatory clearances must fit in the passage. Centering
+targets the clearance-weighted middle of the gate. The additional margin there
+is not imposed on approach connectors: they keep regulatory clearance at their
+actual width, without reserving room for future widening.
+
 ### Pads
 
 The native pad landing point, usually its center, is fixed. A track may not

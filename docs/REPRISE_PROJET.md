@@ -76,6 +76,23 @@ Le Centering peut augmenter la longueur. Actuellement ses portes sont pad–pad 
 les vias restent des obstacles, mais ne définissent pas de portes via–via ou
 pad–via. Cette limitation a été explicitement conservée.
 
+Définition corrigée par l'utilisateur après `a891026` : une porte exige un
+entraxe **centre-à-centre ≤ Proxi**, pas une distance cuivre < 2 × Proxi ni une
+distance piste–pad < Proxi. Le recentrage maximise la marge dans le passage,
+sans imposer cette marge supplémentaire à toute l'approche : seules les
+clearances réglementaires s'y appliquent. La construction locale reconnaît la
+quantification native de 1 nm et reconstruit des directions exactes sans bouger
+les ancres. Si ses voisins fixes bloquent la construction, la construction sur
+chaîne complète est aussi essayée pour une porte seule.
+Le fichier modifié `test_centering2`, SHA-256
+`67204b5f58f60fb79f87abbb6e2071a6587fb3ef4c24306b33fe5efe70bbed1a`,
+donne une porte U1.1–U1.2 centrée à Y=90,615 mm, +0,6810 mm, G5 valide,
+5 pistes remplacées par 5. Test natif détaché :
+`tools/reproduce_centering_native.py CHEMIN_PCB`, sans sauvegarde source.
+Suite : 408 réussites, toujours le test Centering historique sans porte en échec.
+Le constructeur de chaîne réutilisé conserve sa recherche finie historique de
+longueurs de passage ; cette passe ne prouve pas un optimum général du Centering.
+
 **Raccourci DHM Centering.** Avec exactement deux pads sélectionnés et aucun
 autre objet, le plugin mesure leur entraxe centre-à-centre. Si cet entraxe est
 dans la plage Proxi admise (0 à 5 mm), le dialogue s'ouvre sur Centering et

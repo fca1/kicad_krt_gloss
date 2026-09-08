@@ -4,6 +4,7 @@ import math
 from .krt_api import Segment
 from .interpad_types import InterpadCandidate
 from .interpad_geometry import _cross, _other_end, _octolinear, door_crossing_direction, _line_intersection, _native_pad_at
+from .interpad_geometry import _native_direction
 
 
 def center_with_sliding_neighbors(pcb_data, door, *,
@@ -22,8 +23,8 @@ def center_with_sliding_neighbors(pcb_data, door, *,
         return None
     a = (source.start_x, source.start_y)
     b = (source.end_x, source.end_y)
-    direction = (b[0] - a[0], b[1] - a[1])
-    if not _octolinear(a, b) or math.hypot(*direction) <= 1e-9:
+    direction = _native_direction(a, b)
+    if direction is None:
         return None
 
     def neighbours(point):
@@ -52,11 +53,9 @@ def center_with_sliding_neighbors(pcb_data, door, *,
     if len(at_a) == len(at_b) == 1 and at_a[0] is not at_b[0]:
         first, last = at_a[0], at_b[0]
         outer_a, outer_b = _other_end(first, a), _other_end(last, b)
-        rail_a = (a[0] - outer_a[0], a[1] - outer_a[1])
-        rail_b = (b[0] - outer_b[0], b[1] - outer_b[1])
-        if math.hypot(*rail_a) <= 1e-9 or math.hypot(*rail_b) <= 1e-9 or \
-                not (_octolinear(outer_a, a) and
-                     _octolinear(outer_b, b)):
+        rail_a = _native_direction(outer_a, a)
+        rail_b = _native_direction(outer_b, b)
+        if rail_a is None or rail_b is None:
             return None
 
         # The new source line is parallel to the old one and passes through
@@ -104,9 +103,9 @@ def center_with_sliding_neighbors(pcb_data, door, *,
 
         fixed, joint, neighbour = cases[0]
         outer = _other_end(neighbour, joint)
-        source_vector = (joint[0] - fixed[0], joint[1] - fixed[1])
-        rail = (joint[0] - outer[0], joint[1] - outer[1])
-        if not _octolinear(outer, joint) or math.hypot(*rail) <= 1e-9:
+        source_vector = _native_direction(fixed, joint)
+        rail = _native_direction(outer, joint)
+        if source_vector is None or rail is None:
             return None
         new_joint = _line_intersection(
             door.axis, source_vector, outer, rail)

@@ -284,6 +284,13 @@ def center_interpad_routes(context, results, deadline=None, *, net_ids,
                     build_new_segments=build_new_segments,
                     build_multi_door_path=(build_multi_door_path and
                                            not build_new_segments))
+                if build_new_segments:
+                    # A neighbour fixed by the sliding construction need not
+                    # be a true pad/via anchor. Rebuild its approach on the
+                    # complete editable chain when a local proposal fails.
+                    from .protected_centering import build_protected_path
+                    for door in doors:
+                        yield (door,), build_protected_path(context, (door,), deadline)
             for selected_doors, candidate in proposals():
                 if deadline is not None and perf_counter() >= deadline:
                     break

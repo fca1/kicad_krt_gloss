@@ -1,4 +1,4 @@
-"""Shorten centered paths without spending their acquired pad clearance.
+"""Build centered passages with regulatory clearance on their approaches.
 
 This is part of Centering candidate construction, before its KRT validation.
 No board rules or copper are mutated by the search.
@@ -15,7 +15,7 @@ DISTANCE_TOLERANCE = 2e-4
 
 
 def passage_constraints(candidate, doors):
-    from .interpad import _axis_to_pad_distance, _intersection
+    from .interpad import _intersection
 
     passages, protected = [], {}
     for door in doors:
@@ -36,10 +36,9 @@ def passage_constraints(candidate, doors):
                                (door.pad_b, door.clearance_b)):
             if pad.net_id == door.segment.net_id:
                 continue
-            required = max(clearance, _axis_to_pad_distance(
-                door.axis, direction, pad) - door.segment.width / 2)
-            previous = protected.get(id(pad), (pad, math.inf))
-            protected[id(pad)] = (pad, min(previous[1], required))
+            required = clearance
+            previous = protected.get(id(pad), (pad, 0.))
+            protected[id(pad)] = (pad, max(previous[1], required))
     return passages, tuple(protected.values())
 
 
@@ -77,13 +76,13 @@ def build_protected_path(context, doors, deadline=None):
 
     Each stage is a finite centered segment. Dynamic programming chooses
     its length and the connections, without intersecting infinite axes.
-    Shared pads receive the minimum acquired distance, checked on every edge.
+    Approaches keep regulatory clearance, not the margin at the centered axis.
     """
     from .algorithm import _candidate_segments, _simple_chains
-    from .interpad import (InterpadCandidate, _axis_to_pad_distance,
+    from .interpad import (InterpadCandidate,
                            _segment_pad_distance, door_crossing_options)
 
-    if len(doors) < 2:
+    if not doors:
         return None
     net_id = doors[0].segment.net_id
     source_ids = {id(d.segment) for d in doors}
@@ -123,10 +122,9 @@ def build_protected_path(context, doors, deadline=None):
                           (door.pad_b, door.clearance_b)):
             if pad.net_id == net_id:
                 continue
-            required = max(rule, _axis_to_pad_distance(
-                door.axis, direction, pad) - template.width / 2)
-            protected[id(pad)] = (pad, min(
-                protected.get(id(pad), (pad, math.inf))[1], required))
+            required = rule
+            protected[id(pad)] = (pad, max(
+                protected.get(id(pad), (pad, 0.))[1], required))
     protected = tuple(protected.values())
 
     def safe(segments):
@@ -193,6 +191,6 @@ def build_protected_path(context, doors, deadline=None):
 
 
 def certify_passages(candidate, doors):
-    """Check acquired obstacle distances on the whole proposed replacement."""
+    """Check the centered crossing and regulatory approach clearances."""
     constraints = passage_constraints(candidate, doors)
     return constraints is not None and respects_passages(candidate.segments, constraints)

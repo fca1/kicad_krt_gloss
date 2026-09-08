@@ -71,6 +71,26 @@ def _octolinear(a, b, tolerance=1e-7):
     return dx <= tolerance or dy <= tolerance or abs(dx - dy) <= tolerance
 
 
+def _native_direction(a, b):
+    """Recover an exact direction from endpoints quantized to KiCad's 1 nm.
+
+    Only input classification admits one native unit (plus floating-point
+    roundoff). Constructed output still uses strict octolinearity checks.
+    Anchors themselves are never snapped or moved by this function.
+    """
+    dx, dy = b[0]-a[0], b[1]-a[1]
+    tolerance = 1e-6 + 8*max(math.ulp(v) for v in (*a, *b))
+    if math.hypot(dx, dy) <= tolerance:
+        return None
+    if abs(dx) <= tolerance:
+        return (0., math.copysign(1., dy))
+    if abs(dy) <= tolerance:
+        return (math.copysign(1., dx), 0.)
+    if abs(abs(dx)-abs(dy)) <= tolerance:
+        return (math.copysign(1., dx), math.copysign(1., dy))
+    return None
+
+
 def _axis_to_pad_distance(axis, direction, pad):
     """Exact KRT distance from an effectively infinite axis to pad copper."""
     extent = (math.dist(axis, (pad.global_x, pad.global_y)) +
