@@ -271,62 +271,11 @@ class GlossSettingsDialog(wx.Dialog):
 
     @staticmethod
     def _create_gloss_illustration(parent, kind, tooltip):
-        """Return a compact visual explanation for one Gloss option."""
-        diagram = wx.Panel(parent, size=(180, 72))
-        diagram.SetBackgroundStyle(wx.BG_STYLE_PAINT)
+        """Load the packaged illustration; no geometry is drawn at runtime."""
+        image_path = os.path.join(_DIALOG_IMAGES, f"{kind}_illustration.png")
+        image = wx.Image(image_path, wx.BITMAP_TYPE_PNG)
+        diagram = wx.StaticBitmap(parent, bitmap=wx.Bitmap(image))
         diagram.SetToolTip(tooltip)
-
-        def paint(_event):
-            dc = wx.AutoBufferedPaintDC(diagram)
-            dc.SetBackground(wx.Brush(wx.Colour(27, 40, 55)))
-            dc.Clear()
-            cyan = wx.Colour(62, 207, 222)
-            gold = wx.Colour(245, 183, 57)
-            green = wx.Colour(91, 217, 149)
-            if kind == "corridor":
-                dc.SetPen(wx.Pen(wx.Colour(225, 101, 93), 2))
-                for start in range(32, 148, 12):
-                    dc.DrawLine(start, 63, min(start + 6, 148), 63)
-                dc.SetPen(wx.Pen(cyan, 1))
-                dc.SetBrush(wx.Brush(wx.Colour(38, 75, 91)))
-                dc.DrawPolygon([
-                    wx.Point(20, 55), wx.Point(43, 55),
-                    wx.Point(43, 15), wx.Point(137, 15),
-                    wx.Point(137, 55), wx.Point(160, 55),
-                    wx.Point(160, 71), wx.Point(120, 71),
-                    wx.Point(120, 31), wx.Point(60, 31),
-                    wx.Point(60, 71), wx.Point(20, 71),
-                ])
-                dc.SetPen(wx.Pen(green, 3))
-                dc.DrawLine(24, 63, 51, 63)
-                dc.DrawLine(51, 63, 51, 23)
-                dc.DrawLine(51, 23, 129, 23)
-                dc.DrawLine(129, 23, 129, 63)
-                dc.DrawLine(129, 63, 156, 63)
-                dc.SetPen(wx.Pen(gold, 2))
-                dc.SetBrush(wx.Brush(gold))
-                # Obstacle pad below the corridor bridge and above the rejected
-                # shorter path.
-                dc.DrawRectangle(82, 40, 16, 12)
-                dc.DrawCircle(24, 63, 5)
-                dc.DrawCircle(156, 63, 5)
-            else:
-                dc.SetPen(wx.Pen(cyan, 6))
-                dc.DrawLine(18, 36, 68, 36)
-                dc.SetPen(wx.Pen(cyan, 3))
-                dc.DrawLine(68, 36, 162, 36)
-                dc.SetPen(wx.Pen(wx.Colour(122, 142, 158), 1))
-                dc.SetBrush(wx.Brush(wx.Colour(122, 142, 158)))
-                dc.DrawCircle(68, 36, 9)
-                dc.SetPen(wx.Pen(gold, 2))
-                dc.SetBrush(wx.Brush(gold))
-                dc.DrawCircle(116, 36, 9)
-                dc.SetPen(wx.Pen(gold, 2))
-                dc.DrawLine(82, 18, 106, 18)
-                dc.DrawLine(106, 18, 99, 14)
-                dc.DrawLine(106, 18, 99, 22)
-
-        diagram.Bind(wx.EVT_PAINT, paint)
         return diagram
 
     def _create_centering_tab(self, pcb_data, centering_nets,
