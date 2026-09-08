@@ -1,5 +1,7 @@
 """Shared route geometry, independent of optimization stages."""
 
+import math
+
 from .krt_api import (Segment, pos_key, _octolinear_bends, point_to_pad_distance,
     point_to_segment_distance, segments_intersect)
 
@@ -96,6 +98,18 @@ def _touches_other_same_net(candidate, outside, vias, allowed_ends):
         for old in outside:
             if new.layer != old.layer:
                 continue
+            # An allowed common endpoint does not authorize retracing copper.
+            # Test positive collinear overlap before the endpoint exception.
+            dx, dy = new.end_x - new.start_x, new.end_y - new.start_y
+            length = math.hypot(dx, dy)
+            if length > 1e-9:
+                ux, uy = dx / length, dy / length
+                offsets = [(old.start_x - new.start_x, old.start_y - new.start_y),
+                           (old.end_x - new.start_x, old.end_y - new.start_y)]
+                if all(abs(x * uy - y * ux) <= 1e-7 for x, y in offsets):
+                    low, high = sorted(x * ux + y * uy for x, y in offsets)
+                    if min(length, high) - max(0.0, low) > 1e-7:
+                        return True
             if not segments_intersect(new.start_x, new.start_y,
                                       new.end_x, new.end_y,
                                       old.start_x, old.start_y,

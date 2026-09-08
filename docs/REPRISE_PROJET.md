@@ -176,6 +176,13 @@ hors intégration et nécessitent une nouvelle décision pour être reprises.
 
 ## Pièges techniques à préserver
 
+- Un raccordement à une extrémité autorisée ne permet pas de recouvrir une
+  longueur positive de cuivre collinéaire du même net. Le garde-fou rejette
+  désormais ce cas, y compris par rotation/réflexion. Cela ne nettoie pas les
+  chevauchements déjà présents : sur `test_centering2`, `/A`, corridor actif,
+  le fichier SHA-256 `02444ca7e2856235f09683a66ef85a7206e1280926a436f780a5c1019d133cec`
+  reste à 63,4121 mm avec son recouvrement de 1,410 mm après le nouvel essai.
+  Ne pas annoncer ce fichier réparé sur la seule base de G5.
 - Demande de sauvegarde après simple ouverture : KiCad 10
   `PCB_EDIT_FRAME::RunActionPlugin` appelle `OnModify()` lorsque son instantané
   d'annulation contient des objets, sans vérifier leur modification effective.
