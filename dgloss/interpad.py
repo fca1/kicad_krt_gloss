@@ -141,17 +141,17 @@ def _segment_set_signature(segments):
 def _candidate_is_valid(context, candidate, before_grade):
     """Apply the common editability, geometry, KRT and topology gates."""
     if not context.segments_editable(candidate.source_segments):
-        return False, None
+        return False, None, "scope"
     if _segment_set_signature(candidate.source_segments) == \
             _segment_set_signature(candidate.segments):
-        return False, None
+        return False, None, "unchanged"
     if any(math.hypot(segment.end_x - segment.start_x,
                       segment.end_y - segment.start_y) <
            context.coord.grid_step - 1e-9
            for segment in candidate.segments):
-        return False, None
+        return False, None, "grid"
     if not context.clearance_adapter.connector_clears(candidate.segments):
-        return False, None
+        return False, None, "clearance"
 
     source_ids = {id(segment) for segment in candidate.source_segments}
     current = [segment for segment in context.pcb_data.segments
@@ -182,14 +182,16 @@ def _candidate_is_valid(context, candidate, before_grade):
     vias = [via for via in context.pcb_data.vias
             if via.net_id == candidate.source_segments[0].net_id]
     if _touches_other_same_net(candidate.segments, outside, vias, boundary):
-        return False, None
+        return False, None, "same_net"
 
     trial = outside + list(candidate.segments)
     net_id = candidate.source_segments[0].net_id
     after_grade = check_net_connectivity(
         net_id, trial, vias, context.pcb_data.pads_by_net.get(net_id, []), [],
         pcb_data=context.pcb_data)
-    return not _connectivity_worse(before_grade, after_grade), after_grade
+    if _connectivity_worse(before_grade, after_grade):
+        return False, after_grade, "connectivity"
+    return True, after_grade, None
 
 
 def _centering_proposals(pcb_data, doors, *, build_new_segments,
@@ -237,6 +239,18 @@ def center_interpad_routes(context, results, deadline=None, *, net_ids,
     changed_net_ids = set()
     processed_doors = set()
     candidates_tested = 0
+    candidates_considered = 0
+    doors_detected = 0
+    rejected = {
+        "construction": 0,
+        "passage": 0,
+        "scope": 0,
+        "unchanged": 0,
+        "grid": 0,
+        "clearance": 0,
+        "same_net": 0,
+        "connectivity": 0,
+    }
     length_delta = 0.0
     branches_centered = 0
 
@@ -248,6 +262,7 @@ def center_interpad_routes(context, results, deadline=None, *, net_ids,
                 allowed_segment_ids=context.editable_segment_ids)
             doors = [door for door in scan.doors
                      if _door_key(door) not in processed_doors]
+            doors_detected += len(doors)
             if not doors:
                 break
             current = [segment for segment in context.pcb_data.segments
@@ -272,17 +287,21 @@ def center_interpad_routes(context, results, deadline=None, *, net_ids,
             for selected_doors, candidate in proposals():
                 if deadline is not None and perf_counter() >= deadline:
                     break
+                candidates_considered += 1
                 if candidate is None:
+                    rejected["construction"] += 1
                     continue
                 from .protected_centering import certify_passages
                 if not certify_passages(candidate, selected_doors):
+                    rejected["passage"] += 1
                     continue
                 candidates_tested += 1
-                valid, _after_grade = _candidate_is_valid(
+                valid, _after_grade, reason = _candidate_is_valid(
                     context, candidate, before_grade)
                 if valid:
                     accepted = selected_doors, candidate
                     break
+                rejected[reason] += 1
             if accepted is None:
                 processed_doors.update(_door_key(door) for door in doors)
                 break
@@ -328,5 +347,8 @@ def center_interpad_routes(context, results, deadline=None, *, net_ids,
         "net_ids_changed": changed_net_ids,
         "algorithm_ms": round((perf_counter() - started) * 1000.0, 3),
         "candidates_tested": candidates_tested,
+        "candidates_considered": candidates_considered,
+        "doors_detected": doors_detected,
+        "candidate_rejections": rejected,
     }
     return input_strips, added_segments, changes, stats

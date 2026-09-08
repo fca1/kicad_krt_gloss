@@ -58,6 +58,12 @@ def test_no_centering_rolls_back_gloss_with_one_shared_deadline(monkeypatch):
     assert result.stats['atomic_rollback'] is True
     assert result.stats['rollback_reason'] == 'no_centering'
     assert result.stats['doors_centered'] == 0
+    assert result.stats['centering_doors_detected'] == 0
+    assert result.stats['centering_candidates_considered'] == 0
+    assert result.stats['centering_candidate_rejections'] == {
+        'construction': 0, 'passage': 0, 'scope': 0, 'unchanged': 0,
+        'grid': 0, 'clearance': 0, 'same_net': 0, 'connectivity': 0,
+    }
     assert result.stats['cleanup_saved_mm'] == 0
     assert result.stats['nets_changed'] == 0
     assert all(a is b for a, b in zip(pcb.segments, original))

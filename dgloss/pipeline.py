@@ -109,6 +109,12 @@ def run_centering(results, pcb_data, config, *, net_ids,
             return GlossOutcome(stats={
                 "nets_changed": 0, "doors_centered": 0,
                 "centering_branches_changed": 0, "cleanup_saved_mm": 0.0,
+                "centering_doors_detected": centering["doors_detected"],
+                "centering_candidates_considered": (
+                    centering["candidates_considered"]),
+                "centering_candidates_tested": centering["candidates_tested"],
+                "centering_candidate_rejections": dict(
+                    centering["candidate_rejections"]),
                 "before_mm": round(before_length, 4),
                 "after_mm": round(before_length, 4), "saved_mm": 0.0,
                 "atomic_rollback": True, "rollback_reason": reason,
@@ -157,6 +163,10 @@ def run_centering(results, pcb_data, config, *, net_ids,
             "centering_segments_added": centering["segments_added"],
             "centering_length_delta_mm": centering["length_delta_mm"],
             "centering_candidates_tested": centering["candidates_tested"],
+            "centering_candidates_considered": centering["candidates_considered"],
+            "centering_doors_detected": centering["doors_detected"],
+            "centering_candidate_rejections": dict(
+                centering["candidate_rejections"]),
             "centering_algorithm_ms": centering["algorithm_ms"],
             "cleanup_saved_mm": round(cleanup["before_length"] - cleanup["after_length"], 4),
             "cleanup_gloss": cleanup["stage_stats"].as_dict(),

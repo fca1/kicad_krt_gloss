@@ -385,7 +385,34 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                 stats = outcome.stats
                 print("\n=== Track Gloss Centering result ===")
                 print(f"Scope: {len(net_ids)} selected net(s)")
+                print(f"Doors detected: {stats.get('centering_doors_detected', 0)}")
                 print(f"Doors centered: {stats.get('doors_centered', 0)}")
+                considered = stats.get("centering_candidates_considered", 0)
+                if considered:
+                    print("Candidates considered: "
+                          f"{considered} ({stats.get('centering_candidates_tested', 0)} "
+                          "passed passage checks)")
+                if stats.get("atomic_rollback") and \
+                        stats.get("rollback_reason") == "no_centering":
+                    if not stats.get("centering_doors_detected", 0):
+                        print("Centering diagnosis: no eligible gate at this Proxi setting.")
+                    elif not considered:
+                        print("Centering diagnosis: no path could be built through "
+                              "the detected gate(s).")
+                    else:
+                        labels = {
+                            "construction": "geometry", "passage": "passage",
+                            "scope": "scope", "unchanged": "unchanged geometry",
+                            "grid": "grid", "clearance": "clearance",
+                            "same_net": "same-net contact",
+                            "connectivity": "connectivity",
+                        }
+                        rejected = stats.get("centering_candidate_rejections", {})
+                        details = [f"{labels[key]}: {count}"
+                                   for key, count in rejected.items() if count]
+                        if details:
+                            print("Centering diagnosis: no valid candidate (" +
+                                  ", ".join(details) + ").")
                 print("Length delta: "
                       f"{stats.get('centering_length_delta_mm', 0.0):+.4f} mm")
                 print("Corridor cleanup saved: "
@@ -393,7 +420,10 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                 print("Final length delta: "
                       f"{stats.get('after_mm', 0.0) - stats.get('before_mm', 0.0):+.4f} mm")
                 print(f"Tracks replaced: {removed} -> {added}")
-                print(f"G5 valid: {bool(stats.get('g5_valid', False))}")
+                if stats.get("atomic_rollback"):
+                    print("G5 valid: not run (input preserved)")
+                else:
+                    print(f"G5 valid: {bool(stats.get('g5_valid', False))}")
                 if debug_layer:
                     print(f"Differences: {debug_layer} (TrackGloss Changes)")
             return {
