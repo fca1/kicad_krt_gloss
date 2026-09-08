@@ -85,11 +85,12 @@ def run_multinet_passes(context, gloss_config, net_ids, results,
             "completed": completed,
             "operations": stage_rows,
         })
-        print(f"Track Gloss G4 pass {pass_index + 1} "
-              f"({'forward' if pass_index % 2 == 0 else 'reverse'}): "
-              f"{pass_changes} transformations, "
-              f"-{pass_segment_reduction} segments, -{gain:.4f} mm, "
-              f"{elapsed_ms:.1f} ms")
+        if pass_changes or pass_segment_reduction or gain:
+            print(f"Track Gloss G4 pass {pass_index + 1} "
+                  f"({'forward' if pass_index % 2 == 0 else 'reverse'}): "
+                  f"{pass_changes} transformations, "
+                  f"-{pass_segment_reduction} segments, -{gain:.4f} mm, "
+                  f"{elapsed_ms:.1f} ms")
         total_changes += pass_changes
         total_segment_reduction += pass_segment_reduction
         if not completed:
