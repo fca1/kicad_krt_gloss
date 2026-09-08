@@ -92,6 +92,12 @@ dialogue mémorise les UUID des objets qu'il a éclairés et ne retire que ces
 cuivre sans atténuer les autres nets comme le highlight natif de KiCad.
 `BOARD.IsHighLightNetON()` ne prouve pas la surbrillance graphique et n'est
 plus utilisé. Les essais sur carte détachée ne valident pas le rendu visible.
+La version `d896a65` est la référence validée visuellement par l'utilisateur
+le 8 septembre 2026 après installation du ZIP
+`dist/test-highlight-render-d896a65/KiCadKrtGloss-0.1.3.zip`
+(SHA-256 `6c0adafa12a2eb120d209ff188b58f7767d7eff61e378359fa7c9e090d008930`).
+Cette confirmation remplace les conclusions prématurées des tests de drapeau
+BOARD et de temporisation ; conserver cette implémentation comme base correcte.
 Toute simulation temporisée de clic doit rester dans
 un outil de test séparé ; aucun timer de highlight ni clic automatique ne
 doit être intégré au dialogue de production.

@@ -2,5 +2,6 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 dist/
+.build/
 KRT/rust_router/grid_router.pyd
 KRT/rust_router/grid_router.so
