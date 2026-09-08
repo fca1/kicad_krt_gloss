@@ -1,5 +1,9 @@
 # Documentation layout
 
+- [Guide de reprise du projet](REPRISE_PROJET.md) : état intégré, règles,
+  subtilités, pistes non intégrées et limites de validation.
+- [Architecture](ARCHITECTURE.md) : responsabilités des modules et caches.
+
 - [PACK0](PACK0.md) defines the project's five reference boards for runtime
   measurements and regression checks; [PACK0.json](PACK0.json) records their hashes.
 

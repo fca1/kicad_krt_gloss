@@ -2,6 +2,10 @@
 
 Le projet Smooth Gloss KRT est un projet de référence.
 
+Pour reprendre le projet, lire d'abord [le guide de reprise](docs/REPRISE_PROJET.md),
+puis les références pertinentes qu'il indique. Mettre ce guide à jour après
+une intégration qui change les règles, l'architecture ou les limites connues.
+
 Analyser avant toute action.
 
 Modifier le code uniquement après « go ».
