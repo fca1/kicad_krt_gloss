@@ -88,7 +88,7 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                 return KICAD.selected_net_names(board)
 
             def highlight_names(names):
-                KICAD.highlight_net_names(board, names)
+                return KICAD.highlight_net_names(board, names)
 
             # Keep this window top-level; the explicit editor close binding
             # below closes it with the PCB. This does not suppress KiCad's

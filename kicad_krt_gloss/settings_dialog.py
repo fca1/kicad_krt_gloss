@@ -244,6 +244,10 @@ class GlossSettingsDialog(wx.Dialog):
             wx.EVT_LISTBOX, self._on_centering_net_row_selected)
         self.centering_net_panel.net_list.Bind(
             wx.EVT_CHECKLISTBOX, self._on_centering_net_checked)
+        self._pending_highlight_names = ()
+        self._highlight_timer = wx.Timer(self)
+        self.Bind(wx.EVT_TIMER, self._on_highlight_timer,
+                  self._highlight_timer)
         self._sync_net_selection()
         if initial_tab:
             for index in range(self.notebook.GetPageCount()):
@@ -428,21 +432,37 @@ class GlossSettingsDialog(wx.Dialog):
         self.controls["repeat_until_stable"].Enable(len(names) > 1)
         self.g4_max_passes.Enable(len(names) > 1)
         if self._on_net_selection_changed is not None:
-            self._on_net_selection_changed(names)
+            self._queue_net_highlight(names)
 
     def _on_centering_net_row_selected(self, event):
         """Preview the clicked net without changing the checked action scope."""
         net_list = self.centering_net_panel.net_list
         names = [net_list.GetString(index)
                  for index in net_list.GetSelections()]
-        if names and self._on_net_selection_changed is not None:
-            self._on_net_selection_changed(names)
+        if names:
+            self._queue_net_highlight(names)
         event.Skip()
 
     def _on_centering_net_checked(self, event):
         """Apply the checklist scope after wx has updated the check state."""
         wx.CallAfter(self._sync_net_selection)
         event.Skip()
+
+    def _queue_net_highlight(self, names):
+        """Replay a net-list selection after wx has completed its UI event."""
+        self._pending_highlight_names = tuple(names)
+        self._highlight_timer.StartOnce(60)
+
+    def _on_highlight_timer(self, _event):
+        """Apply and verify the pending native KiCad net highlight."""
+        names = self._pending_highlight_names
+        self._pending_highlight_names = ()
+        if self._on_net_selection_changed is None:
+            return
+        verified = self._on_net_selection_changed(names)
+        if names and not verified:
+            self.centering_status.SetLabel(
+                "KiCad did not activate the requested net highlight.")
 
     def _on_import_centering(self, add):
         """Merge or replace checked Centering nets from the KiCad selection."""
@@ -474,7 +494,16 @@ class GlossSettingsDialog(wx.Dialog):
         if event.IsShown():
             self.Unbind(wx.EVT_SHOW, handler=self._on_initial_show)
             wx.CallAfter(self._center_net_list_scroll)
+            wx.CallLater(180, self._simulate_net_selection_for_highlight)
         event.Skip()
+
+    def _simulate_net_selection_for_highlight(self):
+        """One-shot UI probe: replay a real list selection through the timer."""
+        net_list = self.centering_net_panel.net_list
+        if not net_list.GetCount():
+            return
+        net_list.SetSelection(0)
+        self._queue_net_highlight((net_list.GetString(0),))
 
     def _center_net_list_scroll(self):
         """Start halfway through the scrollable range without checking a net."""

@@ -8,7 +8,7 @@ POSITION_DECIMALS = 6
 
 
 def highlight_net_names(board, names):
-    """Highlight checked nets through native net flags, never item selection."""
+    """Highlight nets through native flags and report the native active state."""
     import pcbnew
     chosen = set(names)
     codes = [code for code, net in board.GetNetsByNetcode().items()
@@ -18,6 +18,11 @@ def highlight_net_names(board, names):
         board.SetHighLightNet(code, True)
     board.HighLightON(bool(codes))
     pcbnew.Refresh()
+    update_ui = getattr(pcbnew, "UpdateUserInterface", None)
+    if callable(update_ui):
+        update_ui()
+    active = bool(board.IsHighLightNetON())
+    return (not chosen and not active) or (bool(codes) and active)
 
 
 def selected_pad_pair_distance_mm(board):

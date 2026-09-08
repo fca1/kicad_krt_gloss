@@ -62,7 +62,7 @@ class KiCadBoardBridge:
     @staticmethod
     def highlight_net_names(board, names):
         from .selection import highlight_net_names
-        highlight_net_names(board, names)
+        return highlight_net_names(board, names)
 
     @staticmethod
     def build_krt_config(board, pcb_data, grid_step, net_ids=None):

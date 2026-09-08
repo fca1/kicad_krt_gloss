@@ -327,13 +327,15 @@ def test_dynamic_highlight_add_remove_clear_without_item_selection():
                                  for i in (0, 1, 2)},
         ResetNetHighLight=highlighted.clear,
         SetHighLightNet=lambda code, multi: highlighted.add(code),
-        HighLightON=enabled.append)
-    with patch.dict(sys.modules, {'pcbnew': types.SimpleNamespace(Refresh=lambda: None)}):
-        highlight_net_names(board, ['N1', 'N2'])
+        HighLightON=enabled.append,
+        IsHighLightNetON=lambda: bool(enabled[-1]))
+    with patch.dict(sys.modules, {'pcbnew': types.SimpleNamespace(
+            Refresh=lambda: None, UpdateUserInterface=lambda: None)}):
+        assert highlight_net_names(board, ['N1', 'N2'])
         assert highlighted == {1, 2} and enabled[-1]
-        highlight_net_names(board, ['N2'])
+        assert highlight_net_names(board, ['N2'])
         assert highlighted == {2}
-        highlight_net_names(board, [])
+        assert highlight_net_names(board, [])
         assert not highlighted and not enabled[-1]
 
 
@@ -481,6 +483,8 @@ def test_dialog_keeps_a_post_run_log_with_krt_style_controls():
     assert "on_import_centering" in source
     assert 'wx.EVT_LISTBOX, self._on_centering_net_row_selected' in source
     assert 'wx.EVT_CHECKLISTBOX, self._on_centering_net_checked' in source
+    assert 'self._highlight_timer = wx.Timer(self)' in source
+    assert 'wx.CallLater(180, self._simulate_net_selection_for_highlight)' in source
     assert "def _on_centering_net_row_selected" in source
     assert "def _on_centering_net_checked" in source
     assert 'label="Refresh"' in source
@@ -525,31 +529,19 @@ def _dialog_method(name, namespace=None):
 
 
 def test_clicking_centering_row_forwards_clicked_net_to_highlighter():
-    from kicad_krt_gloss.selection import highlight_net_names
-
     handler = _dialog_method("_on_centering_net_row_selected")
     event = types.SimpleNamespace(skipped=False)
     event.Skip = lambda: setattr(event, "skipped", True)
     net_list = types.SimpleNamespace(
         GetSelections=lambda: [1], GetString=lambda index: ("N1", "N2")[index])
-    highlighted = set()
-    enabled = []
-    board = types.SimpleNamespace(
-        GetNetsByNetcode=lambda: {
-            1: types.SimpleNamespace(GetNetname=lambda: "N1"),
-            2: types.SimpleNamespace(GetNetname=lambda: "N2")},
-        ResetNetHighLight=highlighted.clear,
-        SetHighLightNet=lambda code, multi: highlighted.add(code),
-        HighLightON=enabled.append)
+    queued = []
     dialog = types.SimpleNamespace(
         centering_net_panel=types.SimpleNamespace(net_list=net_list),
-        _on_net_selection_changed=lambda names: highlight_net_names(board, names))
+        _queue_net_highlight=queued.append)
 
-    with patch.dict(sys.modules, {'pcbnew': types.SimpleNamespace(Refresh=lambda: None)}):
-        handler(dialog, event)
+    handler(dialog, event)
 
-    assert highlighted == {2}
-    assert enabled == [True]
+    assert queued == [["N2"]]
     assert event.skipped
 
 
@@ -566,6 +558,40 @@ def test_checking_centering_row_highlights_updated_checked_scope():
 
     assert queued == [dialog._sync_net_selection]
     assert event.skipped
+
+
+def test_highlight_timer_replays_selection_and_checks_native_result():
+    handler = _dialog_method("_on_highlight_timer")
+    calls = []
+    status = []
+    dialog = types.SimpleNamespace(
+        _pending_highlight_names=("N2",),
+        _on_net_selection_changed=lambda names: calls.append(names) or True,
+        centering_status=types.SimpleNamespace(SetLabel=status.append))
+
+    handler(dialog, None)
+
+    assert calls == [("N2",)]
+    assert dialog._pending_highlight_names == ()
+    assert not status
+
+
+def test_initial_highlight_probe_simulates_a_list_selection():
+    handler = _dialog_method("_simulate_net_selection_for_highlight")
+    selected = []
+    queued = []
+    net_list = types.SimpleNamespace(
+        GetCount=lambda: 2,
+        SetSelection=selected.append,
+        GetString=lambda index: ("N1", "N2")[index])
+    dialog = types.SimpleNamespace(
+        centering_net_panel=types.SimpleNamespace(net_list=net_list),
+        _queue_net_highlight=queued.append)
+
+    handler(dialog)
+
+    assert selected == [0]
+    assert queued == [("N1",)]
 
 
 def test_about_tab_uses_project_versions_and_attribution():
