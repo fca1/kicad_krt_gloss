@@ -480,8 +480,9 @@ def test_dialog_keeps_a_post_run_log_with_krt_style_controls():
     assert 'label="Clear selection"' in source
     assert "on_import_centering" in source
     assert 'wx.EVT_LISTBOX, self._on_centering_net_row_selected' in source
+    assert 'wx.EVT_CHECKLISTBOX, self._on_centering_net_checked' in source
     assert "def _on_centering_net_row_selected" in source
-    assert "Preview the clicked net without changing the checked action scope." in source
+    assert "def _on_centering_net_checked" in source
     assert 'label="Refresh"' in source
     assert "def _on_refresh_proximity" in source
     assert "def _clear_centering_highlight" in source
@@ -506,6 +507,65 @@ def test_dialog_keeps_a_post_run_log_with_krt_style_controls():
     assert "dialog = GlossSettingsDialog(\n                None" in action
     assert 'print("\\n=== Track Gloss result ===")' in action
     assert 'stats.get(\'krt_after_mm\'' in action
+
+def _dialog_method(name, namespace=None):
+    """Load one dialog method without importing wx or constructing a dialog."""
+    source = (ROOT / "kicad_krt_gloss" / "settings_dialog.py").read_text(
+        encoding="utf-8")
+    module = ast.parse(source)
+    dialog = next(node for node in module.body
+                  if isinstance(node, ast.ClassDef)
+                  and node.name == "GlossSettingsDialog")
+    method = next(node for node in dialog.body
+                  if isinstance(node, ast.FunctionDef) and node.name == name)
+    scope = {} if namespace is None else namespace
+    exec(compile(ast.Module(body=[method], type_ignores=[]),
+                 "settings_dialog_method", "exec"), scope)
+    return scope[name]
+
+
+def test_clicking_centering_row_forwards_clicked_net_to_highlighter():
+    from kicad_krt_gloss.selection import highlight_net_names
+
+    handler = _dialog_method("_on_centering_net_row_selected")
+    event = types.SimpleNamespace(skipped=False)
+    event.Skip = lambda: setattr(event, "skipped", True)
+    net_list = types.SimpleNamespace(
+        GetSelections=lambda: [1], GetString=lambda index: ("N1", "N2")[index])
+    highlighted = set()
+    enabled = []
+    board = types.SimpleNamespace(
+        GetNetsByNetcode=lambda: {
+            1: types.SimpleNamespace(GetNetname=lambda: "N1"),
+            2: types.SimpleNamespace(GetNetname=lambda: "N2")},
+        ResetNetHighLight=highlighted.clear,
+        SetHighLightNet=lambda code, multi: highlighted.add(code),
+        HighLightON=enabled.append)
+    dialog = types.SimpleNamespace(
+        centering_net_panel=types.SimpleNamespace(net_list=net_list),
+        _on_net_selection_changed=lambda names: highlight_net_names(board, names))
+
+    with patch.dict(sys.modules, {'pcbnew': types.SimpleNamespace(Refresh=lambda: None)}):
+        handler(dialog, event)
+
+    assert highlighted == {2}
+    assert enabled == [True]
+    assert event.skipped
+
+
+def test_checking_centering_row_highlights_updated_checked_scope():
+    queued = []
+    handler = _dialog_method(
+        "_on_centering_net_checked",
+        {"wx": types.SimpleNamespace(CallAfter=queued.append)})
+    event = types.SimpleNamespace(skipped=False)
+    event.Skip = lambda: setattr(event, "skipped", True)
+    dialog = types.SimpleNamespace(_sync_net_selection=lambda: None)
+
+    handler(dialog, event)
+
+    assert queued == [dialog._sync_net_selection]
+    assert event.skipped
 
 
 def test_about_tab_uses_project_versions_and_attribution():

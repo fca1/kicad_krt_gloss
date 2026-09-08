@@ -242,6 +242,8 @@ class GlossSettingsDialog(wx.Dialog):
         self.centering_net_panel.set_selection_changed_callback(self._sync_net_selection)
         self.centering_net_panel.net_list.Bind(
             wx.EVT_LISTBOX, self._on_centering_net_row_selected)
+        self.centering_net_panel.net_list.Bind(
+            wx.EVT_CHECKLISTBOX, self._on_centering_net_checked)
         self._sync_net_selection()
         if initial_tab:
             for index in range(self.notebook.GetPageCount()):
@@ -435,6 +437,11 @@ class GlossSettingsDialog(wx.Dialog):
                  for index in net_list.GetSelections()]
         if names and self._on_net_selection_changed is not None:
             self._on_net_selection_changed(names)
+        event.Skip()
+
+    def _on_centering_net_checked(self, event):
+        """Apply the checklist scope after wx has updated the check state."""
+        wx.CallAfter(self._sync_net_selection)
         event.Skip()
 
     def _on_import_centering(self, add):
