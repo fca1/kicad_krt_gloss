@@ -479,6 +479,9 @@ def test_dialog_keeps_a_post_run_log_with_krt_style_controls():
     assert 'label="Replace with KiCad selection"' in source
     assert 'label="Clear selection"' in source
     assert "on_import_centering" in source
+    assert 'wx.EVT_LISTBOX, self._on_centering_net_row_selected' in source
+    assert "def _on_centering_net_row_selected" in source
+    assert "Preview the clicked net without changing the checked action scope." in source
     assert 'label="Refresh"' in source
     assert "def _on_refresh_proximity" in source
     assert "def _clear_centering_highlight" in source

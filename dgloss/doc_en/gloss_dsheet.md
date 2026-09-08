@@ -53,8 +53,9 @@ and remain enabled. Corridor is experimental and is not exposed by the UI or
 public CLI help.
 
 Centering selection is separate: it has a modifiable-net list, component filter
-and Proxi. The action then runs its required corridor Gloss preparation and
-Centering atomically.
+and Proxi. Clicking a net row previews it through KiCad highlighting; checking
+it defines action scope. The action then runs its required corridor Gloss
+preparation and Centering atomically.
 
 A selected straight track is a seed. G0 finds its maximal elementary branch
 and every stage remains within it. Several tracks may identify several branches

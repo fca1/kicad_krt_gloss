@@ -240,6 +240,8 @@ class GlossSettingsDialog(wx.Dialog):
         self.SetSizerAndFit(outer)
         self.SetMinSize(self.GetSize())
         self.centering_net_panel.set_selection_changed_callback(self._sync_net_selection)
+        self.centering_net_panel.net_list.Bind(
+            wx.EVT_LISTBOX, self._on_centering_net_row_selected)
         self._sync_net_selection()
         if initial_tab:
             for index in range(self.notebook.GetPageCount()):
@@ -323,7 +325,8 @@ class GlossSettingsDialog(wx.Dialog):
             pcb_data = SimpleNamespace(nets={}, pads_by_net={}, footprints={})
         self.centering_net_panel = NetSelectionPanel(
             panel, pcb_data,
-            instructions="Check nets for Gloss and Centering...",
+            instructions=("Click a net to highlight it in KiCad; check nets "
+                          "for Gloss and Centering..."),
             show_hide_checkbox=False,
             show_hide_differential=False,
             show_component_filter=True,
@@ -424,6 +427,15 @@ class GlossSettingsDialog(wx.Dialog):
         self.g4_max_passes.Enable(len(names) > 1)
         if self._on_net_selection_changed is not None:
             self._on_net_selection_changed(names)
+
+    def _on_centering_net_row_selected(self, event):
+        """Preview the clicked net without changing the checked action scope."""
+        net_list = self.centering_net_panel.net_list
+        names = [net_list.GetString(index)
+                 for index in net_list.GetSelections()]
+        if names and self._on_net_selection_changed is not None:
+            self._on_net_selection_changed(names)
+        event.Skip()
 
     def _on_import_centering(self, add):
         """Merge or replace checked Centering nets from the KiCad selection."""

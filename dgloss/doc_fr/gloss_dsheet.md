@@ -55,8 +55,10 @@ comme des choix et restent actifs. Le Corridor est expérimental et n'est pas
 exposé par l'interface ni l'aide CLI publique.
 
 La sélection Centering est distincte : elle contient une liste de nets
-modifiables, un filtre par composant et Proxi. L'action exécute alors le Gloss
-préparatoire imposé dans le corridor, puis Centering atomiquement.
+modifiables, un filtre par composant et Proxi. Un clic sur une ligne prévisualise
+le net par surlignage dans KiCad ; la coche définit la portée de l'action.
+L'action exécute alors le Gloss préparatoire imposé dans le corridor, puis
+Centering atomiquement.
 
 Une piste droite sélectionnée sert de graine. G0 détermine sa branche
 élémentaire maximale, puis toutes les étapes restent limitées à cette branche.

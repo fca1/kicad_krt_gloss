@@ -29,7 +29,9 @@ selection runs immediately with the remembered settings. It reports the
 selected net count, or **ALL** without a selection. The public controls are
 BE or complete-net scope, KRT grid step, time budget, movable vias, G4 repeat
 and its pass limit. Centering has its own checked-net list, component filter
-and Proxi control. Every control has a short tooltip explaining its purpose.
+and Proxi control. Clicking a net row previews it with KiCad highlighting;
+checking it defines the Gloss or Centering scope. Every control has a short
+tooltip explaining its purpose.
 Its **Log** tab retains the latest stage statistics and final result; **Clear
 Log** removes that history. The **Gloss** and **Close** buttons let an all-net
 run complete while the dialog remains available for review.
