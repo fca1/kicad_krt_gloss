@@ -85,9 +85,14 @@ sélectionnées ; « Clear selection » vide les coches. Elles pilotent aussi la
 surbrillance native des nets sur le PCB, sans modifier la sélection des objets.
 La fermeture du dialogue retire cette surbrillance. La sélection visuelle des
 lignes de liste est annulée à son ouverture.
-Le highlight reste défectueux dans l'éditeur : `BOARD.IsHighLightNetON()`
-ne prouve pas la surbrillance graphique. Les essais sur carte détachée ne
-valident pas le rendu. Toute simulation temporisée de clic doit rester dans
+Le highlight utilise désormais `SetBrightened` sur les pistes, vias, pads et
+zones, état lu par `PCB_RENDER_SETTINGS::GetColor`, puis `Refresh`. Chaque
+dialogue mémorise les UUID des objets qu'il a éclairés et ne retire que ces
+états ; la sélection native des objets reste intacte. Ce rendu éclaire le
+cuivre sans atténuer les autres nets comme le highlight natif de KiCad.
+`BOARD.IsHighLightNetON()` ne prouve pas la surbrillance graphique et n'est
+plus utilisé. Les essais sur carte détachée ne valident pas le rendu visible.
+Toute simulation temporisée de clic doit rester dans
 un outil de test séparé ; aucun timer de highlight ni clic automatique ne
 doit être intégré au dialogue de production.
 Les deux actions reconstruisent leurs données depuis la carte courante. En mode

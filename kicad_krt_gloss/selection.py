@@ -7,22 +7,39 @@ import math
 POSITION_DECIMALS = 6
 
 
-def highlight_net_names(board, names):
-    """Highlight nets through native flags and report the native active state."""
-    import pcbnew
-    chosen = set(names)
-    codes = [code for code, net in board.GetNetsByNetcode().items()
-             if code > 0 and net.GetNetname() in chosen]
-    board.ResetNetHighLight()
-    for code in codes:
-        board.SetHighLightNet(code, True)
-    board.HighLightON(bool(codes))
-    pcbnew.Refresh()
-    update_ui = getattr(pcbnew, "UpdateUserInterface", None)
-    if callable(update_ui):
-        update_ui()
-    active = bool(board.IsHighLightNetON())
-    return (not chosen and not active) or (bool(codes) and active)
+class NetHighlighter:
+    """Dialog-owned copper brightening, read directly by KiCad's painter.
+
+    BOARD.HighLightON only stores net metadata. The SWIG API does not expose
+    RENDER_SETTINGS.SetHighlight; PCB_RENDER_SETTINGS.GetColor does, however,
+    consume EDA_ITEM.IsBrightened. Keep UUIDs rather than SWIG item references
+    because running Gloss may replace tracks while this dialog stays open.
+    """
+
+    def __init__(self, board, refresh):
+        self.board = board
+        self.refresh = refresh
+        self._owned = set()
+
+    def __call__(self, names):
+        chosen = set(names)
+        codes = {code for code, net in self.board.GetNetsByNetcode().items()
+                 if code > 0 and net.GetNetname() in chosen}
+        items = list(self.board.GetTracks())
+        items.extend(pad for footprint in self.board.GetFootprints()
+                     for pad in footprint.Pads())
+        items.extend(self.board.Zones())
+        owned = set()
+        for item in items:
+            key = item.m_Uuid.AsString()
+            if item.GetNetCode() in codes:
+                if key in self._owned or not item.IsBrightened():
+                    item.SetBrightened()
+                    owned.add(key)
+            elif key in self._owned:
+                item.ClearBrightened()
+        self._owned = owned
+        self.refresh()
 
 
 def selected_pad_pair_distance_mm(board):

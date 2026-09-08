@@ -59,10 +59,10 @@ class KiCadBoardBridge:
         from .selection import native_arc_net_ids
         return native_arc_net_ids(board)
 
-    @staticmethod
-    def highlight_net_names(board, names):
-        from .selection import highlight_net_names
-        return highlight_net_names(board, names)
+    def net_highlighter(self, board):
+        """Create a display-only highlighter owned by one settings dialog."""
+        from .selection import NetHighlighter
+        return NetHighlighter(board, self.refresh)
 
     @staticmethod
     def build_krt_config(board, pcb_data, grid_step, net_ids=None):

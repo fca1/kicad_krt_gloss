@@ -87,8 +87,7 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
             def import_centering_selection():
                 return KICAD.selected_net_names(board)
 
-            def highlight_names(names):
-                return KICAD.highlight_net_names(board, names)
+            highlight_names = KICAD.net_highlighter(board)
 
             # Keep this window top-level; the explicit editor close binding
             # below closes it with the PCB. This does not suppress KiCad's

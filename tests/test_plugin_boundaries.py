@@ -124,6 +124,7 @@ def test_plugin_run_accepts_two_item_preparation_for_multiple_selected_nets():
 
         kicad = types.SimpleNamespace(
             active_board=lambda: object(),
+            net_highlighter=lambda board: lambda names: None,
             selected_net_ids=lambda board: net_ids,
             selected_pad_pair_distance_mm=lambda board: None)
         namespace = {
@@ -319,24 +320,48 @@ def test_checked_nets_scope_ignores_unchecked_seeds_and_includes_added_nets():
 
 
 def test_dynamic_highlight_add_remove_clear_without_item_selection():
-    from kicad_krt_gloss.selection import highlight_net_names
-    highlighted = set()
-    enabled = []
+    from kicad_krt_gloss.selection import NetHighlighter
+
+    class Copper:
+        def __init__(self, key, net, bright=False):
+            self.m_Uuid = types.SimpleNamespace(AsString=lambda: key)
+            self.net = net
+            self.bright = bright
+
+        def GetNetCode(self): return self.net
+        def IsBrightened(self): return self.bright
+        def SetBrightened(self): self.bright = True
+        def ClearBrightened(self): self.bright = False
+
+    first = Copper('track1', 1)
+    second = Copper('track2', 2)
+    pad = Copper('pad2', 2)
+    zone = Copper('zone1', 1)
+    external = Copper('external', 2, bright=True)
+    tracks = [first, second, external]
+    refreshes = []
     board = types.SimpleNamespace(
         GetNetsByNetcode=lambda: {i: types.SimpleNamespace(GetNetname=lambda i=i: f'N{i}')
                                  for i in (0, 1, 2)},
-        ResetNetHighLight=highlighted.clear,
-        SetHighLightNet=lambda code, multi: highlighted.add(code),
-        HighLightON=enabled.append,
-        IsHighLightNetON=lambda: bool(enabled[-1]))
-    with patch.dict(sys.modules, {'pcbnew': types.SimpleNamespace(
-            Refresh=lambda: None, UpdateUserInterface=lambda: None)}):
-        assert highlight_net_names(board, ['N1', 'N2'])
-        assert highlighted == {1, 2} and enabled[-1]
-        assert highlight_net_names(board, ['N2'])
-        assert highlighted == {2}
-        assert highlight_net_names(board, [])
-        assert not highlighted and not enabled[-1]
+        GetTracks=lambda: tracks,
+        GetFootprints=lambda: [types.SimpleNamespace(Pads=lambda: [pad])],
+        Zones=lambda: [zone])
+    highlight = NetHighlighter(board, lambda: refreshes.append(True))
+    highlight(['N1', 'N2'])
+    assert all(item.bright for item in [first, second, pad, zone, external])
+    highlight(['N2'])
+    assert not first.bright and not zone.bright
+    assert second.bright and pad.bright
+    # Gloss can replace native objects between two dialog interactions.
+    tracks.remove(second)
+    replacement = Copper('replacement', 2)
+    tracks.append(replacement)
+    highlight(['N2'])
+    assert replacement.bright
+    highlight([])
+    assert not replacement.bright and not pad.bright
+    assert external.bright  # Do not clear brightening owned by another tool.
+    assert len(refreshes) == 4
 
 
 def test_dgloss_runtime_does_not_depend_on_pcbnew_or_plugin_package():
