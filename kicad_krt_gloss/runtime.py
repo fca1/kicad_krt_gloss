@@ -43,16 +43,29 @@ def _resolve_rust_binary(root):
     # Windows keeps an imported extension module locked until KiCad exits.
     # A content-addressed directory lets a plugin update load a new binary
     # without trying to overwrite the previous, still-loaded grid_router.pyd.
-    digest = hashlib.sha256(source.read_bytes()).hexdigest()[:16]
+    digest = hashlib.sha256(source.read_bytes()).hexdigest()
     cache = (Path(tempfile.gettempdir()) / "kicad_krt_gloss" /
              f"{sys.version_info.major}.{sys.version_info.minor}" /
-             f"{sys.platform}-{machine}" / digest)
+             f"{sys.platform}-{machine}" / digest[:16])
     cache.mkdir(parents=True, exist_ok=True)
     destination = cache / canonical
-    if (not destination.exists() or
-            destination.stat().st_size != source.stat().st_size or
-            destination.stat().st_mtime_ns < source.stat().st_mtime_ns):
-        shutil.copy2(source, destination)
+    if (destination.exists() and
+            hashlib.sha256(destination.read_bytes()).hexdigest() == digest):
+        return destination
+    # Never truncate a cached extension in place. Publish a complete copy;
+    # another KiCad process may have populated this cache in the meantime.
+    descriptor, temporary = tempfile.mkstemp(dir=cache, suffix=".tmp")
+    os.close(descriptor)
+    try:
+        shutil.copy2(source, temporary)
+        try:
+            os.replace(temporary, destination)
+        except PermissionError:
+            if (not destination.exists() or
+                    hashlib.sha256(destination.read_bytes()).hexdigest() != digest):
+                raise
+    finally:
+        Path(temporary).unlink(missing_ok=True)
     return destination
 
 

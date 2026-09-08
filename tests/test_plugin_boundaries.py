@@ -310,6 +310,37 @@ def test_packaged_rust_binary_uses_a_content_addressed_cache(
     assert second.read_bytes() == b"second packaged binary"
 
 
+def test_rust_cache_reuses_identical_binary_after_reinstallation(tmp_path, monkeypatch):
+    root = tmp_path / "KRT"
+    rust = root / "rust_router"
+    rust.mkdir(parents=True)
+    source = rust / "grid_router-windows-x86_64.pyd"
+    source.write_bytes(b"same binary")
+    monkeypatch.setattr(runtime.sys, "platform", "win32")
+    monkeypatch.setattr(runtime.platform, "machine", lambda: "AMD64")
+    monkeypatch.setattr(runtime.tempfile, "gettempdir", lambda: str(tmp_path))
+    cached = runtime._resolve_rust_binary(root)
+    runtime.os.utime(source, ns=(cached.stat().st_atime_ns,
+                               cached.stat().st_mtime_ns + 10_000_000_000))
+    with patch.object(runtime.shutil, "copy2", side_effect=PermissionError("locked")):
+        assert runtime._resolve_rust_binary(root) == cached
+
+
+def test_rust_cache_repairs_same_size_corruption(tmp_path, monkeypatch):
+    root = tmp_path / "KRT"
+    rust = root / "rust_router"
+    rust.mkdir(parents=True)
+    source = rust / "grid_router-windows-x86_64.pyd"
+    source.write_bytes(b"valid")
+    monkeypatch.setattr(runtime.sys, "platform", "win32")
+    monkeypatch.setattr(runtime.platform, "machine", lambda: "AMD64")
+    monkeypatch.setattr(runtime.tempfile, "gettempdir", lambda: str(tmp_path))
+    cached = runtime._resolve_rust_binary(root)
+    cached.write_bytes(b"wrong")
+    assert runtime._resolve_rust_binary(root).read_bytes() == b"valid"
+    assert not list(cached.parent.glob("*.tmp"))
+
+
 def test_dialog_has_a_top_level_sizer_for_panel_and_buttons():
     source = (ROOT / "kicad_krt_gloss" / "settings_dialog.py").read_text(
         encoding="utf-8")

@@ -135,6 +135,10 @@ hors intégration et nécessitent une nouvelle décision pour être reprises.
 
 ## Pièges techniques à préserver
 
+- Cache Rust Windows : réutiliser un binaire dont le SHA-256 correspond, même
+  si une réinstallation a changé sa date. Une extension chargée est verrouillée ;
+  ne jamais la recopier pour une simple différence d'horodatage. Les copies
+  nécessaires sont publiées par remplacement atomique depuis un fichier temporaire.
 - `segment_blocked` à marge zéro ne démontre pas le balayage du déplacement :
   dans le chemin KRT étudié, seule l'arrivée était testée. Une marge positive
   minuscule ou `pas/2` ne constitue pas à elle seule une preuve de corridor.
