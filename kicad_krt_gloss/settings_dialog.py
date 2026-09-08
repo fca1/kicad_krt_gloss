@@ -20,6 +20,7 @@ GENERAL_DEFAULTS = {
 GLOSS_DEFAULTS = {
     "stay_in_corridor": False,
     "move_vias": True,
+    "repeat_until_stable": True,
 }
 
 CENTERING_DEFAULTS = {
@@ -253,6 +254,14 @@ class GlossSettingsDialog(wx.Dialog):
                 panel, illustration, tooltip), 0,
                 wx.ALIGN_CENTER_VERTICAL | wx.LEFT | wx.RIGHT, 8)
             operations.Add(row, 0, wx.EXPAND | wx.BOTTOM, 8)
+        repeat = wx.CheckBox(panel, label="G4 — Repeat Gloss until stable")
+        repeat.SetValue(bool(values["repeat_until_stable"]))
+        repeat.SetToolTip(
+            "Run additional Gloss passes until no further change is found, "
+            "within the time budget. Local autogloss remains active when "
+            "this option is disabled.")
+        self.controls["repeat_until_stable"] = repeat
+        operations.Add(repeat, 0, wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
         content.Add(operations, 0, wx.EXPAND | wx.ALL, 8)
         content.AddStretchSpacer()
         panel.SetSizer(content)
