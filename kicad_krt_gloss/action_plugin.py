@@ -369,6 +369,11 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                 if not net_ids:
                     print("Centering cancelled: no selected modifiable net remains.")
                     return False
+                centering_scope = (
+                    f"Proxi: {float(values['centering_proximity_mm']):g} mm\n"
+                    "Net labels: " + ", ".join(
+                        repr(pcb_data.nets[net_id].name) for net_id in net_ids))
+                print(centering_scope)
                 config = KICAD.build_krt_config(
                     board, pcb_data, values["grid_step"], net_ids=net_ids)
                 results = []
@@ -386,6 +391,7 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                 stats = outcome.stats
                 print("\n=== Track Gloss Centering result ===")
                 print(f"Scope: {len(net_ids)} selected net(s)")
+                print(centering_scope)
                 print(f"Doors detected: {stats.get('centering_doors_detected', 0)}")
                 print(f"Doors centered: {stats.get('doors_centered', 0)}")
                 considered = stats.get("centering_candidates_considered", 0)
