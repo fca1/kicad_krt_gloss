@@ -22,6 +22,7 @@ PLUGIN_DIR = os.path.dirname(os.path.abspath(__file__))
 class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
     _settings = dict(DEFAULTS)
     _last_log = ""
+    _settings_dialog = None
 
     def defaults(self):
         self.name = "KiCad KRT Gloss"
@@ -34,6 +35,14 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
             self.dark_icon_file_name = dark
 
     def Run(self):
+        active_dialog = getattr(self, "_settings_dialog", None)
+        if active_dialog is not None:
+            try:
+                if active_dialog.IsShown():
+                    active_dialog.Raise()
+                    return
+            except (AttributeError, RuntimeError):
+                self._settings_dialog = None
         board = pcbnew.GetBoard()
         if board is None:
             wx.MessageBox("No PCB board is open.", "KiCad KRT Gloss",
@@ -54,6 +63,8 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
             preselected_names = {
                 prepared[0].nets[net_id].name for net_id in net_ids
                 if net_id in prepared[0].nets}
+            dialog_pcb_data = prepared[0]
+            centering_prepared = prepared
 
             def run_from_dialog(new_values, append_log):
                 nonlocal prepared
@@ -64,13 +75,26 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                                 append_log=append_log, prepared=ready)
 
             def center_from_dialog(new_values, selected_names, append_log):
-                nonlocal prepared
+                nonlocal centering_prepared
                 self.__class__._settings = dict(new_values)
-                ready = prepared
-                prepared = None
+                ready = centering_prepared
+                centering_prepared = None
                 self._run_centering(
                     board, parent, new_values, selected_names,
                     append_log=append_log, prepared=ready)
+
+            def import_centering_selection():
+                nonlocal centering_prepared
+                # The checkbox list has names from dialog_pcb_data.  Selection
+                # changes do not alter copper, but discard the preparation so
+                # Centering reparses the live board when it is run.
+                centering_prepared = None
+                return {
+                    dialog_pcb_data.nets[net_id].name
+                    for net_id in selected_net_ids(board)
+                    if net_id in dialog_pcb_data.nets
+                    and dialog_pcb_data.nets[net_id].name
+                }
 
             dialog = GlossSettingsDialog(
                 parent, values, len(net_ids), on_gloss=run_from_dialog,
@@ -78,14 +102,18 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                 centering_nets=centering_nets,
                 preselected_centering_nets=preselected_names,
                 initial_tab="Centering" if open_centering else None,
-                initial_log=self.__class__._last_log)
-            try:
-                dialog.ShowModal()
-                values = dialog.values()
+                initial_log=self.__class__._last_log,
+                on_import_centering=import_centering_selection)
+
+            def on_dialog_close(event):
+                self.__class__._settings = dialog.values()
                 self.__class__._last_log = dialog.log_value()
-            finally:
-                dialog.Destroy()
-            self.__class__._settings = values
+                self._settings_dialog = None
+                event.Skip()
+
+            dialog.Bind(wx.EVT_CLOSE, on_dialog_close)
+            self._settings_dialog = dialog
+            dialog.Show()
             return
 
         self._run_gloss(board, parent, values, net_ids, show_progress=False)

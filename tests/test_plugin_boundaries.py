@@ -84,7 +84,8 @@ def test_plugin_run_accepts_two_item_preparation_for_multiple_selected_nets():
                 calls.append(("dialog", count))
                 self.on_gloss = kwargs["on_gloss"]
 
-            def ShowModal(self): self.on_gloss(settings, lambda text: None)
+            def Bind(self, *_args): pass
+            def Show(self): self.on_gloss(settings, lambda text: None)
             def values(self): return settings
             def log_value(self): return ""
             def Destroy(self): pass
@@ -106,7 +107,8 @@ def test_plugin_run_accepts_two_item_preparation_for_multiple_selected_nets():
 
         namespace = {
             "pcbnew": types.SimpleNamespace(GetBoard=lambda: object()),
-            "wx": types.SimpleNamespace(GetTopLevelWindows=lambda: []),
+            "wx": types.SimpleNamespace(GetTopLevelWindows=lambda: [],
+                                        EVT_CLOSE=object()),
             "selected_net_ids": lambda board: net_ids,
             "selected_pad_pair_distance_mm": lambda board: None,
             "GlossSettingsDialog": Dialog,
@@ -355,8 +357,10 @@ def test_dialog_keeps_a_post_run_log_with_krt_style_controls():
     assert 'self.notebook.GetPageText(index) == "Log"' in source
     assert 'self.notebook.AddPage(panel, "Centering")' in source
     assert 'label="Centering"' in source
-    assert 'label="Refresh"' not in source
-    assert "on_refresh_centering" not in source
+    assert 'label="Add KiCad selection"' in source
+    assert 'label="Replace with KiCad selection"' in source
+    assert 'label="Clear selection"' in source
+    assert "on_import_centering" in source
     assert "panel, min=0.0, max=5.0" in source
     assert "centering_build_multi_door_path" not in source
     assert "centering_build_new_segments" not in source
@@ -366,6 +370,9 @@ def test_dialog_keeps_a_post_run_log_with_krt_style_controls():
         encoding="utf-8")
     assert '_last_log = ""' in action
     assert "initial_log=self.__class__._last_log" in action
+    assert "dialog.Show()" in action
+    assert "dialog.ShowModal()" not in action
+    assert "on_import_centering=import_centering_selection" in action
     assert 'print("\\n=== Track Gloss result ===")' in action
     assert 'stats.get(\'krt_after_mm\'' in action
 

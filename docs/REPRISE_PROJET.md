@@ -64,6 +64,14 @@ dans la plage Proxi admise (0 à 5 mm), le dialogue s'ouvre sur Centering et
 préremplit Proxi avec cette valeur. Ce raccourci ne choisit aucun net :
 l'utilisateur désigne ensuite les pistes à centrer dans la liste.
 
+**Sélection Centering dans KiCad.** Le dialogue de réglages est non modal :
+l'éditeur reste utilisable pour sélectionner des pistes. Dans l'onglet
+Centering, les boutons d'import ajoutent ou remplacent les coches de la liste
+par les nets des pistes actuellement sélectionnées ; « Clear selection » ne
+modifie que ces coches. Cette importation impose une reconstruction des données
+au lancement de Centering, afin de travailler sur la carte courante. Le flux
+Gloss n'est pas modifié.
+
 **Longueur et segments.** Leur découpage logiciel ne doit pas devenir une
 frontière algorithmique : une réduction peut créer un coude, sa simplification
 peut permettre une nouvelle réduction. L'autogloss intégré réexamine les chaînes

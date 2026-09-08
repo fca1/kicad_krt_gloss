@@ -34,7 +34,7 @@ class GlossSettingsDialog(wx.Dialog):
     def __init__(self, parent, values, selected_count, *, on_gloss=None,
                  on_centering=None, pcb_data=None, centering_nets=(),
                  preselected_centering_nets=(), initial_tab=None,
-                 initial_log=""):
+                 initial_log="", on_import_centering=None):
         super().__init__(parent, title="KiCad KRT Gloss")
         values = dict(values or {})
         if "move_vias" not in values and "enable_g3_1" in values:
@@ -42,6 +42,7 @@ class GlossSettingsDialog(wx.Dialog):
         values = dict(DEFAULTS, **values)
         self._on_gloss_callback = on_gloss
         self._on_centering_callback = on_centering
+        self._on_import_centering_callback = on_import_centering
         wx.ToolTip.SetDelay(250)
         wx.ToolTip.SetAutoPop(15000)
         wx.ToolTip.SetReshow(50)
@@ -217,8 +218,7 @@ class GlossSettingsDialog(wx.Dialog):
         self.gloss_button.Bind(wx.EVT_BUTTON, self._on_gloss)
         close_button = wx.Button(self, label="Close")
         close_button.SetToolTip("Close this dialog.")
-        close_button.Bind(wx.EVT_BUTTON,
-                          lambda _event: self.EndModal(wx.ID_CANCEL))
+        close_button.Bind(wx.EVT_BUTTON, lambda _event: self.Close())
         buttons.Add(self.gloss_button, 1, wx.RIGHT, 5)
         buttons.Add(close_button, 1)
         outer.Add(buttons, 0, wx.EXPAND | wx.ALL, 10)
@@ -309,6 +309,27 @@ class GlossSettingsDialog(wx.Dialog):
         self.centering_net_panel.refresh(sync_from_visible=False)
         self.centering_net_panel.set_selected_nets(preselected_nets)
         net_sizer.Add(self.centering_net_panel, 1, wx.EXPAND)
+
+        selection_actions = wx.BoxSizer(wx.HORIZONTAL)
+        add_selection = wx.Button(panel, label="Add KiCad selection")
+        add_selection.SetToolTip(
+            "Check the nets of currently selected KiCad tracks, keeping "
+            "the nets already checked here.")
+        add_selection.Bind(wx.EVT_BUTTON,
+                           lambda _event: self._on_import_centering(True))
+        replace_selection = wx.Button(panel, label="Replace with KiCad selection")
+        replace_selection.SetToolTip(
+            "Check only the nets of currently selected KiCad tracks.")
+        replace_selection.Bind(
+            wx.EVT_BUTTON,
+            lambda _event: self._on_import_centering(False))
+        clear_selection = wx.Button(panel, label="Clear selection")
+        clear_selection.SetToolTip("Uncheck every net in this Centering list.")
+        clear_selection.Bind(wx.EVT_BUTTON, self._on_clear_centering_selection)
+        selection_actions.Add(add_selection, 1, wx.RIGHT, 5)
+        selection_actions.Add(replace_selection, 1, wx.RIGHT, 5)
+        selection_actions.Add(clear_selection, 1)
+        net_sizer.Add(selection_actions, 0, wx.EXPAND | wx.TOP, 5)
         columns.Add(net_sizer, 2, wx.EXPAND | wx.ALL, 8)
 
         options = wx.BoxSizer(wx.VERTICAL)
@@ -363,6 +384,24 @@ class GlossSettingsDialog(wx.Dialog):
 
     def _on_clear_log(self, _event):
         self.log_text.Clear()
+
+    def _on_import_centering(self, add):
+        """Merge or replace checked Centering nets from the KiCad selection."""
+        if self._on_import_centering_callback is None:
+            return
+        imported = set(self._on_import_centering_callback() or ())
+        if add:
+            imported.update(self.centering_net_panel.get_selected_nets())
+        self.centering_net_panel.set_selected_nets(imported)
+        selected = self.centering_net_panel.get_selected_nets()
+        verb = "Added" if add else "Replaced"
+        self.centering_status.SetLabel(
+            f"{verb} from KiCad selection: {len(selected)} net(s) checked.")
+
+    def _on_clear_centering_selection(self, _event):
+        """Clear the Centering net checklist without affecting KiCad."""
+        self.centering_net_panel.set_selected_nets(())
+        self.centering_status.SetLabel("Centering net selection cleared.")
 
     def _on_copy_log(self, _event):
         if not wx.TheClipboard.Open():
