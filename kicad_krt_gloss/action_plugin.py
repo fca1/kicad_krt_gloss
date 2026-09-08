@@ -406,6 +406,8 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                 print(centering_scope)
                 print(f"Doors detected: {stats.get('centering_doors_detected', 0)}")
                 print(f"Doors centered: {stats.get('doors_centered', 0)}")
+                if stats.get("doors_already_centered", 0):
+                    print(f"Doors already centered (certified): {stats['doors_already_centered']}")
                 considered = stats.get("centering_candidates_considered", 0)
                 if considered:
                     print("Candidates considered: "
@@ -447,6 +449,7 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                     print(f"Differences: {debug_layer} (TrackGloss Changes)")
             return {
                 "doors_centered": stats.get("doors_centered", 0),
+                "doors_already_centered": stats.get("doors_already_centered", 0),
                 "cleanup_saved_mm": stats.get("cleanup_saved_mm", 0.0),
                 "centering_proximity_mm": values[
                     "centering_proximity_mm"],

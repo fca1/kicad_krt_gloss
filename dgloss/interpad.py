@@ -138,11 +138,11 @@ def _segment_set_signature(segments):
     return sorted(rows)
 
 
-def _candidate_is_valid(context, candidate, before_grade):
+def _candidate_is_valid(context, candidate, before_grade, *, allow_unchanged=False):
     """Apply the common editability, geometry, KRT and topology gates."""
     if not context.segments_editable(candidate.source_segments):
         return False, None, "scope"
-    if _segment_set_signature(candidate.source_segments) == \
+    if not allow_unchanged and _segment_set_signature(candidate.source_segments) == \
             _segment_set_signature(candidate.segments):
         return False, None, "unchanged"
     if any(math.hypot(segment.end_x - segment.start_x,
@@ -253,6 +253,7 @@ def center_interpad_routes(context, results, deadline=None, *, net_ids,
     }
     length_delta = 0.0
     branches_centered = 0
+    doors_already_centered = 0
 
     for net_id in net_ids:
         while deadline is None or perf_counter() < deadline:
@@ -285,12 +286,11 @@ def center_interpad_routes(context, results, deadline=None, *, net_ids,
                     build_multi_door_path=(build_multi_door_path and
                                            not build_new_segments))
                 if build_new_segments:
-                    # A neighbour fixed by the sliding construction need not
-                    # be a true pad/via anchor. Rebuild its approach on the
-                    # complete editable chain when a local proposal fails.
-                    from .protected_centering import build_protected_path
+                    from .interpad_paths import center_with_propagated_neighbors
                     for door in doors:
-                        yield (door,), build_protected_path(context, (door,), deadline)
+                        for candidate in center_with_propagated_neighbors(
+                                context.pcb_data, door, deadline):
+                            yield (door,), candidate
             for selected_doors, candidate in proposals():
                 if deadline is not None and perf_counter() >= deadline:
                     break
@@ -304,7 +304,7 @@ def center_interpad_routes(context, results, deadline=None, *, net_ids,
                     continue
                 candidates_tested += 1
                 valid, _after_grade, reason = _candidate_is_valid(
-                    context, candidate, before_grade)
+                    context, candidate, before_grade, allow_unchanged=True)
                 if valid:
                     accepted = selected_doors, candidate
                     break
@@ -314,6 +314,13 @@ def center_interpad_routes(context, results, deadline=None, *, net_ids,
                 break
 
             selected_doors, candidate = accepted
+            if _segment_set_signature(candidate.source_segments) == \
+                    _segment_set_signature(candidate.segments):
+                # A certified centered passage is satisfied, not a reason to
+                # replace its approaches with a different, longer route.
+                processed_doors.update(_door_key(d) for d in selected_doors)
+                doors_already_centered += len(selected_doors)
+                continue
             removed = list(candidate.source_segments)
             removed_ids = {id(segment) for segment in removed}
             built = list(candidate.segments)
@@ -349,6 +356,7 @@ def center_interpad_routes(context, results, deadline=None, *, net_ids,
     stats = {
         "branches_centered": branches_centered,
         "doors_centered": len(changes.doors),
+        "doors_already_centered": doors_already_centered,
         "segments_added": len(added_segments),
         "length_delta_mm": round(length_delta, 4),
         "net_ids_changed": changed_net_ids,

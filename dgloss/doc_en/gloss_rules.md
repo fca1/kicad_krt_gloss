@@ -119,6 +119,14 @@ targets the clearance-weighted middle of the gate. The additional margin there
 is not imposed on approach connectors: they keep regulatory clearance at their
 actual width, without reserving room for future widening.
 
+For a single gate, movable neighbours are not anchors. When the local slide
+fails, the translation of existing supports propagates to successive neighbours
+and their joints slide on fixed boundary rails. Intersections determine the
+new lengths, without inventing new bends; KRT validates each proposal. An
+already centered and certified passage is satisfied, not a reason to rebuild
+its chain or roll back the preparatory Gloss. Logs distinguish newly centered
+and already centered passages.
+
 ### Pads
 
 The native pad landing point, usually its center, is fixed. A track may not

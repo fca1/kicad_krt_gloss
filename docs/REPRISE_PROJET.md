@@ -70,8 +70,9 @@ connectivité), y compris avant l'exemption `geometry_preserving`.
 
 **Gloss et Centering.** Ce sont deux actions distinctes. L'action Centering
 exécute atomiquement Gloss avec `stay_in_corridor=True`, puis Centering, sans
-transformation géométrique ultérieure. Si rien n'est centré, le Gloss préparatoire
-est également annulé. Les échecs et expirations suivent la politique transactionnelle.
+transformation géométrique ultérieure. Si aucune porte n'est recentrée ou déjà
+centrée et certifiée, le Gloss préparatoire est également annulé. Les échecs et
+expirations suivent la politique transactionnelle.
 Le Centering peut augmenter la longueur. Actuellement ses portes sont pad–pad :
 les vias restent des obstacles, mais ne définissent pas de portes via–via ou
 pad–via. Cette limitation a été explicitement conservée.
@@ -82,16 +83,21 @@ distance piste–pad < Proxi. Le recentrage maximise la marge dans le passage,
 sans imposer cette marge supplémentaire à toute l'approche : seules les
 clearances réglementaires s'y appliquent. La construction locale reconnaît la
 quantification native de 1 nm et reconstruit des directions exactes sans bouger
-les ancres. Si ses voisins fixes bloquent la construction, la construction sur
-chaîne complète est aussi essayée pour une porte seule.
+les ancres. Le repli sur chaîne complète pour une porte seule, introduit dans
+`f41a1b6`, a depuis été retiré : il remplaçait les raccords existants et créait
+un coude à 90°. Le déplacement est désormais propagé aux supports voisins
+mobiles, dont les intersections avec les rails fixes déterminent les longueurs.
+Une proposition inchangée mais centrée et certifiée est un succès géométrique,
+pas un motif de reconstruction. Voir le [correctif et les deux reproductions
+natives](reports/CENTERING_PROPAGATION_2026_09_08.md).
 Le fichier modifié `test_centering2`, SHA-256
 `67204b5f58f60fb79f87abbb6e2071a6587fb3ef4c24306b33fe5efe70bbed1a`,
 donne une porte U1.1–U1.2 centrée à Y=90,615 mm, +0,6810 mm, G5 valide,
 5 pistes remplacées par 5. Test natif détaché :
 `tools/reproduce_centering_native.py CHEMIN_PCB`, sans sauvegarde source.
 Suite : 408 réussites, toujours le test Centering historique sans porte en échec.
-Le constructeur de chaîne réutilisé conserve sa recherche finie historique de
-longueurs de passage ; cette passe ne prouve pas un optimum général du Centering.
+Le constructeur multiporte conserve sa recherche finie historique de longueurs
+de passage ; cette passe ne prouve pas un optimum général du Centering.
 
 **Raccourci DHM Centering.** Avec exactement deux pads sélectionnés et aucun
 autre objet, le plugin mesure leur entraxe centre-à-centre. Si cet entraxe est

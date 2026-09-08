@@ -84,8 +84,10 @@ def run_centering(results, pcb_data, config, *, net_ids,
             proximity_mm=float(proximity_mm),
             build_new_segments=True, build_multi_door_path=True)
         # The requested operation is the pair, not a standalone cleanup.
-        # A no-op or unfinished Centering must not publish the preceding Gloss.
-        if centering["branches_centered"] == 0 or perf_counter() >= deadline:
+        # No admissible passage or an unfinished Centering rolls back. A
+        # certified passage already at its centre does satisfy the request.
+        if (centering["branches_centered"] == 0 and
+                centering.get("doors_already_centered", 0) == 0) or perf_counter() >= deadline:
             reason = "budget" if perf_counter() >= deadline else "no_centering"
             _restore(results, baseline_count, baseline_results, pcb_data,
                      baseline_segments, baseline_vias)
@@ -144,6 +146,7 @@ def run_centering(results, pcb_data, config, *, net_ids,
             "after_mm": round(after_length, 4),
             "saved_mm": round(before_length - after_length, 4),
             "doors_centered": centering["doors_centered"],
+            "doors_already_centered": centering.get("doors_already_centered", 0),
             "centering_branches_changed": centering["branches_centered"],
             "centering_segments_added": centering["segments_added"],
             "centering_length_delta_mm": centering["length_delta_mm"],
@@ -167,9 +170,12 @@ def run_centering(results, pcb_data, config, *, net_ids,
             "budget_expired": perf_counter() >= deadline,
         }
         if _emit_log:
+            already = stats.get("doors_already_centered", 0)
+            satisfied = f"{already} already centered and certified, " if already else ""
             print("Track Gloss Centering: "
                   f"{stats['nets_processed']} nets processed, "
                   f"{stats['doors_centered']} doors centered, "
+                  f"{satisfied}"
                   f"{stats['centering_length_delta_mm']:+.4f} mm, "
                   f"{elapsed_ms:.1f} ms")
         return GlossOutcome(

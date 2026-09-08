@@ -80,6 +80,22 @@ def test_expired_budget_discards_even_partial_centering(monkeypatch):
     assert calls == ['gloss', 'centering']
 
 
+def test_certified_already_centered_passage_keeps_preparatory_gloss(monkeypatch):
+    pcb, config, original, calls = prepare(monkeypatch)
+    center = pipeline.center_interpad_routes
+    def satisfied(*args, **kwargs):
+        result = center(*args, **kwargs)
+        result[3]['doors_already_centered'] = 1
+        return result
+    monkeypatch.setattr(pipeline, 'center_interpad_routes', satisfied)
+    result = pipeline.run_centering([], pcb, config, net_ids=[1], _emit_log=False)
+    assert calls == ['gloss', 'centering', 'certification']
+    assert result.stats['g5_valid']
+    assert result.stats['doors_centered'] == 0
+    assert result.stats['doors_already_centered'] == 1
+    assert result.stats['cleanup_saved_mm'] > 0
+
+
 @pytest.mark.parametrize('failure', ['centering', 'certification'])
 def test_failure_restores_state_before_gloss(monkeypatch, failure):
     pcb, config, original, calls = prepare(monkeypatch, failure, simulate_centering=True)

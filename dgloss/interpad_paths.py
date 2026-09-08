@@ -7,6 +7,61 @@ from .interpad_geometry import _cross, _other_end, _octolinear, door_crossing_di
 from .interpad_geometry import _native_direction
 
 
+def center_with_propagated_neighbors(pcb_data, door, deadline=None):
+    """Extend the sliding construction to movable neighbours, not new bends.
+
+    Translate a contiguous set of existing supports with the door. Its outer
+    joints slide on the two unchanged boundary rails. Grow the set in chain
+    order, stopping at real anchors; KRT decides which proposal clears.
+    No arbitrary travel distance, chamfer size or routing grid is introduced.
+    """
+    from time import perf_counter
+    from .chain_topology import _simple_chains
+    from .krt_api import calculate_route_length
+
+    chain = next((c for c in _simple_chains(pcb_data, door.segment.net_id)
+                  if any(s is door.segment for s in c.segments)), None)
+    if chain is None:
+        return
+    points, segments = chain.points, chain.segments
+    index = next(i for i, s in enumerate(segments) if s is door.segment)
+    vectors = [_native_direction(a, b) for a, b in zip(points, points[1:])]
+    if any(v is None for v in vectors):
+        return
+    delta = tuple(door.axis[k] - door.crossing[k] for k in (0, 1))
+    # Two fixed boundary supports are required. The one-support case is
+    # already attempted by center_with_sliding_neighbors.
+    for size in range(2, len(segments) - 1):
+        for left in range(max(1, index-size+1), min(index, len(segments)-size-1)+1):
+            if deadline is not None and perf_counter() >= deadline:
+                return
+            right = left + size - 1
+            supports = []
+            for i in range(left-1, right+2):
+                if left <= i <= right:
+                    origin = door.axis if i == index else tuple(
+                        points[i][k] + delta[k] for k in (0, 1))
+                else:
+                    origin = points[i if i == left-1 else i+1]
+                supports.append((origin, vectors[i]))
+            joints = [_line_intersection(a, u, b, v)
+                      for (a, u), (b, v) in zip(supports, supports[1:])]
+            if any(p is None for p in joints):
+                continue
+            built_points = [points[left-1], *joints, points[right+2]]
+            built = []
+            for i, (a, b) in enumerate(zip(built_points, built_points[1:]), left-1):
+                v = vectors[i]
+                if (b[0]-a[0])*v[0] + (b[1]-a[1])*v[1] <= 1e-9 or not _octolinear(a, b):
+                    break
+                s = segments[i]
+                built.append(Segment(*a, *b, s.width, s.layer, s.net_id))
+            else:
+                old = tuple(segments[left-1:right+2])
+                yield InterpadCandidate(old, tuple(built), delta,
+                    calculate_route_length(old), calculate_route_length(built))
+
+
 def center_with_sliding_neighbors(pcb_data, door, *,
                                   build_new_segments=False):
     """Center one segment using its sliding rails and fixed pad terminals.

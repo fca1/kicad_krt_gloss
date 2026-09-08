@@ -123,6 +123,14 @@ n'est pas imposée aux approches : elles respectent les clearances réglementair
 à la largeur réelle, sans réserve d'élargissement. Toute géométrie produite reste octolinéaire et
 est validée contre l'ensemble des obstacles par les contrôles KRT.
 
+Pour une porte seule, un voisin mobile n'est pas une ancre : si le glissement
+local échoue, la translation des supports existants est propagée aux voisins
+successifs jusqu'aux rails fixes, sans inventer de nouveaux raccords. Les
+intersections déterminent les rallongements et raccourcissements ; KRT valide
+chaque proposition. Une porte déjà centrée et certifiée est satisfaite : elle
+ne justifie ni une reconstruction de sa chaîne ni l'annulation du Gloss
+préparatoire. Le log distingue portes recentrées et portes déjà centrées.
+
 L'option `build_new_segments` autorise l'augmentation du nombre de segments.
 Elle est cochée par défaut dans l'interface Centering. Lorsqu'elle est
 désactivée, le centering choisit le meilleur recentrage réalisable sans créer

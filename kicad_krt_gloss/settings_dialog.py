@@ -568,6 +568,9 @@ class GlossSettingsDialog(wx.Dialog):
                 if doors:
                     self.centering_status.SetLabel(
                         f"{doors} door(s) centered at Proxi {proximity:.2f} mm.")
+                elif result.get("doors_already_centered", 0):
+                    self.centering_status.SetLabel(
+                        f"{result['doors_already_centered']} door(s) already centered and certified.")
                 else:
                     self.centering_status.SetLabel(
                         "No eligible door for the selected nets at "
