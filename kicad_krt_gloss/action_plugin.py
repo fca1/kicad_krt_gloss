@@ -2,6 +2,7 @@
 
 from contextlib import redirect_stdout
 import io
+import json
 import os
 import sys
 import traceback
@@ -217,6 +218,8 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                 busy_cursor_started = True
             with redirect_stdout(LogTee()):
                 print("\n=== Track Gloss run ===")
+                print("Options: " + json.dumps(dict(DEFAULTS, **values),
+                                               sort_keys=True, ensure_ascii=False))
                 configure_krt_runtime()
                 if not ensure_krt_dependencies(parent):
                     print("Track Gloss cancelled: dependencies are unavailable.")
@@ -237,6 +240,11 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                                       for segment in seed_segments})
                     print(f"Track Gloss BE: {len(seed_segments)} segment "
                           f"seed(s) on {len(net_ids)} net(s)")
+                logged_net_ids = sorted(net_ids or {
+                    segment.net_id for segment in pcb_data.segments if segment.net_id})
+                net_labels = ", ".join(repr(pcb_data.nets[n].name)
+                                       for n in logged_net_ids if n in pcb_data.nets)
+                print("Net labels: " + net_labels)
                 config = KICAD.build_krt_config(
                     board, pcb_data, values["grid_step"], net_ids=net_ids)
                 gloss_config = GlossConfig(
@@ -286,6 +294,7 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                 stats = outcome.stats
                 print("\n=== Track Gloss result ===")
                 print(f"Scope: {scope}")
+                print("Net labels: " + net_labels)
                 print(f"Length: {stats.get('before_mm', 0.0):.4f} -> "
                       f"{stats.get('after_mm', 0.0):.4f} mm")
                 print(f"Saved: {stats.get('saved_mm', 0.0):.4f} mm")
@@ -351,6 +360,9 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
             wx.BeginBusyCursor()
             with redirect_stdout(LogTee()):
                 print("\n=== Track Gloss Centering run ===")
+                print("Options: " + json.dumps(
+                    dict(DEFAULTS, **values) | {"stay_in_corridor": True},
+                    sort_keys=True, ensure_ascii=False))
                 configure_krt_runtime()
                 if not ensure_krt_dependencies(parent):
                     print("Centering cancelled: dependencies are unavailable.")
