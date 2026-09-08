@@ -64,12 +64,15 @@ dans la plage Proxi admise (0 à 5 mm), le dialogue s'ouvre sur Centering et
 préremplit Proxi avec cette valeur. Ce raccourci ne choisit aucun net :
 l'utilisateur désigne ensuite les pistes à centrer dans la liste.
 
-**Sélection Centering dans KiCad.** Le dialogue de réglages est non modal :
-l'éditeur reste utilisable pour sélectionner des pistes. Dans l'onglet
-Centering, les boutons d'import ajoutent ou remplacent les coches de la liste
-par les nets des pistes actuellement sélectionnées ; « Clear selection » ne
-modifie que ces coches. Cette importation impose une reconstruction des données
-au lancement de Centering, afin de travailler sur la carte courante. Le flux
+**Sélection Centering dans KiCad.** Le dialogue de réglages est non modal et
+se ferme avec son éditeur PCB : l'éditeur reste utilisable pour sélectionner
+des pistes. La liste Centering est située dans General. Ses boutons d'import
+ajoutent ou remplacent les coches par les nets des pistes actuellement
+sélectionnées ; « Clear selection » ne modifie que ces coches. La sélection
+visuelle de la liste est annulée à son ouverture. Cette importation impose une
+reconstruction des données au lancement de Centering, afin de travailler sur la
+carte courante. Dans Centering, « Refresh » actualise Proxi seulement depuis
+une sélection exacte de deux pads, si leur entraxe est dans [0, 5] mm. Le flux
 Gloss n'est pas modifié.
 
 **Longueur et segments.** Leur découpage logiciel ne doit pas devenir une
@@ -87,14 +90,17 @@ net sur la couche de la branche, avec la demi-largeur du segment terminal.
 L'arrêt est conservé entre étapes et passes du même Gloss, sans verrou permanent
 écrit sur la carte. [Correctif et tests](reports/VIA_TERMINAL_ABSORPTION_2026_09_08.md).
 
-**G4.** Le budget initial vaut 20 s et ne borne plus G4. Par défaut, G4 autorise
-deux passes supplémentaires. Dès la première, arrêt si le gain incrémental est
+**G4.** Le budget initial vaut 20 s et ne borne plus G4. Par défaut,
+l'interface autorise une passe supplémentaire (réglable de 1 à 10) ; l'API
+conserve sa valeur propre si elle est appelée sans l'interface. Dès la
+première, arrêt si le gain incrémental est
 inférieur ou égal à 10 % du gain incrémental précédent, comparé d'abord à celui
 de la passe initiale. Ce n'est pas 10 % de la longueur restante. Un gain précédent
 nul ne déclenche pas le test de ratio ; aucune transformation arrête les passes.
 G4 peut continuer après expiration du budget initial : 20 s n'est donc pas un
-plafond total. `g4_min_gain_percent` et `g4_max_passes` restent dans la configuration,
-sans champs de dialogue ; la case d'activation G4 est disponible.
+plafond total. `g4_min_gain_percent` reste dans la configuration sans champ de
+dialogue ; la case d'activation G4 et le nombre maximal de passes sont
+disponibles.
 [Définition et validation](reports/G4_LIMITS_2026_09_08.md).
 
 ## État des intégrations

@@ -361,6 +361,9 @@ def test_dialog_keeps_a_post_run_log_with_krt_style_controls():
     assert 'label="Replace with KiCad selection"' in source
     assert 'label="Clear selection"' in source
     assert "on_import_centering" in source
+    assert 'label="Refresh"' in source
+    assert "def _on_refresh_proximity" in source
+    assert "def _clear_centering_highlight" in source
     assert "panel, min=0.0, max=5.0" in source
     assert "centering_build_multi_door_path" not in source
     assert "centering_build_new_segments" not in source
@@ -373,6 +376,8 @@ def test_dialog_keeps_a_post_run_log_with_krt_style_controls():
     assert "dialog.Show()" in action
     assert "dialog.ShowModal()" not in action
     assert "on_import_centering=import_centering_selection" in action
+    assert "on_refresh_proximity=lambda: selected_pad_pair_distance_mm(board)" in action
+    assert "parent.Bind(wx.EVT_CLOSE, close_dialog_with_parent)" in action
     assert 'print("\\n=== Track Gloss result ===")' in action
     assert 'stats.get(\'krt_after_mm\'' in action
 
@@ -406,12 +411,14 @@ def test_dialog_exposes_the_integrated_gloss_options_by_public_name():
         encoding="utf-8")
     assert '\"move_vias\": True' in source
     assert '\"stay_in_corridor\": False' in source
+    assert '\"g4_max_passes\": 1' in source
     assert "enable_g4" not in source
     assert source.count("SetToolTip(") >= 2
     assert 'label="Use elementary branches"' in source
     assert '"move_vias", "Movable vias"' in source
     assert '"stay_in_corridor", "Stay in corridor (prototype)"' in source
     assert 'label="Proximity max"' in source
+    assert 'label="G4 passes:"' in source
     assert "def _create_gloss_illustration" in source
     assert 'label="G3.3' not in source
     assert 'label="G3.4' not in source

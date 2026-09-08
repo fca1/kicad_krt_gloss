@@ -103,15 +103,26 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                 preselected_centering_nets=preselected_names,
                 initial_tab="Centering" if open_centering else None,
                 initial_log=self.__class__._last_log,
-                on_import_centering=import_centering_selection)
+                on_import_centering=import_centering_selection,
+                on_refresh_proximity=lambda: selected_pad_pair_distance_mm(board))
+
+            def close_dialog_with_parent(event):
+                """Do not leave a modeless plugin window after the PCB editor."""
+                if self._settings_dialog is dialog:
+                    dialog.Close()
+                event.Skip()
 
             def on_dialog_close(event):
                 self.__class__._settings = dialog.values()
                 self.__class__._last_log = dialog.log_value()
                 self._settings_dialog = None
+                if parent is not None:
+                    parent.Unbind(wx.EVT_CLOSE, handler=close_dialog_with_parent)
                 event.Skip()
 
             dialog.Bind(wx.EVT_CLOSE, on_dialog_close)
+            if parent is not None:
+                parent.Bind(wx.EVT_CLOSE, close_dialog_with_parent)
             self._settings_dialog = dialog
             dialog.Show()
             return
@@ -209,6 +220,7 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                     board, pcb_data, values["grid_step"], net_ids=net_ids)
                 gloss_config = GlossConfig(
                     repeat_until_stable=values.get("repeat_until_stable", True),
+                    g4_max_passes=int(values.get("g4_max_passes", 1)),
                     stay_in_corridor=values.get("stay_in_corridor", False),
                     move_vias=values.get("move_vias",
                                          values.get("enable_g3_1", True)),

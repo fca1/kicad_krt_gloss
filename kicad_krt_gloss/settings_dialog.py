@@ -21,6 +21,7 @@ GLOSS_DEFAULTS = {
     "stay_in_corridor": False,
     "move_vias": True,
     "repeat_until_stable": True,
+    "g4_max_passes": 1,
 }
 
 CENTERING_DEFAULTS = {
@@ -34,7 +35,8 @@ class GlossSettingsDialog(wx.Dialog):
     def __init__(self, parent, values, selected_count, *, on_gloss=None,
                  on_centering=None, pcb_data=None, centering_nets=(),
                  preselected_centering_nets=(), initial_tab=None,
-                 initial_log="", on_import_centering=None):
+                 initial_log="", on_import_centering=None,
+                 on_refresh_proximity=None):
         super().__init__(parent, title="KiCad KRT Gloss")
         values = dict(values or {})
         if "move_vias" not in values and "enable_g3_1" in values:
@@ -43,6 +45,7 @@ class GlossSettingsDialog(wx.Dialog):
         self._on_gloss_callback = on_gloss
         self._on_centering_callback = on_centering
         self._on_import_centering_callback = on_import_centering
+        self._on_refresh_proximity_callback = on_refresh_proximity
         wx.ToolTip.SetDelay(250)
         wx.ToolTip.SetAutoPop(15000)
         wx.ToolTip.SetReshow(50)
@@ -130,12 +133,14 @@ class GlossSettingsDialog(wx.Dialog):
         budget_row.Add(budget_unit, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
         budget.Add(budget_row, 0, wx.ALL, 8)
         content.Add(budget, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
+        centering_selection = self._create_centering_selection(
+            panel, pcb_data, centering_nets, preselected_centering_nets)
+        content.Add(centering_selection, 1, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
         panel.SetSizer(content)
         self.notebook.AddPage(panel, "General")
 
         self._create_gloss_tab(values)
-        self._create_centering_tab(
-            pcb_data, centering_nets, preselected_centering_nets, values)
+        self._create_centering_tab(values)
 
         log_panel = wx.Panel(self.notebook)
         log_content = wx.BoxSizer(wx.VERTICAL)
@@ -270,6 +275,18 @@ class GlossSettingsDialog(wx.Dialog):
             "this option is disabled.")
         self.controls["repeat_until_stable"] = repeat
         operations.Add(repeat, 0, wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
+        g4_passes = wx.BoxSizer(wx.HORIZONTAL)
+        g4_passes.Add(wx.StaticText(panel, label="G4 passes:"), 0,
+                      wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 8)
+        self.g4_max_passes = wx.SpinCtrl(
+            panel, min=1, max=10, initial=int(values["g4_max_passes"]),
+            size=(70, -1))
+        g4_passes_help = (
+            "Maximum number of additional whole-board G4 passes after the "
+            "initial Gloss pass. The G4 checkbox must be enabled.")
+        self.g4_max_passes.SetToolTip(g4_passes_help)
+        g4_passes.Add(self.g4_max_passes, 0)
+        operations.Add(g4_passes, 0, wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
         content.Add(operations, 0, wx.EXPAND | wx.ALL, 8)
         content.AddStretchSpacer()
         panel.SetSizer(content)
@@ -284,13 +301,9 @@ class GlossSettingsDialog(wx.Dialog):
         diagram.SetToolTip(tooltip)
         return diagram
 
-    def _create_centering_tab(self, pcb_data, centering_nets,
-                              preselected_nets, values):
-        """Build the special G3.6 page around KRT's net-selection panel."""
-        panel = wx.Panel(self.notebook)
-        content = wx.BoxSizer(wx.VERTICAL)
-        columns = wx.BoxSizer(wx.HORIZONTAL)
-
+    def _create_centering_selection(self, panel, pcb_data, centering_nets,
+                                    preselected_nets):
+        """Build the shared Centering net checklist on the General page."""
         net_box = wx.StaticBox(panel, label="Net Selection")
         net_sizer = wx.StaticBoxSizer(net_box, wx.VERTICAL)
         from dgloss.krt_api import NetSelectionPanel
@@ -330,7 +343,13 @@ class GlossSettingsDialog(wx.Dialog):
         selection_actions.Add(replace_selection, 1, wx.RIGHT, 5)
         selection_actions.Add(clear_selection, 1)
         net_sizer.Add(selection_actions, 0, wx.EXPAND | wx.TOP, 5)
-        columns.Add(net_sizer, 2, wx.EXPAND | wx.ALL, 8)
+        wx.CallAfter(self._clear_centering_highlight)
+        return net_sizer
+
+    def _create_centering_tab(self, values):
+        """Build the special G3.6 controls without duplicating net selection."""
+        panel = wx.Panel(self.notebook)
+        content = wx.BoxSizer(wx.VERTICAL)
 
         options = wx.BoxSizer(wx.VERTICAL)
         icon_path = os.path.join(_DIALOG_IMAGES, "centering_illustration.png")
@@ -366,9 +385,14 @@ class GlossSettingsDialog(wx.Dialog):
             options.Add(self.centering_proximity_mm, 0,
                         wx.ALIGN_CENTER | wx.ALL, 10)
 
+        refresh_proximity = wx.Button(panel, label="Refresh")
+        refresh_proximity.SetToolTip(
+            "Set Proximity max from exactly two selected KiCad pads when "
+            "their centre spacing is between 0 and 5 mm.")
+        refresh_proximity.Bind(wx.EVT_BUTTON, self._on_refresh_proximity)
+        options.Add(refresh_proximity, 0, wx.ALIGN_CENTER | wx.BOTTOM, 10)
         options.AddStretchSpacer()
-        columns.Add(options, 1, wx.EXPAND | wx.TOP | wx.RIGHT | wx.BOTTOM, 8)
-        content.Add(columns, 1, wx.EXPAND)
+        content.Add(options, 1, wx.ALIGN_CENTER | wx.ALL, 8)
 
         self.centering_button = wx.Button(panel, label="Centering")
         self.centering_button.SetToolTip(
@@ -402,6 +426,28 @@ class GlossSettingsDialog(wx.Dialog):
         """Clear the Centering net checklist without affecting KiCad."""
         self.centering_net_panel.set_selected_nets(())
         self.centering_status.SetLabel("Centering net selection cleared.")
+
+    def _clear_centering_highlight(self):
+        """Do not show every initial checklist row as a blue selection."""
+        net_list = self.centering_net_panel.net_list
+        for index in net_list.GetSelections():
+            net_list.Deselect(index)
+
+    def _on_refresh_proximity(self, _event):
+        """Refresh Proxi only from one exclusive native two-pad selection."""
+        if self._on_refresh_proximity_callback is None:
+            return
+        distance = self._on_refresh_proximity_callback()
+        if distance is None:
+            self.centering_status.SetLabel(
+                "Select exactly two pads in KiCad to refresh Proxi.")
+        elif 0.0 <= distance <= 5.0:
+            self.centering_proximity_mm.SetValue(distance)
+            self.centering_status.SetLabel(
+                f"Proxi refreshed from pad spacing: {distance:.2f} mm.")
+        else:
+            self.centering_status.SetLabel(
+                "Selected pad spacing is outside the 0–5 mm Proxi range.")
 
     def _on_copy_log(self, _event):
         if not wx.TheClipboard.Open():
@@ -493,6 +539,7 @@ class GlossSettingsDialog(wx.Dialog):
                 for key, control in self.controls.items()} | {
                     "grid_step": self.grid_step.GetValue(),
                     "budget_seconds": self.budget_seconds.GetValue(),
+                    "g4_max_passes": self.g4_max_passes.GetValue(),
                     "centering_proximity_mm": (
                         self.centering_proximity_mm.GetValue()),
                 }
