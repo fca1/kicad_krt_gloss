@@ -1,5 +1,9 @@
 # Track Gloss — spécification de référence
 
+Ce document fixe les règles fonctionnelles et les invariants. Pour une
+présentation accessible du fonctionnement des deux actions, voir
+[`gloss_explain.md`](gloss_explain.md).
+
 ## Finalité
 
 Track Gloss est un traitement final d'un routage existant. Il améliore sa
@@ -67,19 +71,21 @@ explicite ne lève pas leur protection.
 
 ## Séquencement
 
-Les phases de réduction de longueur sont exécutées avant le centering. Le
-centering poursuit un objectif distinct : il peut conserver ou augmenter
-légèrement la longueur afin d'améliorer le passage entre les obstacles. Il
-n'est donc pas soumis au gain minimal exigé par les phases de réduction.
+Le Gloss et le Centering sont deux actions distinctes, aux objectifs différents.
+Le Gloss cherche à réduire et à simplifier ; le Centering cherche à placer une
+piste au mieux dans un passage. Le Centering peut donc conserver ou augmenter
+légèrement la longueur : il n'est pas soumis au gain minimal exigé par les
+phases de réduction.
 
-Un centering antérieur ne constitue pas une contrainte à conserver pour un
-nouvel appel au gloss. Si la géométrie centrée peut être remplacée par une
-géométrie valide plus courte, le gloss doit supprimer entièrement la
-déformation introduite par le centering. Lorsque la situation initiale réduite
-reste valide, le résultat doit retrouver cette géométrie, sa longueur et son
-nombre de segments. L'ordre choisi par l'utilisateur détermine donc l'état
-final : le centering privilégie les portes, puis un gloss ultérieur privilégie
-de nouveau la réduction.
+Lorsqu'un Centering est demandé, l'enchaînement est impératif et atomique :
+
+1. exécuter le Gloss avec `stay_in_corridor=True` ;
+2. exécuter le Centering sur ce résultat ;
+3. ne plus transformer la géométrie après le Centering.
+
+Le Centering est ainsi la dernière transformation géométrique de l'action. En
+cas d'échec, de budget expiré ou de non-conformité de cette action combinée, le
+résultat initial est restauré selon la politique transactionnelle.
 
 Les mesures publiées pour une action Gloss couvrent toute l'action, depuis le
 cuivre reçu en entrée jusqu'au cuivre final. La longueur initiale, le nombre de
