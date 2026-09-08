@@ -37,7 +37,7 @@ class GlossSettingsDialog(wx.Dialog):
                  on_centering=None, pcb_data=None, centering_nets=(),
                  preselected_centering_nets=(), initial_tab=None,
                  initial_log="", on_import_centering=None,
-                 on_refresh_proximity=None):
+                 on_refresh_proximity=None, on_net_selection_changed=None):
         super().__init__(
             parent, title="KiCad KRT Gloss",
             style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER | wx.STAY_ON_TOP)
@@ -50,6 +50,7 @@ class GlossSettingsDialog(wx.Dialog):
         self._on_import_centering_callback = on_import_centering
         self._on_refresh_proximity_callback = on_refresh_proximity
         self._selected_count = selected_count
+        self._on_net_selection_changed = on_net_selection_changed
         wx.ToolTip.SetDelay(250)
         wx.ToolTip.SetAutoPop(15000)
         wx.ToolTip.SetReshow(50)
@@ -63,11 +64,9 @@ class GlossSettingsDialog(wx.Dialog):
         right_column = wx.BoxSizer(wx.VERTICAL)
         right_box = wx.StaticBox(panel, label="Select branch")
         selection = wx.StaticBoxSizer(right_box, wx.VERTICAL)
-        selection_label = "Selected Net" if selected_count <= 1 else \
-            "Selected Nets"
-        selection_value = str(selected_count) if selected_count else "ALL"
         selected_net = wx.StaticText(
-            panel, label=f"{selection_label}: {selection_value}")
+            panel, label="Selected Nets: 0")
+        self.selected_net_label = selected_net
         selected_font = selected_net.GetFont()
         selected_font.SetPointSize(selected_font.GetPointSize() + 4)
         selected_font.SetWeight(wx.FONTWEIGHT_BOLD)
@@ -241,6 +240,8 @@ class GlossSettingsDialog(wx.Dialog):
         outer.Add(buttons, 0, wx.EXPAND | wx.ALL, 10)
         self.SetSizerAndFit(outer)
         self.SetMinSize(self.GetSize())
+        self.centering_net_panel.set_selection_changed_callback(self._sync_net_selection)
+        self._sync_net_selection()
         if initial_tab:
             for index in range(self.notebook.GetPageCount()):
                 if self.notebook.GetPageText(index) == initial_tab:
@@ -328,7 +329,7 @@ class GlossSettingsDialog(wx.Dialog):
             pcb_data = SimpleNamespace(nets={}, pads_by_net={}, footprints={})
         self.centering_net_panel = NetSelectionPanel(
             panel, pcb_data,
-            instructions="Select modifiable nets to center...",
+            instructions="Check nets for Gloss and Centering...",
             show_hide_checkbox=False,
             show_hide_differential=False,
             show_component_filter=True,
@@ -354,7 +355,7 @@ class GlossSettingsDialog(wx.Dialog):
             wx.EVT_BUTTON,
             lambda _event: self._on_import_centering(False))
         clear_selection = wx.Button(panel, label="Clear selection")
-        clear_selection.SetToolTip("Uncheck every net in this Centering list.")
+        clear_selection.SetToolTip("Uncheck every net for Gloss and Centering.")
         clear_selection.Bind(wx.EVT_BUTTON, self._on_clear_centering_selection)
         selection_actions.Add(add_selection, 1, wx.RIGHT, 5)
         selection_actions.Add(replace_selection, 1, wx.RIGHT, 5)
@@ -420,6 +421,16 @@ class GlossSettingsDialog(wx.Dialog):
     def _on_clear_log(self, _event):
         self.log_text.Clear()
 
+    def _sync_net_selection(self):
+        names = self.centering_net_panel.get_selected_nets()
+        self.selected_net_label.SetLabel(f"Selected Nets: {len(names)}")
+        self.gloss_button.Enable(bool(names))
+        self.centering_button.Enable(bool(names))
+        self.controls["repeat_until_stable"].Enable(len(names) > 1)
+        self.g4_max_passes.Enable(len(names) > 1)
+        if self._on_net_selection_changed is not None:
+            self._on_net_selection_changed(names)
+
     def _on_import_centering(self, add):
         """Merge or replace checked Centering nets from the KiCad selection."""
         if self._on_import_centering_callback is None:
@@ -438,7 +449,7 @@ class GlossSettingsDialog(wx.Dialog):
         """Clear the Centering net checklist without affecting KiCad."""
         self.centering_net_panel.set_selected_nets(())
         self._clear_centering_highlight()
-        self.centering_status.SetLabel("Centering net selection cleared.")
+        self.centering_status.SetLabel("Net selection cleared.")
 
     def _clear_centering_highlight(self):
         """Do not show every initial checklist row as a blue selection."""
@@ -498,13 +509,16 @@ class GlossSettingsDialog(wx.Dialog):
 
     def _on_gloss(self, _event):
         self._show_action_tab("Gloss")
+        names = self.centering_net_panel.get_selected_nets()
+        if not names:
+            return
         if self._on_gloss_callback is None:
             self.EndModal(wx.ID_OK)
             return
         self.gloss_button.Disable()
         self.centering_button.Disable()
         try:
-            self._on_gloss_callback(self.values(), self.append_log)
+            self._on_gloss_callback(self.values(), names, self.append_log)
         finally:
             self.gloss_button.Enable()
             self.centering_button.Enable()

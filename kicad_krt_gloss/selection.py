@@ -7,6 +7,19 @@ import math
 POSITION_DECIMALS = 6
 
 
+def highlight_net_names(board, names):
+    """Highlight checked nets through native net flags, never item selection."""
+    import pcbnew
+    chosen = set(names)
+    codes = [code for code, net in board.GetNetsByNetcode().items()
+             if code > 0 and net.GetNetname() in chosen]
+    board.ResetNetHighLight()
+    for code in codes:
+        board.SetHighLightNet(code, True)
+    board.HighLightON(bool(codes))
+    pcbnew.Refresh()
+
+
 def selected_pad_pair_distance_mm(board):
     """Return the centre spacing of an exclusive two-pad selection in mm.
 

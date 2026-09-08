@@ -76,16 +76,22 @@ def test_plugin_run_accepts_two_item_preparation_for_multiple_selected_nets():
                if isinstance(node, ast.FunctionDef) and node.name == "Run")
     for net_ids in ([], [1], [1, 2]):
         calls = []
-        prepared = (types.SimpleNamespace(nets={}), [])
+        prepared = (types.SimpleNamespace(nets={
+            i: types.SimpleNamespace(name=f'N{i}') for i in (1, 2, 3)}), [])
         settings = {"test": True}
 
         class Dialog:
             def __init__(self, parent, values, count, **kwargs):
                 calls.append(("dialog", count))
                 self.on_gloss = kwargs["on_gloss"]
+                self.on_centering = kwargs["on_centering"]
+                assert set(kwargs['preselected_centering_nets']) == (
+                    {f'N{i}' for i in net_ids} if net_ids else {'N1', 'N2', 'N3'})
 
             def Bind(self, *_args): pass
-            def Show(self): self.on_gloss(settings, lambda text: None)
+            def Show(self):
+                self.on_gloss(settings, ['N3'], lambda text: None)
+                self.on_centering(settings, ['N3'], lambda text: None)
             def values(self): return settings
             def log_value(self): return ""
             def Destroy(self): pass
@@ -100,7 +106,17 @@ def test_plugin_run_accepts_two_item_preparation_for_multiple_selected_nets():
 
             def _modifiable_net_rows(self, board, pcb_data):
                 calls.append(("modifiable",))
-                return []
+                return [('N1', 1), ('N2', 2), ('N3', 3)]
+
+            def _prepare_checked_nets(self, board, parent, names):
+                assert names == ['N3']
+                calls.append(('fresh',))
+                return prepared, [3]
+
+            def _run_centering(self, board, parent, values, names, **kwargs):
+                assert names == ['N3']
+                assert kwargs['prepared'] is prepared
+                calls.append(('centering',))
 
             def _run_gloss(self, board, parent, values, nets, **kwargs):
                 calls.append(("run", nets, kwargs))
@@ -121,10 +137,12 @@ def test_plugin_run_accepts_two_item_preparation_for_multiple_selected_nets():
         assert ("prepare",) in calls if len(net_ids) != 1 else (
             ("prepare",) not in calls)
         run_call = next(call for call in calls if call[0] == "run")
-        assert run_call[1] == net_ids
+        assert run_call[1] == ([3] if len(net_ids) != 1 else net_ids)
         if len(net_ids) != 1:
             assert run_call[2].get("prepared") == prepared
             assert "show_progress" not in run_call[2]
+            assert calls.count(('fresh',)) == 2
+            assert ('centering',) in calls
         else:
             assert run_call[2] == {"show_progress": False}
 
@@ -247,6 +265,45 @@ def test_native_arc_nets_are_excluded_at_the_plugin_boundary():
     arc.GetClass = lambda: "PCB_ARC"
     board = types.SimpleNamespace(GetTracks=lambda: [straight, arc])
     assert native_arc_net_ids(board) == [8]
+
+
+def test_checked_nets_scope_ignores_unchecked_seeds_and_includes_added_nets():
+    source = (ROOT / 'kicad_krt_gloss' / 'action_plugin.py').read_text(encoding='utf-8')
+    cls = next(node for node in ast.parse(source).body if isinstance(node, ast.ClassDef))
+    method = next(node for node in cls.body
+                  if isinstance(node, ast.FunctionDef) and node.name == '_prepare_checked_nets')
+    namespace = {}
+    exec(compile(ast.Module(body=[method], type_ignores=[]), 'scope', 'exec'), namespace)
+    segments = [types.SimpleNamespace(net_id=i) for i in (1, 2, 2, 3)]
+    data = types.SimpleNamespace(segments=segments)
+    plugin = types.SimpleNamespace(
+        _prepare_selection=lambda *_: (data, [segments[0], segments[1]]),
+        _modifiable_net_rows=lambda *_: [('N1', 1), ('N2', 2), ('N3', 3)])
+    resolve = namespace['_prepare_checked_nets']
+    ready, codes = resolve(plugin, None, None, ['N2', 'N3'])
+    assert codes == [2, 3]
+    assert ready[1] == [segments[1], segments[3]]
+    assert resolve(plugin, None, None, [])[0] is None
+    assert resolve(plugin, None, None, ['deleted'])[0] is None
+
+
+def test_dynamic_highlight_add_remove_clear_without_item_selection():
+    from kicad_krt_gloss.selection import highlight_net_names
+    highlighted = set()
+    enabled = []
+    board = types.SimpleNamespace(
+        GetNetsByNetcode=lambda: {i: types.SimpleNamespace(GetNetname=lambda i=i: f'N{i}')
+                                 for i in (0, 1, 2)},
+        ResetNetHighLight=highlighted.clear,
+        SetHighLightNet=lambda code, multi: highlighted.add(code),
+        HighLightON=enabled.append)
+    with patch.dict(sys.modules, {'pcbnew': types.SimpleNamespace(Refresh=lambda: None)}):
+        highlight_net_names(board, ['N1', 'N2'])
+        assert highlighted == {1, 2} and enabled[-1]
+        highlight_net_names(board, ['N2'])
+        assert highlighted == {2}
+        highlight_net_names(board, [])
+        assert not highlighted and not enabled[-1]
 
 
 def test_dgloss_runtime_does_not_depend_on_pcbnew_or_plugin_package():
@@ -430,8 +487,7 @@ def test_about_tab_uses_project_versions_and_attribution():
     assert '"https://github.com/drandyhaas/KiCadRoutingTools"' in source
     assert "info.AddSpacer(10)" in source
     assert "info.AddSpacer((1, 10))" not in source
-    assert 'selection_value = str(selected_count) if selected_count else "ALL"' \
-        in source
+    assert 'self.selected_net_label.SetLabel(f"Selected Nets: {len(names)}")' in source
 
 
 def test_pcm_package_includes_the_about_logo():

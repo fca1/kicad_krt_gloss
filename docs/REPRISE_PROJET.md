@@ -61,19 +61,30 @@ pad–via. Cette limitation a été explicitement conservée.
 **Raccourci DHM Centering.** Avec exactement deux pads sélectionnés et aucun
 autre objet, le plugin mesure leur entraxe centre-à-centre. Si cet entraxe est
 dans la plage Proxi admise (0 à 5 mm), le dialogue s'ouvre sur Centering et
-préremplit Proxi avec cette valeur. Ce raccourci ne choisit aucun net :
-l'utilisateur désigne ensuite les pistes à centrer dans la liste.
+préremplit Proxi avec cette valeur. Les deux pads ne désignent pas les nets à
+traiter : la netlist suit la règle commune ci-dessous (tous les nets admissibles
+cochés en l'absence de pistes présélectionnées).
 
-**Sélection Centering dans KiCad.** Le dialogue de réglages est non modal et
+**Sélection commune dans KiCad.** Un seul net désigné par les pistes natives
+sélectionnées lance toujours le Gloss direct, sans dialogue. Si le dialogue
+s'ouvre, ses coches pilotent Gloss et Centering. Sans net présélectionné, tous
+les nets admissibles sont cochés ; avec plusieurs nets présélectionnés, seuls
+ceux-ci sont cochés. Le compteur reflète les coches et une liste vide interdit
+les deux actions, sans repli implicite sur tous les nets.
+
+Le dialogue de réglages est non modal et
 se ferme avec son éditeur PCB : l'éditeur reste utilisable pour sélectionner
-des pistes. La liste Centering est située dans General. Ses boutons d'import
+des pistes. La liste commune est située dans General. Ses boutons d'import
 ajoutent ou remplacent les coches par les nets des pistes actuellement
-sélectionnées ; « Clear selection » ne modifie que ces coches. La sélection
-visuelle de la liste est annulée à son ouverture. Cette importation impose une
-reconstruction des données au lancement de Centering, afin de travailler sur la
-carte courante. Dans Centering, « Refresh » actualise Proxi seulement depuis
-une sélection exacte de deux pads, si leur entraxe est dans [0, 5] mm. Le flux
-Gloss n'est pas modifié.
+sélectionnées ; « Clear selection » vide les coches. Elles pilotent aussi la
+surbrillance native des nets sur le PCB, sans modifier la sélection des objets.
+La fermeture du dialogue retire cette surbrillance. La sélection visuelle des
+lignes de liste est annulée à son ouverture.
+Les deux actions reconstruisent leurs données depuis la carte courante. En mode
+branches élémentaires, les pistes natives désignent les branches uniquement de
+leurs nets cochés ; un net coché sans graine native désigne tout son cuivre.
+Les graines d'un net décoché sont ignorées. Dans Centering, « Refresh » actualise
+Proxi seulement depuis une sélection exacte de deux pads, dans [0, 5] mm.
 
 Dans General, la liste occupe la colonne de gauche ; « Select branch », son
 illustration et « Use elementary branches » occupent la colonne de droite,

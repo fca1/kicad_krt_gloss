@@ -10,7 +10,7 @@ import pcbnew
 import wx
 
 from .runtime import configure_krt_runtime, ensure_krt_dependencies
-from .selection import (native_arc_net_ids, selected_net_ids,
+from .selection import (highlight_net_names, native_arc_net_ids, selected_net_ids,
                         selected_pad_pair_distance_mm, selected_seed_segments)
 from .settings_dialog import DEFAULTS, GlossSettingsDialog
 from .version import __version__
@@ -63,38 +63,35 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
             preselected_names = {
                 prepared[0].nets[net_id].name for net_id in net_ids
                 if net_id in prepared[0].nets}
-            dialog_pcb_data = prepared[0]
-            centering_prepared = prepared
+            if not net_ids:
+                preselected_names = {name for name, _ in centering_nets}
 
-            def run_from_dialog(new_values, append_log):
-                nonlocal prepared
+            def run_from_dialog(new_values, selected_names, append_log):
                 self.__class__._settings = dict(new_values)
-                ready = prepared
-                prepared = None
-                self._run_gloss(board, parent, new_values, net_ids,
+                ready, checked_ids = self._prepare_checked_nets(
+                    board, parent, selected_names)
+                if ready is None:
+                    return False
+                return self._run_gloss(board, parent, new_values, checked_ids,
                                 append_log=append_log, prepared=ready)
 
             def center_from_dialog(new_values, selected_names, append_log):
-                nonlocal centering_prepared
                 self.__class__._settings = dict(new_values)
-                ready = centering_prepared
-                centering_prepared = None
-                self._run_centering(
+                ready, checked_ids = self._prepare_checked_nets(
+                    board, parent, selected_names)
+                if ready is None:
+                    return False
+                return self._run_centering(
                     board, parent, new_values, selected_names,
                     append_log=append_log, prepared=ready)
 
             def import_centering_selection():
-                nonlocal centering_prepared
-                # The checkbox list has names from dialog_pcb_data.  Selection
-                # changes do not alter copper, but discard the preparation so
-                # Centering reparses the live board when it is run.
-                centering_prepared = None
-                return {
-                    dialog_pcb_data.nets[net_id].name
-                    for net_id in selected_net_ids(board)
-                    if net_id in dialog_pcb_data.nets
-                    and dialog_pcb_data.nets[net_id].name
-                }
+                chosen = set(selected_net_ids(board))
+                return {net.GetNetname() for code, net in board.GetNetsByNetcode().items()
+                        if code in chosen}
+
+            def highlight_names(names):
+                highlight_net_names(board, names)
 
             # Keep this window top-level; the explicit editor close binding
             # below closes it with the PCB. This does not suppress KiCad's
@@ -107,6 +104,7 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                 initial_tab="Centering" if open_centering else None,
                 initial_log=self.__class__._last_log,
                 on_import_centering=import_centering_selection,
+                on_net_selection_changed=highlight_names,
                 on_refresh_proximity=lambda: selected_pad_pair_distance_mm(board))
 
             def close_dialog_with_parent(event):
@@ -119,6 +117,7 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                 self.__class__._settings = dialog.values()
                 self.__class__._last_log = dialog.log_value()
                 self._settings_dialog = None
+                highlight_names(())
                 if parent is not None:
                     parent.Unbind(wx.EVT_CLOSE, handler=close_dialog_with_parent)
                 event.Skip()
@@ -131,6 +130,27 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
             return
 
         self._run_gloss(board, parent, values, net_ids, show_progress=False)
+
+    def _prepare_checked_nets(self, board, parent, names):
+        """Resolve both dialog actions against the same fresh, explicit scope."""
+        if not names:
+            return None, []
+        prepared = self._prepare_selection(board, parent)
+        if prepared is None:
+            return None, []
+        data, seeds = prepared
+        chosen = {code for name, code in self._modifiable_net_rows(board, data)
+                  if name in names}
+        if not chosen:
+            return None, []
+        # Native tracks designate branches only on their own checked nets.
+        # A checked net without native seeds designates its complete copper.
+        seeds = [seed for seed in seeds if seed.net_id in chosen]
+        seeded = {seed.net_id for seed in seeds}
+        seeds.extend(segment for segment in data.segments
+                     if segment.net_id in chosen - seeded
+                     and not getattr(segment, "graphic", False))
+        return (data, seeds), sorted(chosen)
 
     @staticmethod
     def _modifiable_net_rows(board, pcb_data):
