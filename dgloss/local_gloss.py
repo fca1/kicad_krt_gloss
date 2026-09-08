@@ -12,8 +12,7 @@ from dgloss.krt_api import calculate_route_length
 
 @stable_copper_search
 def local_replacement(context, chain, net_id, current, vias, deadline=None):
-    from .algorithm import (_candidate_segments, _touches_other_same_net,
-                            _pad_holds_point)
+    from .route_geometry import (_candidate_segments, _touches_other_same_net, _pad_holds_point)
     original = list(chain.segments)
     segments = list(original)
     points = list(chain.points)

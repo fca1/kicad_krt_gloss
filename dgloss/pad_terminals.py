@@ -9,10 +9,8 @@ from dgloss.krt_api import point_to_pad_distance
 from dgloss.krt_api import calculate_route_length
 from dgloss.krt_api import pos_key
 
-from .algorithm import (_candidate_clearance, _connector_families,
-                        _edge_directions,
-                        _right_angle,
-                        _touches_other_same_net)
+from .algorithm import (_candidate_clearance)
+from .route_geometry import (_connector_families, _edge_directions, _right_angle, _touches_other_same_net)
 from .changes import GlossChanges, release_result_custody
 from .corridor import stays_in_corridor
 
@@ -219,12 +217,7 @@ def optimize_pad_terminals(context, results, deadline=None, *, net_ids,
             native_segments, _native_vias = release_result_custody(
                 results, chain)
             strips.extend(native_segments)
-            context.pcb_data.segments = [segment for segment in
-                                         context.pcb_data.segments
-                                         if id(segment) not in removed_ids] + candidate
-            context.replace_editable_segments(chain, candidate)
-            if hasattr(context.pcb_data, "_foreign_seg_arr_cache"):
-                context.pcb_data._foreign_seg_arr_cache = None
+            context.apply_replacement(chain, candidate)
             processed.update(removed_ids)
             changes.segments.extend({"old": segment, "stage": "G3.2"}
                                     for segment in chain)

@@ -4,27 +4,20 @@ from collections import defaultdict, Counter
 from dataclasses import dataclass
 import math
 from .execution import perf_counter
-
-from .topology import terminal_partition, ReplacementGuard
-from dgloss.krt_api import point_to_pad_distance
-from dgloss.krt_api import point_to_segment_distance, segments_intersect
-from dgloss.krt_api import Segment
+from .topology import ReplacementGuard
+from dgloss.krt_api import point_to_segment_distance
 from dgloss.krt_api import calculate_route_length
-from dgloss.krt_api import _octolinear_bends
-from dgloss.krt_api import pos_key
 from dgloss.krt_api import _segment_fits_wide
 from .changes import GlossChanges, release_result_custody
 from .segment_sliding import slide_interval, slide_segment, slide_length_rate
 from .corridor import stays_in_corridor
 from .krt_clearance import stable_copper_search
-
-
-@dataclass
-class _Chain:
-    segments: list
-    points: list
-    layer: str
-    width: float
+from .board_views import board_views
+from .topology import (_connectivity_worse)
+from .route_geometry import (_pad_holds_point, _candidate_segments, _segments_for_points,
+    _connector_families, _chamfer_candidate_families, _chamfer_candidate_at,
+    _touches_other_same_net, _edge_directions, _right_angle)
+from .chain_topology import (_Chain, _simple_chains)
 
 
 @dataclass(frozen=True)
@@ -36,173 +29,6 @@ class _ClearanceDecision:
 
     def __bool__(self):
         return self.clear
-
-
-def _connectivity_worse(before, after):
-    """Use KRT's connectivity grade without requiring an initially clean net."""
-    if (before.get("graph") is not None and after.get("graph") is not None and
-            terminal_partition(before) != terminal_partition(after)):
-        return True
-    return ((before.get("connected") and not after.get("connected")) or
-            len(after.get("disconnected_pads") or []) >
-            len(before.get("disconnected_pads") or []) or
-            (after.get("num_components") or 1) >
-            (before.get("num_components") or 1))
-
-
-def _pad_holds_point(pad, point, layer, half_width):
-    if layer not in pad.layers and not any("*" in name for name in pad.layers):
-        return False
-    return point_to_pad_distance(point[0], point[1], pad) <= half_width + 1e-6
-
-
-def _simple_chains(pcb_data, net_id, allowed_segment_ids=None):
-    """Return conservative same-layer/width chains; pads, vias and nodes anchor."""
-    net_segments = [s for s in pcb_data.segments if s.net_id == net_id and
-                    not getattr(s, "graphic", False) and
-                    not getattr(s, "locked", False) and
-                    (allowed_segment_ids is None or
-                     id(s) in allowed_segment_ids)]
-    if len(net_segments) < 2:
-        return []
-
-    incidence = defaultdict(int)
-    for seg in [s for s in pcb_data.segments if s.net_id == net_id]:
-        incidence[pos_key(seg.start_x, seg.start_y)] += 1
-        incidence[pos_key(seg.end_x, seg.end_y)] += 1
-    via_points = {pos_key(v.x, v.y) for v in pcb_data.vias if v.net_id == net_id}
-    pads = pcb_data.pads_by_net.get(net_id, [])
-
-    groups = defaultdict(list)
-    for seg in net_segments:
-        groups[(seg.layer, round(seg.width, 6))].append(seg)
-
-    chains = []
-    for (layer, width), segments in sorted(groups.items()):
-        adjacency = defaultdict(list)
-        actual = {}
-        for seg in segments:
-            a = pos_key(seg.start_x, seg.start_y)
-            b = pos_key(seg.end_x, seg.end_y)
-            adjacency[a].append(seg)
-            adjacency[b].append(seg)
-            actual[(id(seg), a)] = (seg.start_x, seg.start_y)
-            actual[(id(seg), b)] = (seg.end_x, seg.end_y)
-
-        def interior(key):
-            point = actual.get((id(adjacency[key][0]), key), key)
-            return (len(adjacency[key]) == 2 and incidence[key] == 2 and
-                    key not in via_points and
-                    not any(_pad_holds_point(pad, point, layer, width / 2)
-                            for pad in pads))
-
-        anchors = sorted(key for key in adjacency if not interior(key))
-        used = set()
-        for anchor in anchors:
-            for first in adjacency[anchor]:
-                if id(first) in used:
-                    continue
-                ordered = []
-                points = [actual[(id(first), anchor)]]
-                current = anchor
-                seg = first
-                while True:
-                    used.add(id(seg))
-                    ordered.append(seg)
-                    a = pos_key(seg.start_x, seg.start_y)
-                    b = pos_key(seg.end_x, seg.end_y)
-                    other = b if a == current else a
-                    points.append(actual[(id(seg), other)])
-                    current = other
-                    if current == anchor or not interior(current):
-                        break
-                    following = [candidate for candidate in adjacency[current]
-                                 if id(candidate) not in used]
-                    if not following:
-                        break
-                    seg = following[0]
-                if current != anchor and len(ordered) >= 2:
-                    chains.append(_Chain(ordered, points, layer, width))
-    return chains
-
-
-def _candidate_segments(a, b, layer, width, net_id):
-    """Build KRT-octolinear connectors; dgloss owns only their selection."""
-    for bends in _octolinear_bends(a, b):
-        candidate = _segments_for_points([a] + bends + [b], layer, width,
-                                         net_id)
-        if candidate:
-            yield candidate
-
-
-def _segments_for_points(points, layer, width, net_id):
-    return [Segment(start_x=points[i][0], start_y=points[i][1],
-                    end_x=points[i + 1][0], end_y=points[i + 1][1],
-                    width=width, layer=layer, net_id=net_id)
-            for i in range(len(points) - 1)
-            if pos_key(*points[i]) != pos_key(*points[i + 1])]
-
-
-def _connector_families(a, b, segment, grid_step):
-    """Shared octolinear connectors for chains, pads and junction approaches."""
-    yield "canonical", _candidate_segments(
-        a, b, segment.layer, segment.width, segment.net_id)
-    yield from (("chamfer", family) for family in
-                _chamfer_candidate_families(
-                    a, b, segment.layer, segment.width, segment.net_id,
-                    grid_step))
-
-
-def _chamfer_candidate_families(a, b, layer, width, net_id, grid_step):
-    """Legacy fixed-endpoint octolinear chamfer families.
-
-    The x/y/d labels below describe directions in one board coordinate frame;
-    they are not the relational, orientation-neutral segment-slide rule.
-    """
-    diagonal_max = min(abs(b[0] - a[0]), abs(b[1] - a[1]))
-    if diagonal_max <= grid_step + 1e-9:
-        return
-    # The diagonal must separate the two orthogonal moves.  Any other
-    # permutation puts X and Y next to each other and creates a 90-degree
-    # corner even though every individual segment is octolinear.
-    orders = (("x", "d", "y"), ("y", "d", "x"))
-
-    for order in orders:
-        def family(order=order):
-            index = 1
-            while index * grid_step < diagonal_max - 1e-9:
-                yield _chamfer_candidate_at(
-                    a, b, layer, width, net_id, grid_step, index, order)
-                index += 1
-        yield family()
-
-
-def _chamfer_candidate_at(a, b, layer, width, net_id, grid_step, index,
-                          order):
-    """Build one legacy chamfer candidate at an integer KRT-grid index."""
-    ax, ay = a
-    bx, by = b
-    dx, dy = bx - ax, by - ay
-    adx, ady = abs(dx), abs(dy)
-    diagonal = min(adx, ady) - index * grid_step
-    if diagonal <= 1e-9:
-        return []
-    sx = 1.0 if dx >= 0 else -1.0
-    sy = 1.0 if dy >= 0 else -1.0
-    moves = {
-        "x": (sx * (adx - diagonal), 0.0),
-        "y": (0.0, sy * (ady - diagonal)),
-        "d": (sx * diagonal, sy * diagonal),
-    }
-    points = [a]
-    x, y = a
-    for kind in order:
-        mx, my = moves[kind]
-        if abs(mx) > 1e-9 or abs(my) > 1e-9:
-            x, y = round(x + mx, 6), round(y + my, 6)
-            points.append((x, y))
-    points[-1] = b
-    return _segments_for_points(points, layer, width, net_id)
 
 
 def _last_positive_chamfer_index(a, b, layer, width, net_id, grid_step,
@@ -406,62 +232,6 @@ def _candidate_geometry_valid(context, segments):
     return bool(segments) and not any(
         calculate_route_length([segment]) < context.coord.grid_step - 1e-9
         for segment in segments)
-
-
-def _touches_other_same_net(candidate, outside, vias, allowed_ends):
-    """Reject a new same-net junction: G3 changes length, never topology."""
-    allowed = {pos_key(*point) for point in allowed_ends}
-    for new in candidate:
-        for old in outside:
-            if new.layer != old.layer:
-                continue
-            if not segments_intersect(new.start_x, new.start_y,
-                                      new.end_x, new.end_y,
-                                      old.start_x, old.start_y,
-                                      old.end_x, old.end_y):
-                continue
-            shared = ({pos_key(new.start_x, new.start_y),
-                       pos_key(new.end_x, new.end_y)} &
-                      {pos_key(old.start_x, old.start_y),
-                       pos_key(old.end_x, old.end_y)})
-            if not shared or not shared.issubset(allowed):
-                return True
-        for via in vias:
-            key = pos_key(via.x, via.y)
-            if key in allowed:
-                continue
-            if point_to_segment_distance(via.x, via.y,
-                                         new.start_x, new.start_y,
-                                         new.end_x, new.end_y) <= \
-                    (getattr(via, "size", 0.0) + new.width) / 2.0:
-                return True
-    return False
-
-
-def _edge_directions(segments, start, end):
-    """Traversal directions of an ordered graph edge, including reversed input."""
-    first, last = segments[0], segments[-1]
-    if pos_key(first.start_x, first.start_y) == pos_key(*start):
-        first_vector = (first.end_x - first.start_x,
-                        first.end_y - first.start_y)
-    else:
-        first_vector = (first.start_x - first.end_x,
-                        first.start_y - first.end_y)
-    if pos_key(last.end_x, last.end_y) == pos_key(*end):
-        last_vector = (last.end_x - last.start_x,
-                       last.end_y - last.start_y)
-    else:
-        last_vector = (last.start_x - last.end_x,
-                       last.start_y - last.end_y)
-
-    def direction(vector):
-        return tuple(0 if abs(value) <= 1e-9 else (1 if value > 0 else -1)
-                     for value in vector)
-    return direction(first_vector), direction(last_vector)
-
-
-def _right_angle(first, second):
-    return first[0] * second[0] + first[1] * second[1] == 0
 
 
 def _shortest_path(edges, points, excluded):
@@ -705,9 +475,8 @@ def shorten_routes(context, results, deadline=None, *, net_ids,
         if deadline is not None and perf_counter() >= deadline:
             break
         started = perf_counter()
-        net_segments = [s for s in context.pcb_data.segments
-                        if s.net_id == net_id]
-        net_vias = [v for v in context.pcb_data.vias if v.net_id == net_id]
+        net_segments = board_views(context.pcb_data).segments(net_id)
+        net_vias = board_views(context.pcb_data).vias(net_id)
         before_length = calculate_route_length(net_segments, net_vias,
                                                context.pcb_data)
         foreign = context.foreign_obstacles(net_id)
@@ -718,7 +487,7 @@ def shorten_routes(context, results, deadline=None, *, net_ids,
                 context.pcb_data, net_id, context.editable_segment_ids):
             if deadline is not None and perf_counter() >= deadline:
                 break
-            current = [s for s in context.pcb_data.segments if s.net_id == net_id]
+            current = board_views(context.pcb_data).segments(net_id)
             cache = getattr(context, "search_cache", None)
             cache_key = None
             if cache is not None:
@@ -758,12 +527,7 @@ def shorten_routes(context, results, deadline=None, *, net_ids,
                 pass
             elif gain <= (1e-7 if use_local else context.coord.grid_step):
                 continue
-            context.pcb_data.segments = [
-                seg for seg in context.pcb_data.segments
-                if id(seg) not in removed_ids] + added
-            context.replace_editable_segments(removed, added)
-            if hasattr(context.pcb_data, "_foreign_seg_arr_cache"):
-                context.pcb_data._foreign_seg_arr_cache = None
+            context.apply_replacement(removed, added)
             removed_net.extend(removed)
             added_net.extend(added)
 

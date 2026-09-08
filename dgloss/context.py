@@ -35,6 +35,23 @@ class GlossContext:
     search_cache: object = None
     zone_invalidations: int = 0
 
+    def apply_replacement(self, removed, added, old_vias=(), new_vias=()):
+        """Commit validated copper and invalidate all revision-dependent views.
+
+        Obstacle-map refresh remains batched once per changed net by the stage.
+        """
+        removed, added = tuple(removed), tuple(added)
+        old_vias, new_vias = tuple(old_vias), tuple(new_vias)
+        ids = {id(item) for item in removed}
+        if removed or added:
+            self.pcb_data.segments = [s for s in self.pcb_data.segments
+                                      if id(s) not in ids] + list(added)
+        if old_vias or new_vias:
+            ids = {id(item) for item in old_vias}
+            self.pcb_data.vias = [v for v in self.pcb_data.vias
+                                  if id(v) not in ids] + list(new_vias)
+        self.replace_editable_segments(removed, added, old_vias, new_vias)
+
     @property
     def branch_scoped(self):
         return self.editable_segment_ids is not None
@@ -49,6 +66,9 @@ class GlossContext:
 
         touched = list(removed) + list(added)
         vias = list(old_vias) + list(new_vias)
+        if self.pcb_data is not None:
+            self.pcb_data._foreign_seg_arr_cache = None
+            self.pcb_data._gloss_reference_grades = {}
         if self.search_cache is not None:
             self.search_cache.changed(touched, vias)
         self.zone_invalidations += len(invalidate_copper_models(self.pcb_data, touched, vias))
@@ -127,6 +147,9 @@ def build_gloss_context(pcb_data, config, net_ids=None, *,
                         editable_segment_ids=None):
     """Rebuild KRT obstacles from the post-smooth board."""
     import math
+    from .board_views import BoardViews
+    pcb_data._gloss_views = BoardViews(pcb_data)
+    pcb_data._gloss_reference_grades = {}
     if not math.isfinite(config.grid_step) or config.grid_step <= 0:
         raise ValueError("grid_step must be finite and positive")
     layers = list(pcb_data.board_info.copper_layers or config.layers)

@@ -1,5 +1,6 @@
 """Revisit only changed or incident complete chains within a reduction stage."""
 from collections import deque
+from .board_views import board_views
 
 
 def _key(chain):
@@ -32,7 +33,7 @@ def revisit_chains(original, pcb, net, allowed, stats):
         chain = pending.popleft()
         key = _key(chain)
         queued.discard(key)
-        current = {id(s) for s in pcb.segments if s.net_id == net}
+        current = {id(s) for s in board_views(pcb).segments(net)}
         if not key <= current:
             stats['stale_chains'] += 1
             continue
@@ -43,7 +44,7 @@ def revisit_chains(original, pcb, net, allowed, stats):
         visited.add(signature)
         stats['chains_searched'] += 1
         yield chain
-        after = {id(s): s for s in pcb.segments if s.net_id == net}
+        after = {id(s): s for s in board_views(pcb).segments(net)}
         removed = [s for s in chain.segments if id(s) not in after]
         added = [s for ident, s in after.items() if ident not in current]
         if not removed and not added:

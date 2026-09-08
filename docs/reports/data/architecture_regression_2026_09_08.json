@@ -1,0 +1,201 @@
+[
+  {
+    "board": "micro_dmm",
+    "before": {
+      "board": "micro_dmm",
+      "sha256": "e4c246f797d22445c3821edc722a0a02b92039e07b9f2257c3b2b4c8b34e05a9",
+      "seconds": 0.604892399860546,
+      "nets": 29,
+      "saved_mm": 7.6664,
+      "g5": true,
+      "geometry_sha256": "217b0087b3237cc690337f5c2149453e9750b01d0016e94862a000dce8e1c3e9",
+      "budget_expired": false,
+      "g4_passes": 1,
+      "segments": 153,
+      "vias": 19,
+      "nets_per_second": 47.9424109257874
+    },
+    "after": {
+      "board": "micro_dmm",
+      "sha256": "e4c246f797d22445c3821edc722a0a02b92039e07b9f2257c3b2b4c8b34e05a9",
+      "seconds": 0.5642541998531669,
+      "nets": 29,
+      "saved_mm": 7.6664,
+      "g5": true,
+      "geometry_sha256": "217b0087b3237cc690337f5c2149453e9750b01d0016e94862a000dce8e1c3e9",
+      "budget_expired": false,
+      "g4_passes": 1,
+      "failure_stats": null,
+      "segments": 153,
+      "vias": 19,
+      "nets_per_second": 51.39527540521014
+    },
+    "geometry_identical": true,
+    "elapsed_reduction_percent": 6.7182527035796635
+  },
+  {
+    "board": "chart_plotter_hat",
+    "before": {
+      "board": "chart_plotter_hat",
+      "sha256": "e5c8a670216dddc3e3e5e28555eecb3543b1515e7aebbff1785cb5998a1e8598",
+      "seconds": 4.285261400043964,
+      "nets": 63,
+      "saved_mm": 65.4426,
+      "g5": true,
+      "geometry_sha256": "c3a1cf6cb740ea5558c88153d2c8defbdb0905f495b8ba78dbd7da822f82bc45",
+      "budget_expired": false,
+      "g4_passes": 1,
+      "segments": 565,
+      "vias": 99,
+      "nets_per_second": 14.701553562019264
+    },
+    "after": {
+      "board": "chart_plotter_hat",
+      "sha256": "e5c8a670216dddc3e3e5e28555eecb3543b1515e7aebbff1785cb5998a1e8598",
+      "seconds": 4.058472000062466,
+      "nets": 63,
+      "saved_mm": 65.4426,
+      "g5": true,
+      "geometry_sha256": "c3a1cf6cb740ea5558c88153d2c8defbdb0905f495b8ba78dbd7da822f82bc45",
+      "budget_expired": false,
+      "g4_passes": 1,
+      "failure_stats": null,
+      "segments": 565,
+      "vias": 99,
+      "nets_per_second": 15.523083564215877
+    },
+    "geometry_identical": true,
+    "elapsed_reduction_percent": 5.292311922422566
+  },
+  {
+    "board": "environment_sensor",
+    "before": {
+      "board": "environment_sensor",
+      "sha256": "493b0ee9eb319d68ea5c16f3ffa0dfcabeb585e1d0c35b6c45223b357ea2febc",
+      "seconds": 4.6193560000974685,
+      "nets": 52,
+      "saved_mm": 27.0909,
+      "g5": true,
+      "geometry_sha256": "622be29a2e9c0e102ea064042d42b24050488e94c09ca6b2409b10ab6068e6d5",
+      "budget_expired": false,
+      "g4_passes": 2,
+      "segments": 727,
+      "vias": 144,
+      "nets_per_second": 11.2569804100188
+    },
+    "after": {
+      "board": "environment_sensor",
+      "sha256": "493b0ee9eb319d68ea5c16f3ffa0dfcabeb585e1d0c35b6c45223b357ea2febc",
+      "seconds": 4.2027624999172986,
+      "nets": 52,
+      "saved_mm": 27.0909,
+      "g5": true,
+      "geometry_sha256": "622be29a2e9c0e102ea064042d42b24050488e94c09ca6b2409b10ab6068e6d5",
+      "budget_expired": false,
+      "g4_passes": 2,
+      "failure_stats": null,
+      "segments": 727,
+      "vias": 144,
+      "nets_per_second": 12.372814309879097
+    },
+    "geometry_identical": true,
+    "elapsed_reduction_percent": 9.018432443210267
+  },
+  {
+    "board": "azukar_fpga",
+    "before": {
+      "board": "azukar_fpga",
+      "sha256": "8534f62e77e04c7169aa2f3ffaee795f1da493b7d1de4813620cde6f770d13fe",
+      "seconds": 24.356508300174028,
+      "nets": 0,
+      "saved_mm": 0.0,
+      "g5": null,
+      "geometry_sha256": "7c864222af2b4d774bab1003a555cda0c955b656f6159c431423f195fd948c1b",
+      "budget_expired": false,
+      "g4_passes": null,
+      "segments": 1813,
+      "vias": 200,
+      "nets_per_second": 0.0
+    },
+    "after": {
+      "board": "azukar_fpga",
+      "sha256": "8534f62e77e04c7169aa2f3ffaee795f1da493b7d1de4813620cde6f770d13fe",
+      "seconds": 23.299021699931473,
+      "nets": 0,
+      "saved_mm": 0.0,
+      "g5": null,
+      "geometry_sha256": "7c864222af2b4d774bab1003a555cda0c955b656f6159c431423f195fd948c1b",
+      "budget_expired": false,
+      "g4_passes": null,
+      "failure_stats": {
+        "nets_changed": 0,
+        "saved_mm": 0.0,
+        "krt_baseline_saved_mm": 0.0,
+        "gloss_errors": 1,
+        "config": {
+          "enable_g3_1": true,
+          "enable_g3_2": true,
+          "enable_g3_3": true,
+          "enable_g3_4": true,
+          "budget_seconds": 120.0,
+          "enable_noncollinear_t_rails": true,
+          "enable_multipasses": true,
+          "enable_g3_6": false,
+          "centering_proximity_mm": 1.0,
+          "stay_in_corridor": false,
+          "move_vias": true,
+          "optimize_pad_approaches": true,
+          "move_junctions": true,
+          "repeat_until_stable": true,
+          "g4_min_gain_percent": 10.0,
+          "g4_max_passes": 2
+        },
+        "gloss": {
+          "budget_seconds": 120.0,
+          "budget_expired": false,
+          "stages": {}
+        }
+      },
+      "segments": 1813,
+      "vias": 200,
+      "nets_per_second": 0.0
+    },
+    "geometry_identical": true,
+    "elapsed_reduction_percent": 4.3417003258837354
+  },
+  {
+    "board": "tildagon_base",
+    "before": {
+      "board": "tildagon_base",
+      "sha256": "d751d4b1aa20c047496b231f3f0bd5041d5e3c936fafa7fca779883d09777e91",
+      "seconds": 94.39809200004674,
+      "nets": 164,
+      "saved_mm": 122.611,
+      "g5": true,
+      "geometry_sha256": "0eb81978f08544934d3d17c7649a83e341049179fca75ec935583d90b76ec958",
+      "budget_expired": false,
+      "g4_passes": 2,
+      "failure_stats": null,
+      "segments": 4164,
+      "vias": 693,
+      "nets_per_second": 1.7373232501343225
+    },
+    "after": {
+      "board": "tildagon_base",
+      "sha256": "d751d4b1aa20c047496b231f3f0bd5041d5e3c936fafa7fca779883d09777e91",
+      "seconds": 89.41128639993258,
+      "nets": 164,
+      "saved_mm": 122.611,
+      "g5": true,
+      "geometry_sha256": "0eb81978f08544934d3d17c7649a83e341049179fca75ec935583d90b76ec958",
+      "budget_expired": false,
+      "g4_passes": 2,
+      "failure_stats": null,
+      "segments": 4164,
+      "vias": 693,
+      "nets_per_second": 1.8342203384306042
+    },
+    "geometry_identical": true,
+    "elapsed_reduction_percent": 5.282739824986815
+  }
+]

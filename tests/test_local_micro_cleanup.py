@@ -100,7 +100,8 @@ def test_local_delta_excludes_unchanged_segments(monkeypatch):
     context, config, original = make_example(points)
     generate = algorithm._candidate_segments
     monkeypatch.setattr(local_gloss, 'slide_interval', lambda *a, **k: None)
-    monkeypatch.setattr(algorithm, '_candidate_segments',
+    from dgloss import route_geometry
+    monkeypatch.setattr(route_geometry, '_candidate_segments',
                         lambda a, b, *rest: generate(a, b, *rest)
                         if a == points[1] and b == points[3] else [])
     removed, added = local_replacement(

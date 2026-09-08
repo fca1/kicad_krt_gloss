@@ -8,6 +8,15 @@ module is installed. Keep knowledge of KRT's private cache layout in this file.
 from dgloss.krt_api import plane_fill_model as krt
 
 
+def reset_copper_models(pcb_data):
+    """Discard derived fills after rollback, including KRT's secondary lookup."""
+    cache = getattr(pcb_data, krt._CACHE_ATTR, None) or {}
+    for key, model in list(cache.items()):
+        if krt._MODELS_BY_ZONE_ID.get(key[2]) is model:
+            krt._MODELS_BY_ZONE_ID.pop(key[2], None)
+    setattr(pcb_data, krt._CACHE_ATTR, {})
+
+
 class CachedZoneModel:
     """Delegate to an immutable KRT model; memoize only its largest component."""
 

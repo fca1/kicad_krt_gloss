@@ -1,16 +1,10 @@
 """Public KRT integration points for the final gloss."""
 
-import math
-from dataclasses import dataclass, field
 from .execution import perf_counter
-
-from dgloss.krt_api import check_net_connectivity
 from .topology import terminal_partition as _terminal_partition
-from .zone_models import prepare_zone_models
 from dgloss.krt_api import calculate_route_length
 from dgloss.krt_api import merge_collinear_segments
-
-from .algorithm import _connectivity_worse, shorten_routes
+from .algorithm import shorten_routes
 from .branches import elementary_branch_segment_ids
 from .changes import GlossChanges, release_result_custody
 from .config import GlossConfig
@@ -21,90 +15,20 @@ from .passes import run_multinet_passes
 from .sliding_nodes import slide_t_nodes
 from .stats import GlossStats
 from .via_mobile import move_mobile_vias, refine_mobile_vias
-from .reduction_motion import MotionCertificate
-
-
-@dataclass
-class GlossOutcome:
-    input_strip_segments: list = field(default_factory=list)
-    input_strip_vias: list = field(default_factory=list)
-    # Complete mutation history, used to resolve chained via moves.
-    changes: dict = field(default_factory=lambda: {
-        "segments": [], "vias": [], "doors": []})
-    # Strict post-smooth -> final delta, intended only for visualisation.
-    visual_changes: dict = field(
-        default_factory=lambda: {"segments": [], "vias": [], "doors": []})
-    stats: dict = field(default_factory=dict)
-
-
-def _result_snapshot(results):
-    return [(result, list(result.get("new_segments") or []),
-             list(result.get("new_vias") or [])) for result in results]
-
-
-def _restore(results, count, snapshot, pcb_data, segments, vias):
-    pcb_data.segments = segments
-    pcb_data.vias = vias
-    del results[count:]
-    for result, result_segments, result_vias in snapshot:
-        result["new_segments"] = result_segments
-        result["new_vias"] = result_vias
-    if hasattr(pcb_data, "_foreign_seg_arr_cache"):
-        pcb_data._foreign_seg_arr_cache = None
+from .transaction import (GlossOutcome, _result_snapshot, _restore)
+from .outcome_geometry import (_route_signature, _final_visual_changes)
+from .certification import _g5_grade
+from . import certification
+from .optimization import PassOperations, run_optimization_pass, _append_result
 
 
 def _grade(pcb_data, net_id):
     # Local and pass-level validation must use the same electrical model.
-    return _g5_grade(pcb_data, net_id)
-
-
-def _g5_grade(pcb_data, net_id):
-    zones = [zone for zone in (getattr(pcb_data, "zones", None) or [])
-             if zone.net_id == net_id]
-    prepare_zone_models(pcb_data, zones)
-    return check_net_connectivity(
-        net_id,
-        [segment for segment in pcb_data.segments if segment.net_id == net_id],
-        [via for via in pcb_data.vias if via.net_id == net_id],
-        pcb_data.pads_by_net.get(net_id, []), zones, pcb_data=pcb_data,
-        return_graph=True)
-
-
-def _route_signature(pcb_data, net_id):
-    """Comparable routed-copper geometry for one net, without object IDs."""
-    segments = []
-    for segment in pcb_data.segments:
-        if segment.net_id != net_id:
-            continue
-        start = (segment.start_x, segment.start_y)
-        end = (segment.end_x, segment.end_y)
-        segments.append((segment.layer, min(start, end), max(start, end),
-                         segment.width, bool(getattr(segment, "graphic", False)),
-                         bool(getattr(segment, "locked", False))))
-    vias = []
-    for via in pcb_data.vias:
-        if via.net_id != net_id:
-            continue
-        vias.append((via.x, via.y, via.size, via.drill,
-                     tuple(via.layers), bool(getattr(via, "free", False)),
-                     bool(getattr(via, "locked", False)),
-                     tuple(sorted((getattr(via, "tenting_attrs", {}) or {}).items()))))
-    return tuple(sorted(segments)), tuple(sorted(vias))
-
-
-def _append_result(results, cleanup, added_segments, added_vias, changes):
-    if changes:
-        results.append({
-            "new_segments": added_segments, "new_vias": added_vias,
-            "cleanup": cleanup,
-            "track_gloss_changes": changes.as_dict(),
-        })
-
-
-def _empty_via_stats():
-    return {"vias_moved": 0, "saved_mm": 0.0, "net_ids_changed": set(),
-            "algorithm_ms": 0.0, "segment_strips": [],
-            "added_segments": []}
+    from .board_views import board_views
+    from .topology import reference_connectivity
+    views = board_views(pcb_data)
+    return reference_connectivity(pcb_data, net_id, views.segments(net_id),
+                                  views.vias(net_id))
 
 
 def _merge_collinear_in_scope(results, context, net_ids):
@@ -126,311 +50,6 @@ def _merge_collinear_in_scope(results, context, net_ids):
                         "cleanup": "track_gloss_g3_5_segments_be"})
     context.replace_editable_segments(removed, added)
     return changed, nets, native, added, stats
-
-
-def _configure_motion(context, selected):
-    """Reuse one certificate's counters across passes requiring the corridor."""
-    if not selected.stay_in_corridor:
-        context._reduction_motion = None
-    elif getattr(context, "_reduction_motion", None) is None:
-        context._reduction_motion = MotionCertificate()
-
-
-def _run_optimization_pass(results, context, selected, net_ids, deadline, *, emit_log,
-                   skip_smoothed_canonical=False):
-    """Apply complementary search strategies under one optimization policy."""
-    _configure_motion(context, selected)
-    pcb_data = context.pcb_data
-    run_net_ids = [net_id for net_id in net_ids
-                   if net_id in context.net_ids]
-    before_length = calculate_route_length(pcb_data.segments)
-    before_grades = {net_id: _grade(pcb_data, net_id)
-                     for net_id in run_net_ids}
-    changes = GlossChanges()
-    stage_stats = GlossStats(
-        budget_seconds=max(0.0, deadline - perf_counter()), emit=emit_log)
-
-    def available(enabled):
-        expired = perf_counter() >= deadline
-        stage_stats.budget_expired = stage_stats.budget_expired or expired
-        return enabled and not expired, expired
-
-    strips, added, g3_changes, g3 = shorten_routes(
-        context, results, deadline=deadline, net_ids=run_net_ids,
-        include_canonical=not skip_smoothed_canonical,
-        stay_in_corridor=selected.stay_in_corridor)
-    _append_result(results, "track_gloss_g3", added, [], g3_changes)
-    changes.segments.extend(g3_changes.segments)
-    changes.vias.extend(g3_changes.vias)
-    stage_stats.record("G3", changes=g3["nets_changed"],
-                       saved_mm=g3["saved_mm"],
-                       elapsed_ms=g3["algorithm_ms"],
-                       label="nets improved")
-
-    run, expired = available((selected.move_vias and selected.enable_g3_1))
-    via_strips, added_vias, via_changes, via = \
-        move_mobile_vias(
-            context, results, deadline=deadline, net_ids=run_net_ids) \
-        if run else ([], [], GlossChanges(), _empty_via_stats())
-    _append_result(results, "track_gloss_g3_1", via["added_segments"],
-                   added_vias, via_changes)
-    changes.vias.extend(via_changes.vias)
-    changes.segments.extend(via_changes.segments)
-    stage_stats.record("G3.1", enabled=(selected.move_vias and selected.enable_g3_1),
-                       skipped_budget=expired and (selected.move_vias and selected.enable_g3_1),
-                       changes=via["vias_moved"], saved_mm=via["saved_mm"],
-                       elapsed_ms=via["algorithm_ms"], label="vias moved")
-
-    run, expired = available(selected.optimize_pad_approaches)
-    pad_strips, pad_added, pad_changes, pad = \
-        optimize_pad_terminals(
-            context, results, deadline=deadline, net_ids=run_net_ids,
-            stay_in_corridor=selected.stay_in_corridor) \
-        if run else ([], [], GlossChanges(), {
-            "pads_changed": 0, "saved_mm": 0.0,
-            "net_ids_changed": set(), "algorithm_ms": 0.0})
-    _append_result(results, "track_gloss_g3_2", pad_added, [], pad_changes)
-    changes.segments.extend(pad_changes.segments)
-    stage_stats.record("G3.2", enabled=selected.optimize_pad_approaches,
-                       skipped_budget=expired and selected.optimize_pad_approaches,
-                       changes=pad["pads_changed"], saved_mm=pad["saved_mm"],
-                       elapsed_ms=pad["algorithm_ms"], label="pads optimized")
-
-    run, expired = available(selected.move_junctions)
-    node_strips, node_added, node_changes, node = \
-        slide_t_nodes(
-            context, results, deadline=deadline,
-            allow_noncollinear=selected.enable_noncollinear_t_rails,
-            net_ids=run_net_ids) \
-        if run else ([], [], GlossChanges(), {
-            "t_branches_slid": 0, "saved_mm": 0.0,
-            "noncollinear_t_slid": 0, "right_angles_cleaned": 0,
-            "net_ids_changed": set(), "algorithm_ms": 0.0})
-    _append_result(results, "track_gloss_g3_3", node_added, [], node_changes)
-    changes.segments.extend(node_changes.segments)
-    stage_stats.record("G3.3", enabled=selected.move_junctions,
-                       skipped_budget=expired and selected.move_junctions,
-                       changes=node["t_branches_slid"],
-                       saved_mm=node["saved_mm"],
-                       elapsed_ms=node["algorithm_ms"],
-                       label="T branches moved")
-    if emit_log and node["noncollinear_t_slid"]:
-        print("Track Gloss G3.3 non-collinear variant: "
-              f"{node['noncollinear_t_slid']} T junction(s) without a "
-              f"collinear rail, {node['right_angles_cleaned']} "
-              "90-degree bend(s) cleaned")
-
-    run, expired = available((selected.move_vias and selected.enable_g3_4))
-    refine_strips, refine_vias, refine_changes, refine = \
-        refine_mobile_vias(
-            context, results, deadline=deadline, net_ids=run_net_ids) \
-        if run else ([], [], GlossChanges(), _empty_via_stats())
-    _append_result(results, "track_gloss_g3_4", refine["added_segments"],
-                   refine_vias, refine_changes)
-    changes.vias.extend(refine_changes.vias)
-    changes.segments.extend(refine_changes.segments)
-    stage_stats.record("G3.4", enabled=(selected.move_vias and selected.enable_g3_4),
-                       skipped_budget=expired and (selected.move_vias and selected.enable_g3_4),
-                       changes=refine["vias_moved"],
-                       saved_mm=refine["saved_mm"],
-                       elapsed_ms=refine["algorithm_ms"],
-                       label="vias refined")
-
-    run, expired = available(True)
-    equal_strips, equal_added, equal_changes, equal = \
-        shorten_routes(
-            context, results, deadline=deadline,
-            objective="fewer_segments", stage="G3.5",
-            net_ids=run_net_ids, stay_in_corridor=selected.stay_in_corridor) \
-        if run else ([], [], GlossChanges(), {
-            "nets_changed": 0, "segments_removed": 0,
-            "segments_added": 0, "saved_mm": 0.0,
-            "algorithm_ms": 0.0, "per_net": []})
-    _append_result(results, "track_gloss_g3_5_equal_length",
-                   equal_added, [], equal_changes)
-    changes.segments.extend(equal_changes.segments)
-    stage_stats.record(
-        "G3.5 equal length", skipped_budget=expired,
-        changes=equal["segments_removed"] - equal["segments_added"],
-        saved_mm=0.0, elapsed_ms=equal["algorithm_ms"],
-        label="segments removed at equal length")
-
-    run, expired = available(True)
-    merge_before = list(pcb_data.segments)
-    merge_started = perf_counter()
-    if run:
-        merged_count, merged_nets, merge_strips, merge_added, merge = \
-            _merge_collinear_in_scope(results, context, run_net_ids)
-    else:
-        merged_count, merged_nets = 0, 0
-        merge_strips, merge_added = [], []
-        merge = {"joints": 0, "segs_removed": 0, "segs_added": 0,
-                 "nets_skipped_large": 0}
-    merge_ms = (perf_counter() - merge_started) * 1000.0
-    final_segment_ids = {id(segment) for segment in pcb_data.segments}
-    merge_removed = [segment for segment in merge_before
-                     if id(segment) not in final_segment_ids]
-    if merge_removed and not context.branch_scoped:
-        context.replace_editable_segments(merge_removed, merge_added)
-    merge_changes = GlossChanges(
-        segments=([{"old": segment, "stage": "G3.5"}
-                   for segment in merge_removed] +
-                  [{"new": segment, "stage": "G3.5",
-                    "geometry_preserving": True}
-                   for segment in merge_added]))
-    changes.segments.extend(merge_changes.segments)
-    stage_stats.record(
-        "G3.5 segments", skipped_budget=expired,
-        changes=merge.get("joints", 0), saved_mm=0.0,
-        elapsed_ms=merge_ms, label="collinear joints removed")
-
-    if not selected.stay_in_corridor:
-        local_strips, local_added, local_changes, local_stats = shorten_routes(
-            context, results, deadline=deadline, net_ids=run_net_ids,
-            local_only=True, stage="G3 local")
-        _append_result(results, "track_gloss_local", local_added, [], local_changes)
-        strips.extend(local_strips)
-        changes.segments.extend(local_changes.segments)
-        stage_stats.record("G3 local", changes=local_stats["nets_changed"],
-                           saved_mm=local_stats["saved_mm"],
-                           elapsed_ms=local_stats["algorithm_ms"], label="local reductions")
-
-    after_length = _validate_final(
-        context, before_grades, before_length, changes)
-    changed_net_ids = {row["net_id"] for row in g3.get("per_net", [])
-                       if row.get("saved_mm", 0.0) > 0.0}
-    for row in (via, pad, node, refine):
-        changed_net_ids.update(row["net_ids_changed"])
-    changed_net_ids.update(
-        entry["old"].net_id for entry in equal_changes.segments
-        if "old" in entry)
-    changed_net_ids.update(segment.net_id for segment in merge_removed)
-    if not selected.stay_in_corridor:
-        changed_net_ids.update(entry["old"].net_id for entry in local_changes.segments
-                               if "old" in entry)
-
-    return {
-        "context": context, "changes": changes,
-        "segment_strips": (strips + via["segment_strips"] + pad_strips +
-                           node_strips + refine["segment_strips"] +
-                           equal_strips + merge_strips),
-        "via_strips": via_strips + refine_strips,
-        "stage_stats": stage_stats, "changed_net_ids": changed_net_ids,
-        "before_length": before_length, "after_length": after_length,
-        "g3": g3, "via": via, "pad": pad, "node": node,
-        "refine": refine, "equal": equal,
-        "merged_count": merged_count, "merged_nets": merged_nets,
-        "merge": merge, "merge_ms": merge_ms,
-    }
-
-
-def _final_visual_changes(baseline_segments, baseline_vias, pcb_data,
-                          history):
-    """Describe only the post-smooth to final delta, without intermediates."""
-    final_segment_ids = {id(segment) for segment in pcb_data.segments}
-    baseline_segment_ids = {id(segment) for segment in baseline_segments}
-    segments = [
-        {"old": segment, "stage": "Final"}
-        for segment in baseline_segments if id(segment) not in final_segment_ids]
-    segments.extend(
-        {"new": segment, "stage": "Final"}
-        for segment in pcb_data.segments
-        if id(segment) not in baseline_segment_ids)
-
-    roots = {}
-    for entry in history.vias:
-        old, new = entry.get("old"), entry.get("new")
-        if old is None or new is None:
-            continue
-        root = roots.pop(id(old), old)
-        roots[id(new)] = root
-    final_via_ids = {id(via) for via in pcb_data.vias}
-    vias = [{"old": old, "new": via, "stage": "Final"}
-            for via in pcb_data.vias
-            if id(via) in roots and id(via) in final_via_ids
-            for old in [roots[id(via)]]]
-    return GlossChanges(segments=segments, vias=vias,
-                        doors=list(history.doors))
-
-
-def _validate_final(context, before_grades, before_length, changes):
-    """G3.5 safety gate retained by each internal G4 net call."""
-    after_length = calculate_route_length(context.pcb_data.segments)
-    if after_length > before_length + 1e-9:
-        raise RuntimeError("G3.5 final length increased")
-    for net_id, before in before_grades.items():
-        after = _grade(context.pcb_data, net_id)
-        if _connectivity_worse(before, after):
-            raise RuntimeError(f"G3.5 connectivity regression on net {net_id}")
-    final_segment_ids = {id(segment)
-                         for segment in context.pcb_data.segments}
-    for entry in changes.segments:
-        segment = entry.get("new")
-        if segment is None or id(segment) not in final_segment_ids:
-            continue
-        if entry.get("geometry_preserving"):
-            continue
-        dx = abs(segment.end_x - segment.start_x)
-        dy = abs(segment.end_y - segment.start_y)
-        length = math.hypot(dx, dy)
-        # Imported pad/track coordinates can differ by a few 1e-5 mm. This is
-        # only a KRT-resolution classification tolerance, never a search step.
-        tolerance = max(1e-7, context.coord.grid_step / 100.0)
-        if not (dx <= tolerance or dy <= tolerance or
-                abs(dx - dy) <= tolerance):
-            raise RuntimeError("G3.5 produced non-octolinear copper")
-        if length < context.coord.grid_step - 1e-9:
-            raise RuntimeError("G3.5 produced a micro-segment")
-    return after_length
-
-
-def _certify_g5_copper(context, before_grades, changes):
-    """Recheck final changed copper with KRT; no geometry is generated here."""
-    for net_id, before in before_grades.items():
-        after = _g5_grade(context.pcb_data, net_id)
-        if _terminal_partition(before) != _terminal_partition(after):
-            raise RuntimeError(f"G5 topology changed on net {net_id}")
-
-    final_segment_ids = {id(segment) for segment in context.pcb_data.segments}
-    final_via_ids = {id(via) for via in context.pcb_data.vias}
-    segment_ids = set()
-    via_ids = set()
-    preserved_segments = 0
-
-    for entry in changes.segments:
-        segment = entry.get("new")
-        if (segment is None or id(segment) not in final_segment_ids or
-                id(segment) in segment_ids):
-            continue
-        segment_ids.add(id(segment))
-        if entry.get("geometry_preserving"):
-            preserved_segments += 1
-            continue
-        if not context.clearance_adapter.segment_clears(segment):
-            raise RuntimeError(
-                f"G5 final copper clearance regression on net {segment.net_id}")
-
-    via_attributes = ("size", "drill", "layers", "net_id", "free", "locked",
-                      "tenting_attrs")
-    for entry in changes.vias:
-        old, via = entry.get("old"), entry.get("new")
-        if (old is None or via is None or id(via) not in final_via_ids or
-                id(via) in via_ids):
-            continue
-        via_ids.add(id(via))
-        if any(getattr(old, name, None) != getattr(via, name, None)
-               for name in via_attributes):
-            raise RuntimeError(
-                f"G5 moved-via attributes changed on net {via.net_id}")
-        if not context.clearance_adapter.via_clears(via, ignored_via=via):
-            raise RuntimeError(
-                f"G5 final via clearance regression on net {via.net_id}")
-
-    return {
-        "segments_certified": len(segment_ids) - preserved_segments,
-        "segments_geometry_preserved": preserved_segments,
-        "vias_certified": len(via_ids),
-    }
 
 
 def run_final_gloss(results, pcb_data, config, gloss_config=None, *,
@@ -867,3 +486,22 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
                    "krt_baseline_saved_mm": krt_stats.get("saved_mm", 0.0),
                    "gloss_errors": 1, "config": selected.as_dict(),
                    "gloss": gloss_stats.as_dict()})
+
+
+def _validate_final(context, before_grades, before_length, changes):
+    return certification._validate_final(context, before_grades, before_length,
+                                       changes, grade=_grade)
+
+def _certify_g5_copper(context, before_grades, changes):
+    return certification._certify_g5_copper(context, before_grades, changes,
+                                          grade=_g5_grade)
+
+
+def _run_optimization_pass(results, context, selected, net_ids, deadline, *,
+                           emit_log, skip_smoothed_canonical=False):
+    operations = PassOperations(shorten_routes, move_mobile_vias,
+        optimize_pad_terminals, slide_t_nodes, refine_mobile_vias,
+        _merge_collinear_in_scope, _grade, _validate_final)
+    return run_optimization_pass(results, context, selected, net_ids, deadline,
+        operations=operations, emit_log=emit_log,
+        skip_smoothed_canonical=skip_smoothed_canonical)

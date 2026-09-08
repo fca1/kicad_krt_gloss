@@ -4,22 +4,19 @@ import math
 from collections import defaultdict
 from itertools import combinations
 from .execution import perf_counter
-
 from .topology import ReplacementGuard
 from .krt_clearance import stable_copper_search
 from dgloss.krt_api import point_to_pad_distance
 from dgloss.krt_api import point_to_segment_distance, segments_intersect
-from dgloss.krt_api import Segment
 from dgloss.krt_api import calculate_route_length
 from dgloss.krt_api import pos_key
-
-from .algorithm import (
-                        _candidate_clearance, _connector_families,
-                        _segments_for_points,
-                        _touches_other_same_net)
+from .algorithm import (_candidate_clearance)
+from .route_geometry import (_connector_families, _segments_for_points,
+    _touches_other_same_net)
 from .changes import GlossChanges, release_result_custody
 from .pad_terminals import _new_boundary_right_angle, _pad_on_layer
-from .via_mobile import _DIRECTIONS, _line_intersection, _other_end
+from .route_geometry import _DIRECTIONS, _line_intersection, _other_end
+from .chain_topology import (_walk_branch_chain)
 
 
 def _vector_from(node, segment):
@@ -81,58 +78,6 @@ def _node_is_fixed(pcb_data, net_id, layer, node, incident):
                point_to_pad_distance(node[0], node[1], pad) <=
                width / 2.0 + 1e-6
                for pad in pcb_data.pads_by_net.get(net_id, []))
-
-
-def _walk_branch_chain(pcb_data, net_id, node, branch):
-    """Walk from a T along its simple branch to the next KRT anchor."""
-    net_segments = [segment for segment in pcb_data.segments
-                    if segment.net_id == net_id and
-                    not getattr(segment, "graphic", False)]
-    group = [segment for segment in net_segments
-             if segment.layer == branch.layer and
-             abs(segment.width - branch.width) <= 1e-6 and
-             not getattr(segment, "locked", False)]
-    adjacency = defaultdict(list)
-    actual = {}
-    incidence = defaultdict(int)
-    for segment in net_segments:
-        incidence[pos_key(segment.start_x, segment.start_y)] += 1
-        incidence[pos_key(segment.end_x, segment.end_y)] += 1
-    for segment in group:
-        for point in ((segment.start_x, segment.start_y),
-                      (segment.end_x, segment.end_y)):
-            key = pos_key(*point)
-            adjacency[key].append(segment)
-            actual[(id(segment), key)] = point
-    via_keys = {pos_key(via.x, via.y) for via in pcb_data.vias
-                if via.net_id == net_id}
-    pads = pcb_data.pads_by_net.get(net_id, [])
-
-    chain = []
-    current = pos_key(*node)
-    segment = branch
-    used = set()
-    anchor = node
-    while len(chain) < 100:
-        used.add(id(segment))
-        chain.append(segment)
-        a = pos_key(segment.start_x, segment.start_y)
-        b = pos_key(segment.end_x, segment.end_y)
-        other = b if a == current else a
-        anchor = actual[(id(segment), other)]
-        current = other
-        anchored = (incidence[current] != 2 or current in via_keys or
-                    any(_pad_on_layer(pad, branch.layer) and
-                        point_to_pad_distance(anchor[0], anchor[1], pad) <=
-                        branch.width / 2.0 + 1e-6 for pad in pads))
-        if anchored:
-            break
-        following = [candidate for candidate in adjacency[current]
-                     if id(candidate) not in used]
-        if len(following) != 1:
-            break
-        segment = following[0]
-    return chain, anchor
 
 
 def _candidate_meets_only_rail_end(candidate, point, rails):
@@ -397,12 +342,7 @@ def slide_t_nodes(context, results, deadline=None, *,
                 native_segments, _native_vias = release_result_custody(
                     results, removed)
                 strips.extend(native_segments)
-                context.pcb_data.segments = [
-                    segment for segment in context.pcb_data.segments
-                    if id(segment) not in removed_ids] + candidate
-                context.replace_editable_segments(removed, candidate)
-                if hasattr(context.pcb_data, "_foreign_seg_arr_cache"):
-                    context.pcb_data._foreign_seg_arr_cache = None
+                context.apply_replacement(removed, candidate)
                 processed.update(removed_ids)
                 changes.segments.extend({"old": segment, "stage": "G3.3"}
                                         for segment in removed)

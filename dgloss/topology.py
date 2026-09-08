@@ -33,6 +33,22 @@ def check_local_connectivity(net_id, segments, vias, pads, zones, *, pcb_data):
                   return_graph=True)
 
 
+def reference_connectivity(pcb_data, net_id, segments, vias):
+    """Reuse only the current reference graph; trial/final checks stay fresh."""
+    cache = getattr(pcb_data, '_gloss_reference_grades', None)
+    if cache is None:
+        cache = pcb_data._gloss_reference_grades = {}
+    key = tuple(map(id, segments)), tuple(map(id, vias))
+    found = cache.get(net_id)
+    if found is not None and found[0] == key:
+        return found[1]
+    grade = check_local_connectivity(net_id, segments, vias,
+        pcb_data.pads_by_net.get(net_id, []), [], pcb_data=pcb_data)
+    # Retain source objects so identities cannot be recycled under this key.
+    cache[net_id] = key, grade, tuple(segments), tuple(vias)
+    return grade
+
+
 class ReplacementGuard:
     """Compute the baseline only if a geometrically valid contender reaches us."""
 
@@ -46,13 +62,11 @@ class ReplacementGuard:
         self.last_result = None
 
     def __call__(self, removed, added):
-        from .algorithm import _connectivity_worse
 
         pads = self.pcb_data.pads_by_net.get(self.net_id, [])
         if self.before is None:
-            self.before = check_local_connectivity(
-                self.net_id, self.segments, self.vias, pads, [],
-                pcb_data=self.pcb_data)
+            self.before = reference_connectivity(
+                self.pcb_data, self.net_id, self.segments, self.vias)
         removed_ids = {id(segment) for segment in removed}
         trial = [segment for segment in self.segments
                  if id(segment) not in removed_ids] + added
@@ -64,3 +78,15 @@ class ReplacementGuard:
         self.last_trial = trial  # retain objects, preventing identity reuse
         self.last_result = not _connectivity_worse(self.before, after)
         return self.last_result
+
+
+def _connectivity_worse(before, after):
+    """Use KRT's connectivity grade without requiring an initially clean net."""
+    if (before.get("graph") is not None and after.get("graph") is not None and
+            terminal_partition(before) != terminal_partition(after)):
+        return True
+    return ((before.get("connected") and not after.get("connected")) or
+            len(after.get("disconnected_pads") or []) >
+            len(before.get("disconnected_pads") or []) or
+            (after.get("num_components") or 1) >
+            (before.get("num_components") or 1))

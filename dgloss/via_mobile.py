@@ -1,22 +1,20 @@
 """G3.1/G3.4: move simple two-layer vias with KRT geometry and checks."""
 
 import math
-from collections import defaultdict, deque
+from collections import deque
 from dataclasses import replace
 from .execution import perf_counter
-
 from .topology import check_local_connectivity as check_net_connectivity
 from dgloss.krt_api import (Segment, SpatialIndex, calculate_route_length,
                             point_to_pad_distance, point_to_segment_distance,
                             pos_key, via_copper_layers)
 from dgloss.pad_terminals import _pad_on_layer
-
-from .algorithm import (_clears_krt_grid, _connectivity_worse, _right_angle,
-                        _touches_other_same_net)
+from .algorithm import (_clears_krt_grid)
+from .route_geometry import (_right_angle, _touches_other_same_net)
+from .topology import _connectivity_worse
 from .changes import GlossChanges, release_result_custody
-
-
-_DIRECTIONS = ((1.0, 0.0), (0.0, 1.0), (1.0, 1.0), (1.0, -1.0))
+from .route_geometry import _DIRECTIONS
+from .route_geometry import (_other_end, _line_intersection)
 
 
 def _terminal_at_pad(context, via, layer, width):
@@ -86,23 +84,9 @@ def _progressing_vias(context, net_id):
         queue.appendleft(moved_via)
 
 
-def _other_end(segment, at):
-    if pos_key(segment.start_x, segment.start_y) == at:
-        return segment.end_x, segment.end_y
-    return segment.start_x, segment.start_y
-
-
 def _octolinear(a, b):
     dx, dy = abs(b[0] - a[0]), abs(b[1] - a[1])
     return dx <= 1e-7 or dy <= 1e-7 or abs(dx - dy) <= 1e-7
-
-
-def _line_intersection(a, u, b, v):
-    denominator = u[0] * v[1] - u[1] * v[0]
-    if abs(denominator) <= 1e-12:
-        return None
-    t = ((b[0] - a[0]) * v[1] - (b[1] - a[1]) * v[0]) / denominator
-    return a[0] + t * u[0], a[1] + t * u[1]
 
 
 def _candidate_positions(context, first_anchor, second_anchor, old_position):
@@ -203,7 +187,7 @@ def move_mobile_vias(context, results, *, net_ids, stage="G3.1",
                 # Local import avoids making the two small topology modules
                 # depend on each other while reusing G3.3's already-tested
                 # simple-chain walker.
-                from .sliding_nodes import _walk_branch_chain
+                from .chain_topology import _walk_branch_chain
                 walked = [_walk_branch_chain(
                     context.pcb_data, net_id, (old_via.x, old_via.y), segment)
                            for segment in incident]
@@ -286,23 +270,13 @@ def move_mobile_vias(context, results, *, net_ids, stage="G3.1",
                    for anchor, chain in zip(anchors, chains)):
                 context._absorbed_pad_vias.add(
                     (net_id, pos_key(moved_via.x, moved_via.y)))
-            trial_segments = outside + candidate
-            trial_vias = [via for via in context.pcb_data.vias
-                          if via.net_id == net_id and via is not old_via] + [moved_via]
-
             strips, native_vias = release_result_custody(
                 results, removed_segments, [old_via])
             segment_strips.extend(strips)
             if native_vias:
                 input_vias.append(old_via)
-            context.pcb_data.segments = [segment for segment in context.pcb_data.segments
-                                         if id(segment) not in removed_ids] + candidate
-            context.pcb_data.vias = [via for via in context.pcb_data.vias
-                                     if via is not old_via] + [moved_via]
-            context.replace_editable_segments(removed_segments, candidate,
-                                               [old_via], [moved_via])
-            if hasattr(context.pcb_data, "_foreign_seg_arr_cache"):
-                context.pcb_data._foreign_seg_arr_cache = None
+            context.apply_replacement(removed_segments, candidate,
+                                      [old_via], [moved_via])
             changes.segments.extend({"old": segment, "stage": stage}
                                     for segment in removed_segments)
             changes.segments.extend({"new": segment, "stage": stage}
