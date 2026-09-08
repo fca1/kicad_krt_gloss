@@ -616,14 +616,14 @@ def test_runtime_log_messages_are_english_only():
     assert not any(term in sources for term in french_log_terms)
 
 
-def test_single_selected_net_skips_the_success_summary_dialog():
+def test_gloss_results_return_to_the_log_without_a_success_modal():
     source = (ROOT / "kicad_krt_gloss" / "action_plugin.py").read_text(
         encoding="utf-8")
-    assert "if len(net_ids) != 1:" in source
-    assert source.index("if len(net_ids) != 1:") < source.index(
-        'f"Scope: {scope}\\n"')
-    assert "f'Differences are shown on {debug_layer} '" in source
-    assert '("TrackGloss Changes").' in source
+    dialog = (ROOT / "kicad_krt_gloss" / "settings_dialog.py").read_text(
+        encoding="utf-8")
+    assert "The board was modified but not saved." not in source
+    assert "if not show_progress:" in source
+    assert 'self._show_action_tab("Log")' in dialog
 
 
 def test_single_selected_net_runs_without_the_progress_dialog():

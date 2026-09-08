@@ -12,7 +12,6 @@ import wx
 from .kicad_bridge import KiCadBoardBridge
 from .runtime import configure_krt_runtime, ensure_krt_dependencies
 from .settings_dialog import DEFAULTS, GlossSettingsDialog
-from .version import __version__
 
 
 PLUGIN_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -69,20 +68,20 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
             def run_from_dialog(new_values, selected_names, append_log):
                 self.__class__._settings = dict(new_values)
                 ready, checked_ids = self._prepare_checked_nets(
-                    board, parent, selected_names)
+                    board, dialog, selected_names)
                 if ready is None:
                     return False
-                return self._run_gloss(board, parent, new_values, checked_ids,
+                return self._run_gloss(board, dialog, new_values, checked_ids,
                                 append_log=append_log, prepared=ready)
 
             def center_from_dialog(new_values, selected_names, append_log):
                 self.__class__._settings = dict(new_values)
                 ready, checked_ids = self._prepare_checked_nets(
-                    board, parent, selected_names)
+                    board, dialog, selected_names)
                 if ready is None:
                     return False
                 return self._run_centering(
-                    board, parent, new_values, selected_names,
+                    board, dialog, new_values, selected_names,
                     append_log=append_log, prepared=ready)
 
             def import_centering_selection():
@@ -185,6 +184,7 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                    prepared=None, show_progress=True):
         """Run once and retain the same concise statistics shown by KRT."""
         captured = io.StringIO()
+        busy_cursor_started = False
 
         class LogTee:
             encoding = "utf-8"
@@ -210,7 +210,12 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                 return False
 
         try:
-            wx.BeginBusyCursor()
+            # The progress dialog owns feedback for multi-net runs.  Keeping a
+            # global busy cursor over its modal loop can strand KiCad in a
+            # busy state after the worker has already completed.
+            if not show_progress:
+                wx.BeginBusyCursor()
+                busy_cursor_started = True
             with redirect_stdout(LogTee()):
                 print("\n=== Track Gloss run ===")
                 configure_krt_runtime()
@@ -298,21 +303,6 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                     print("Elementary branches: "
                           f"{stats.get('elementary_branches', 0)}")
                 print(f"G5 valid: {bool(stats.get('g5_valid', False))}")
-            if len(net_ids) != 1:
-                overlay_note = (
-                    f'Differences are shown on {debug_layer} '
-                    '("TrackGloss Changes").'
-                    if debug_layer else
-                    "No free User layer was available for the differences.")
-                wx.MessageBox(
-                    f"Scope: {scope}\n"
-                    f"Saved: {outcome.stats.get('saved_mm', 0.0):.4f} mm\n"
-                    f"Tracks replaced: {removed} -> {added}\n"
-                    f"Vias moved: {moved}\n\n"
-                    f"{overlay_note}\n\n"
-                    "The board was modified but not saved.",
-                    f"KiCad KRT Gloss {__version__}",
-                    wx.OK | wx.ICON_INFORMATION)
             return True
         except Exception:
             detail = traceback.format_exc()
@@ -327,7 +317,7 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
         finally:
             if append_log is None:
                 self.__class__._last_log = captured.getvalue()
-            if wx.IsBusy():
+            if busy_cursor_started and wx.IsBusy():
                 wx.EndBusyCursor()
 
     def _run_centering(self, board, parent, values, selected_names, *,

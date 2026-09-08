@@ -512,7 +512,10 @@ class GlossSettingsDialog(wx.Dialog):
         self.gloss_button.Disable()
         self.centering_button.Disable()
         try:
-            self._on_gloss_callback(self.values(), names, self.append_log)
+            completed = self._on_gloss_callback(
+                self.values(), names, self.append_log)
+            if completed:
+                self._show_action_tab("Log")
         finally:
             self.gloss_button.Enable()
             self.centering_button.Enable()
