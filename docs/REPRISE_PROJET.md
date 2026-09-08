@@ -81,6 +81,8 @@ suivis d'un cadre commun pour les réglages de calcul et la limite d'exécution.
 À l'ouverture, le défilement de la liste est au milieu de sa plage.
 La barre inférieure contient Gloss, Centering (bleu pâle) et Close ; l'onglet
 Centering conserve ses réglages et son statut, sans bouton d'exécution.
+Un clic sur Gloss ou Centering affiche immédiatement l'onglet correspondant ;
+le Gloss ne bascule plus automatiquement vers Log en fin de traitement.
 La boîte de réglages est détachée de l'éditeur
 et maintenue au premier plan, mais l'événement de fermeture de l'éditeur la
 ferme aussi.
@@ -139,6 +141,13 @@ hors intégration et nécessitent une nouvelle décision pour être reprises.
 
 ## Pièges techniques à préserver
 
+- Demande de sauvegarde après simple ouverture : KiCad 10
+  `PCB_EDIT_FRAME::RunActionPlugin` appelle `OnModify()` lorsque son instantané
+  d'annulation contient des objets, sans vérifier leur modification effective.
+  Voir [le code KiCad 10](https://github.com/KiCad/kicad-source-mirror/blob/10.0/pcbnew/python/scripting/pcbnew_action_plugins.cpp).
+  Détacher la fenêtre ne corrige pas ce comportement. Ne pas effacer aveuglément
+  l'état modifié, ni déclencher Undo ou une sauvegarde automatique pour le masquer.
+  Cette limite de l'intégration ActionPlugin reste non résolue.
 - Cache Rust Windows : réutiliser un binaire dont le SHA-256 correspond, même
   si une réinstallation a changé sa date. Une extension chargée est verrouillée ;
   ne jamais la recopier pour une simple différence d'horodatage. Les copies

@@ -385,7 +385,6 @@ def test_dialog_keeps_a_post_run_log_with_krt_style_controls():
     assert 'label="Gloss"' in source
     assert 'label="Close"' in source
     assert "wx.TE_READONLY" in source
-    assert 'self.notebook.GetPageText(index) == "Log"' in source
     assert 'self.notebook.AddPage(panel, "Centering")' in source
     assert 'label="Centering"' in source
     assert 'label="Add KiCad selection"' in source

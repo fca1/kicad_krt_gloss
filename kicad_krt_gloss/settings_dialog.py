@@ -489,7 +489,15 @@ class GlossSettingsDialog(wx.Dialog):
         finally:
             wx.TheClipboard.Close()
 
+    def _show_action_tab(self, name):
+        for index in range(self.notebook.GetPageCount()):
+            if self.notebook.GetPageText(index) == name:
+                self.notebook.SetSelection(index)
+                self.notebook.Update()
+                break
+
     def _on_gloss(self, _event):
+        self._show_action_tab("Gloss")
         if self._on_gloss_callback is None:
             self.EndModal(wx.ID_OK)
             return
@@ -500,12 +508,9 @@ class GlossSettingsDialog(wx.Dialog):
         finally:
             self.gloss_button.Enable()
             self.centering_button.Enable()
-            for index in range(self.notebook.GetPageCount()):
-                if self.notebook.GetPageText(index) == "Log":
-                    self.notebook.SetSelection(index)
-                    break
 
     def _on_centering(self, _event):
+        self._show_action_tab("Centering")
         selected_nets = self.centering_net_panel.get_selected_nets()
         if not selected_nets:
             wx.MessageBox(
