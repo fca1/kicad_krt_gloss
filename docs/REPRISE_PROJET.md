@@ -48,7 +48,10 @@ la spécification ne deviennent pas modifiables par une sélection explicite.
 
 ## Subtilités fonctionnelles
 
-**Corridor.** Il représente les positions accessibles par une déformation
+**Corridor.** L'onglet Gloss expose la case « Stay in corridor », désactivée par défaut,
+avec l'illustration `corridor_illustration.png`. Son état est transmis au Gloss.
+Le Centering impose toujours le corridor à son Gloss préparatoire.
+Il représente les positions accessibles par une déformation
 continue respectant les contraintes à chaque instant. Une destination libre
 ne suffit pas : aucun segment, via ou nœud mobile ne peut sauter un obstacle.
 Ce n'est ni une bande de largeur constante, ni une région définie par la grille.

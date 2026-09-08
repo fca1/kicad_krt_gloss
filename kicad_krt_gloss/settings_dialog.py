@@ -20,6 +20,7 @@ GENERAL_DEFAULTS = {
 
 GLOSS_DEFAULTS = {
     "move_vias": True,
+    "stay_in_corridor": False,
     "repeat_until_stable": True,
     "g4_max_passes": 1,
 }
@@ -259,6 +260,11 @@ class GlossSettingsDialog(wx.Dialog):
         operations_box = wx.StaticBox(panel, label="Gloss Operations")
         operations = wx.StaticBoxSizer(operations_box, wx.VERTICAL)
         visible_options = (
+            ("stay_in_corridor", "Stay in corridor",
+             "Keep Gloss movements within the admissible corridor of the "
+             "existing route, preserving clearance and connectivity. "
+             "Centering always enables this constraint for its preparatory "
+             "Gloss, regardless of this checkbox.", "corridor"),
             ("move_vias", "Movable vias",
              "Move an eligible unlocked via connected to exactly two unlocked "
              "track segments on different copper layers. Both local and complete "

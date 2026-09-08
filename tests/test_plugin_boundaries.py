@@ -483,7 +483,7 @@ def test_dialog_configuration_is_partitioned_by_action_scope():
     assert '"grid_step"' in general
     assert '"budget_seconds"' in general
     assert '"move_vias"' in gloss
-    assert '"stay_in_corridor"' not in gloss
+    assert '"stay_in_corridor": False' in gloss
     assert '"centering_proximity_mm"' in centering
     assert '"centering_build_new_segments"' not in centering
     assert source.index('AddPage(panel, "General")') < source.index(
