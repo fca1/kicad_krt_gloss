@@ -119,13 +119,14 @@ def test_context_transports_editability_through_replacements():
 
 def test_scoped_merge_exposes_only_branch_copper_as_mutable():
     editable = _seg(0, 0, 1, 0)
-    outside = _seg(1, 0, 2, 0)
-    replacement = _seg(0, 0, 1, 1)
-    pcb = SimpleNamespace(segments=[editable, outside], vias=[])
-    results = [{"new_segments": [editable, outside], "new_vias": []}]
+    editable_tail = _seg(1, 0, 2, 0)
+    outside = _seg(2, 0, 3, 0)
+    replacement = _seg(0, 0, 2, 0)
+    pcb = _pcb([editable, editable_tail, outside])
+    results = [{"new_segments": [editable, editable_tail, outside], "new_vias": []}]
 
     def fake_smooth(scratch, live_pcb, net_ids, **kwargs):
-        assert scratch[0]["new_segments"] == [editable]
+        assert scratch[0]["new_segments"] == [editable, editable_tail]
         assert kwargs["keep_input_copper"] is True
         assert set(net_ids) == {1}
         live_pcb.segments = [outside, replacement]
@@ -135,13 +136,13 @@ def test_scoped_merge_exposes_only_branch_copper_as_mutable():
         pcb_data=pcb, config=None, coord=None, layer_map={}, net_ids=[1],
         working_obstacles=None, net_obstacles={}, clearance_adapter=None,
         excluded_net_ids=set(), exclusion_reasons={},
-        editable_segment_ids={id(editable)})
+        editable_segment_ids={id(editable), id(editable_tail)})
     with patch("dgloss.pipeline.merge_collinear_segments", fake_smooth):
         changed, nets, native, added, stats = \
             _merge_collinear_in_scope(results, context, [1])
 
-    assert (changed, nets, native, added, stats) == \
-        (1, 1, [], [replacement], {"spans": 1})
+    assert (changed, nets, native, added) == (1, 1, [], [replacement])
+    assert stats['spans'] == 1 and stats['rejections'] == []
     assert pcb.segments == [outside, replacement]
     assert results[0]["new_segments"] == [outside]
     assert results[1]["new_segments"] == [replacement]

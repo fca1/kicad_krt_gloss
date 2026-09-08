@@ -5,6 +5,7 @@ from .krt_api import check_net_connectivity, calculate_route_length
 from .topology import terminal_partition as _terminal_partition
 from .zone_models import prepare_zone_models
 from .topology import _connectivity_worse
+from .route_geometry import _octolinear_points
 
 
 def _g5_grade(pcb_data, net_id):
@@ -39,11 +40,8 @@ def _validate_final(context, before_grades, before_length, changes, *, grade):
         dx = abs(segment.end_x - segment.start_x)
         dy = abs(segment.end_y - segment.start_y)
         length = math.hypot(dx, dy)
-        # Imported pad/track coordinates can differ by a few 1e-5 mm. This is
-        # only a KRT-resolution classification tolerance, never a search step.
-        tolerance = max(1e-7, context.coord.grid_step / 100.0)
-        if not (dx <= tolerance or dy <= tolerance or
-                abs(dx - dy) <= tolerance):
+        if not _octolinear_points((segment.start_x, segment.start_y),
+                                  (segment.end_x, segment.end_y)):
             raise RuntimeError("G3.5 produced non-octolinear copper")
         if length < context.coord.grid_step - 1e-9:
             raise RuntimeError("G3.5 produced a micro-segment")

@@ -1,7 +1,8 @@
 """Geometry of a two-pad gate, using KRT distances and clearances."""
 
 import math
-from .krt_api import _segment_to_polys_distance, pad_copper_layers, point_to_pad_distance, segment_to_rect_distance
+from .krt_api import pad_copper_layers, point_to_pad_distance
+from .krt_sweep import pad_axis_distance as _segment_pad_distance
 
 
 def _intersection(a, b, c, d, eps=1e-9, allow_ab_ends=False):
@@ -79,40 +80,6 @@ def _axis_to_pad_distance(axis, direction, pad):
     end = (axis[0] + direction[0] * extent,
            axis[1] + direction[1] * extent)
     return _segment_pad_distance(start, end, pad)
-
-
-def _segment_pad_distance(start, end, pad):
-    """Distance from a finite track axis to copper, using KRT geometry."""
-    polygons = getattr(pad, "polygons", None)
-    if polygons:
-        distance, _closest = _segment_to_polys_distance(
-            start[0], start[1], end[0], end[1], polygons)
-        return distance
-
-    rotation = getattr(pad, "rect_rotation", 0.0) or 0.0
-    if rotation:
-        radians = math.radians(rotation)
-        cosine, sine = math.cos(radians), math.sin(radians)
-
-        def into_frame(point):
-            dx = point[0] - pad.global_x
-            dy = point[1] - pad.global_y
-            return (pad.global_x + dx * cosine + dy * sine,
-                    pad.global_y - dx * sine + dy * cosine)
-
-        start, end = into_frame(start), into_frame(end)
-    if pad.shape in ("circle", "oval"):
-        corner_radius = min(pad.size_x, pad.size_y) / 2.0
-    elif pad.shape == "roundrect":
-        corner_radius = (getattr(pad, "roundrect_rratio", 0.0) or 0.0) * \
-                        min(pad.size_x, pad.size_y)
-    else:
-        corner_radius = 0.0
-    distance, _closest = segment_to_rect_distance(
-        start[0], start[1], end[0], end[1],
-        pad.global_x, pad.global_y, pad.size_x / 2.0, pad.size_y / 2.0,
-        corner_radius)
-    return distance
 
 
 def door_crossing_options(door, *, allow_reorientation):

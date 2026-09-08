@@ -56,8 +56,8 @@ def test_slides_horizontal_member_between_opposed_diagonals():
     candidate = slide_segment(first, middle, last, 3.2)
 
     assert candidate is not None
-    assert _points(candidate) == [
-        (86.3, 92.5), (89.2, 89.6), (135.5, 89.6), (141.2, 95.3)]
+    expected = [(86.3, 92.5), (89.2, 89.6), (135.5, 89.6), (141.2, 95.3)]
+    assert all(math.dist(a, b) < 1e-9 for a, b in zip(_points(candidate), expected))
     assert math.isclose(candidate.before_length, 61.11320343559642)
     assert math.isclose(candidate.after_length, 58.46223663640862)
 
@@ -72,8 +72,9 @@ def test_parallel_neighbours_keep_total_length_but_remain_constructible():
     assert candidate is not None
     assert math.isclose(candidate.before_length, candidate.after_length,
                         abs_tol=1e-6)
-    assert _points(candidate) == [
-        (0.0, 0.0), (5.767767, 0.0), (7.767767, 2.0), (10.0, 2.0)]
+    expected = [(0., 0.), (4+1.25*math.sqrt(2), 0.),
+                (6+1.25*math.sqrt(2), 2.), (10., 2.)]
+    assert all(math.dist(a, b) < 1e-9 for a, b in zip(_points(candidate), expected))
 
 
 def test_opposite_parallel_traversal_changes_both_outer_lengths_together():

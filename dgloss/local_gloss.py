@@ -12,7 +12,7 @@ from dgloss.krt_api import calculate_route_length
 
 @stable_copper_search
 def local_replacement(context, chain, net_id, current, vias, deadline=None):
-    from .route_geometry import (_candidate_segments, _touches_other_same_net, _pad_holds_point)
+    from .route_geometry import (_candidate_segments, _touches_other_same_net, _pad_holds_point, _octolinear_points)
     original = list(chain.segments)
     segments = list(original)
     points = list(chain.points)
@@ -53,6 +53,9 @@ def local_replacement(context, chain, net_id, current, vias, deadline=None):
             for candidate in sorted(candidates, key=calculate_route_length):
                 if deadline is not None and perf_counter() >= deadline:
                     break
+                if not all(_octolinear_points((s.start_x, s.start_y), (s.end_x, s.end_y))
+                           for s in candidate):
+                    continue
                 gain = calculate_route_length(source) - calculate_route_length(candidate)
                 if gain <= 1e-7 and not (abs(gain) <= 1e-7 and len(candidate) < size):
                     continue

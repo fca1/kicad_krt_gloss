@@ -23,6 +23,12 @@ leurs responsabilités : `krt_clearance.py` compose les validations KRT et
 `zone_models.py` adapte les caches de zones, dont certains détails sont privés.
 Ce dernier accède au module de zones via la façade.
 
+La revue corridor du 8 septembre ajoute `krt_sweep` (composition continue des
+formes et primitives KRT, sans échantillonnage des pads) et `krt_merge`
+(propositions de fusion sur copie, contrôlées avant publication). Les tolérances
+de calcul utilisent `FP_EPS_MM`, pas une fraction de grille ni une largeur de
+contrôle. Les modèles et règles KRT restent inchangés.
+
 Le démarrage de KRT et la vérification de ses dépendances restent dans
 `kicad_krt_gloss/runtime.py`, avant l'utilisation de l'API. Les outils de test
 et de benchmark peuvent importer KRT directement pour servir de référence.

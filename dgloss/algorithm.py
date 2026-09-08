@@ -5,7 +5,6 @@ from dataclasses import dataclass
 import math
 from .execution import perf_counter
 from .topology import ReplacementGuard
-from dgloss.krt_api import point_to_segment_distance
 from dgloss.krt_api import calculate_route_length
 from dgloss.krt_api import _segment_fits_wide
 from .changes import GlossChanges, release_result_custody
@@ -17,6 +16,7 @@ from .topology import (_connectivity_worse)
 from .route_geometry import (_pad_holds_point, _candidate_segments, _segments_for_points,
     _connector_families, _chamfer_candidate_families, _chamfer_candidate_at,
     _touches_other_same_net, _edge_directions, _right_angle)
+from .route_geometry import _octolinear_points
 from .chain_topology import (_Chain, _simple_chains)
 
 
@@ -123,7 +123,7 @@ def _adaptive_chamfer_candidates(context, obstacles, a, b, layer, width,
 
 
 def _reachable_segment_slides(context, source, outside, net_vias, anchors,
-                              deadline=None, max_steps=2000):
+                              deadline=None, max_steps=None):
     """Yield the best locally reachable slide in the shortening direction.
 
     Geometry is provided by :mod:`segment_sliding`; this function is only G3's
@@ -147,7 +147,9 @@ def _reachable_segment_slides(context, source, outside, net_vias, anchors,
         if math.isinf(bound):
             bound = span_limit
         bound = min(bound, span_limit)
-        count = min(max_steps, max(0, int((bound + 1e-9) // step)))
+        count = max(0, int((bound + 1e-9) // step))
+        if max_steps is not None:
+            count = min(max_steps, count)  # Explicit diagnostic caller only.
         best = None
         for index in range(1, count + 1):
             if deadline is not None and perf_counter() >= deadline:
@@ -180,39 +182,15 @@ def _clears_krt_grid(context, obstacles, segments):
     return True
 
 
-def _reuses_source_segment(candidate, source_segments):
-    """True when candidate is wholly contained in unchanged source copper."""
-    return any(
-        candidate.layer == source.layer and
-        abs(candidate.width - source.width) <= 1e-6 and
-        point_to_segment_distance(
-            candidate.start_x, candidate.start_y,
-            source.start_x, source.start_y,
-            source.end_x, source.end_y) <= 1e-7 and
-        point_to_segment_distance(
-            candidate.end_x, candidate.end_y,
-            source.start_x, source.start_y,
-            source.end_x, source.end_y) <= 1e-7
-        for source in source_segments)
-
-
 def _candidate_clearance(context, obstacles, segments, source,
                          source_segments=(), *, defer_exact=False):
-    """Grid-first enumeration, followed by the KRT geometric certificate.
+    """Geometry-first enumeration; a raster rejection is not a collision.
 
-    Dense chamfer searches use a conservative grid rejection filter. Canonical
-    probes and already checked adaptive proposals retain the exact fallback.
-    A direct, non-deferred query always asks the geometric predicate.
+    Deferred callers must certify their chosen candidates with the geometric
+    adapter. No family is discarded solely because a grid cell is blocked.
     """
     if not _candidate_geometry_valid(context, segments):
         return _ClearanceDecision(False)
-    if defer_exact and source not in ("canonical", "chamfer_exact",
-                                      "segment_slide_exact"):
-        rejected = [segment for segment in segments
-                    if not _clears_krt_grid(context, obstacles, [segment])]
-        if rejected and not all(_reuses_source_segment(segment, source_segments)
-                                for segment in rejected):
-            return _ClearanceDecision(False)
     if defer_exact:
         return _ClearanceDecision(True)
     clear = context.clearance_adapter.connector_clears(segments)
@@ -230,7 +208,9 @@ def _candidate_clears(context, obstacles, segments, source,
 def _candidate_geometry_valid(context, segments):
     """Keep mandatory, cheap geometry guards ahead of clearance policy."""
     return bool(segments) and not any(
-        calculate_route_length([segment]) < context.coord.grid_step - 1e-9
+        calculate_route_length([segment]) < context.coord.grid_step - 1e-9 or
+        not _octolinear_points((segment.start_x, segment.start_y),
+                               (segment.end_x, segment.end_y))
         for segment in segments)
 
 

@@ -2,7 +2,7 @@
 
 import math
 
-from .krt_api import (Segment, pos_key, _octolinear_bends, point_to_pad_distance,
+from .krt_api import (Segment, FP_EPS_MM, pos_key, point_to_pad_distance,
     point_to_segment_distance, segments_intersect)
 
 
@@ -13,12 +13,31 @@ def _pad_holds_point(pad, point, layer, half_width):
 
 
 def _candidate_segments(a, b, layer, width, net_id):
-    """Build KRT-octolinear connectors; dgloss owns only their selection."""
-    for bends in _octolinear_bends(a, b):
+    """KRT's two shortest connector families, reconstructed at exact anchors.
+
+    The KRT convenience helper rounds bends to four decimals. That changes
+    their direction on imported off-grid anchors; no rounding belongs here.
+    """
+    ax, ay = a
+    bx, by = b
+    dx, dy = bx-ax, by-ay
+    adx, ady = abs(dx), abs(dy)
+    sx, sy = (1 if dx >= 0 else -1), (1 if dy >= 0 else -1)
+    options = [[]] if _octolinear_points(a, b) else []
+    if adx >= ady:
+        options += [[(ax+sx*ady, by)], [(bx-sx*ady, ay)]]
+    else:
+        options += [[(bx, ay+sy*adx)], [(ax, by-sy*adx)]]
+    for bends in options:
         candidate = _segments_for_points([a] + bends + [b], layer, width,
                                          net_id)
         if candidate:
             yield candidate
+
+
+def _octolinear_points(a, b):
+    dx, dy = abs(b[0]-a[0]), abs(b[1]-a[1])
+    return min(dx, dy, abs(dx-dy)) <= FP_EPS_MM
 
 
 def _segments_for_points(points, layer, width, net_id):
@@ -26,7 +45,7 @@ def _segments_for_points(points, layer, width, net_id):
                     end_x=points[i + 1][0], end_y=points[i + 1][1],
                     width=width, layer=layer, net_id=net_id)
             for i in range(len(points) - 1)
-            if pos_key(*points[i]) != pos_key(*points[i + 1])]
+            if math.dist(points[i], points[i + 1]) > FP_EPS_MM]
 
 
 def _connector_families(a, b, segment, grid_step):
@@ -85,7 +104,7 @@ def _chamfer_candidate_at(a, b, layer, width, net_id, grid_step, index,
     for kind in order:
         mx, my = moves[kind]
         if abs(mx) > 1e-9 or abs(my) > 1e-9:
-            x, y = round(x + mx, 6), round(y + my, 6)
+            x, y = x + mx, y + my
             points.append((x, y))
     points[-1] = b
     return _segments_for_points(points, layer, width, net_id)

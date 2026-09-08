@@ -30,11 +30,8 @@ def micro_free_candidates(candidate, minimum_length):
         return
     a, joint, b = points
     def direction(first, last):
-        # KRT bends are rounded to four decimals: classify all eight
-        # directions equally, then reconstruct from the exact outer anchors.
-        angle = round(math.atan2(last[1] - first[1], last[0] - first[0]) /
-                      (math.pi / 4)) * (math.pi / 4)
-        return math.cos(angle), math.sin(angle)
+        length = math.dist(first, last)
+        return (last[0]-first[0])/length, (last[1]-first[1])/length
 
     u, v = direction(a, joint), direction(joint, b)
     cosine = u[0] * v[0] + u[1] * v[1]
@@ -49,7 +46,7 @@ def micro_free_candidates(candidate, minimum_length):
     if short < -1e-7 or short >= minimum_length:
         return
     w = (2 * cosine * v[0] - u[0], 2 * cosine * v[1] - u[1])
-    step = minimum_length + 2e-6  # leave room for six-decimal coordinates
+    step = minimum_length
     if long - 2 * cosine * step < minimum_length:
         return
     repaired = [a, (a[0] + (short + step) * u[0],
@@ -57,7 +54,6 @@ def micro_free_candidates(candidate, minimum_length):
                 (b[0] - step * w[0], b[1] - step * w[1]), b]
     if reverse:
         repaired.reverse()
-    repaired[1:-1] = [(round(x, 6), round(y, 6)) for x, y in repaired[1:-1]]
     template = candidate[0]
     result = [Segment(*a, *b, template.width, template.layer, template.net_id)
               for a, b in zip(repaired, repaired[1:])]

@@ -1,0 +1,487 @@
+[
+  {
+    "board": "environment_sensor",
+    "before_saved_mm": 27.0909,
+    "after_saved_mm": 24.3122,
+    "before_new_non_octolinear": 35,
+    "after_new_non_octolinear": 0,
+    "before_clearance_rejected": {
+      "13": 3,
+      "14": 5,
+      "19": 1,
+      "21": 1,
+      "37": 2,
+      "38": 1,
+      "40": 1,
+      "46": 1
+    },
+    "after_clearance_rejected": {},
+    "before_inherited_clearance": {
+      "13": 1,
+      "14": 1,
+      "37": 1
+    },
+    "after_inherited_clearance": {
+      "13": 2
+    },
+    "after_clearance_details": [],
+    "losses": [
+      {
+        "net_id": 13,
+        "label": "JTRST",
+        "extra_length_mm": 0.47455746741797356,
+        "before_new_non_octolinear": 3,
+        "before_clearance_rejected": 3
+      },
+      {
+        "net_id": 14,
+        "label": "NRST",
+        "extra_length_mm": 0.15268103984077896,
+        "before_new_non_octolinear": 5,
+        "before_clearance_rejected": 5
+      },
+      {
+        "net_id": 38,
+        "label": "Net-(U1-RTS#)",
+        "extra_length_mm": 0.1656855933777024,
+        "before_new_non_octolinear": 0,
+        "before_clearance_rejected": 1
+      },
+      {
+        "net_id": 42,
+        "label": "Net-(U1-RI#)",
+        "extra_length_mm": 0.2949483980313268,
+        "before_new_non_octolinear": 2,
+        "before_clearance_rejected": 0
+      },
+      {
+        "net_id": 44,
+        "label": "Net-(U1-TXD)",
+        "extra_length_mm": 0.24733359234752328,
+        "before_new_non_octolinear": 0,
+        "before_clearance_rejected": 0
+      },
+      {
+        "net_id": 45,
+        "label": "Net-(U1-RXD)",
+        "extra_length_mm": 0.4488352001837228,
+        "before_new_non_octolinear": 2,
+        "before_clearance_rejected": 0
+      },
+      {
+        "net_id": 46,
+        "label": "Net-(U3-PA15)",
+        "extra_length_mm": 1.0829343949689125,
+        "before_new_non_octolinear": 4,
+        "before_clearance_rejected": 1
+      }
+    ]
+  },
+  {
+    "board": "tildagon_base",
+    "before_saved_mm": 113.7842,
+    "after_saved_mm": 102.396,
+    "before_new_non_octolinear": 409,
+    "after_new_non_octolinear": 0,
+    "before_clearance_rejected": {
+      "13": 1,
+      "14": 1,
+      "25": 3,
+      "27": 3,
+      "39": 1,
+      "48": 1,
+      "50": 1,
+      "56": 2,
+      "57": 2,
+      "58": 2,
+      "67": 1,
+      "91": 1,
+      "92": 1,
+      "93": 2,
+      "94": 1,
+      "95": 1,
+      "96": 4,
+      "97": 1,
+      "98": 1,
+      "104": 1,
+      "109": 1,
+      "110": 1,
+      "111": 3,
+      "112": 2,
+      "113": 6,
+      "114": 4,
+      "125": 1,
+      "131": 1,
+      "132": 2,
+      "134": 2,
+      "135": 1,
+      "136": 2,
+      "138": 2,
+      "139": 5,
+      "140": 3,
+      "150": 1,
+      "156": 4,
+      "157": 1,
+      "158": 2,
+      "159": 1,
+      "165": 4,
+      "166": 1,
+      "167": 5,
+      "168": 1,
+      "169": 1,
+      "170": 1,
+      "171": 2,
+      "172": 2,
+      "173": 2,
+      "174": 2,
+      "175": 1,
+      "177": 2,
+      "178": 1
+    },
+    "after_clearance_rejected": {},
+    "before_inherited_clearance": {
+      "14": 2,
+      "27": 1,
+      "40": 2,
+      "56": 1,
+      "57": 1,
+      "61": 1,
+      "91": 1,
+      "92": 2,
+      "95": 3,
+      "96": 2,
+      "97": 2,
+      "98": 1,
+      "103": 1,
+      "105": 2,
+      "109": 1,
+      "110": 1,
+      "111": 2,
+      "112": 2,
+      "113": 2,
+      "114": 1,
+      "125": 1,
+      "129": 2,
+      "130": 1,
+      "131": 2,
+      "132": 1,
+      "134": 2,
+      "135": 2,
+      "136": 1,
+      "138": 1,
+      "139": 4,
+      "140": 1,
+      "150": 1,
+      "158": 1,
+      "165": 1,
+      "167": 1,
+      "170": 1,
+      "171": 1,
+      "173": 2,
+      "175": 1,
+      "178": 2,
+      "179": 1
+    },
+    "after_inherited_clearance": {
+      "13": 1,
+      "39": 1,
+      "40": 1,
+      "57": 1,
+      "111": 1,
+      "150": 1,
+      "165": 1,
+      "166": 2,
+      "169": 1
+    },
+    "after_clearance_details": [],
+    "losses": [
+      {
+        "net_id": 14,
+        "label": "Net-(J8-CC2)",
+        "extra_length_mm": 0.16571400394093772,
+        "before_new_non_octolinear": 2,
+        "before_clearance_rejected": 1
+      },
+      {
+        "net_id": 56,
+        "label": "/GPIO/DET_E",
+        "extra_length_mm": 0.41438517703048205,
+        "before_new_non_octolinear": 10,
+        "before_clearance_rejected": 2
+      },
+      {
+        "net_id": 57,
+        "label": "/GPIO/DET_F",
+        "extra_length_mm": 0.8768609568200247,
+        "before_new_non_octolinear": 9,
+        "before_clearance_rejected": 2
+      },
+      {
+        "net_id": 60,
+        "label": "/GPIO/BTN5",
+        "extra_length_mm": 0.2485737885155288,
+        "before_new_non_octolinear": 0,
+        "before_clearance_rejected": 0
+      },
+      {
+        "net_id": 61,
+        "label": "/GPIO/BTN6",
+        "extra_length_mm": 0.16569437881602767,
+        "before_new_non_octolinear": 2,
+        "before_clearance_rejected": 0
+      },
+      {
+        "net_id": 72,
+        "label": "/SFPs/D_NDET",
+        "extra_length_mm": 0.4142137308015368,
+        "before_new_non_octolinear": 0,
+        "before_clearance_rejected": 0
+      },
+      {
+        "net_id": 91,
+        "label": "/NB_HS1",
+        "extra_length_mm": 0.1657218713659816,
+        "before_new_non_octolinear": 2,
+        "before_clearance_rejected": 1
+      },
+      {
+        "net_id": 92,
+        "label": "/NB_HS2",
+        "extra_length_mm": 0.19077599766126951,
+        "before_new_non_octolinear": 1,
+        "before_clearance_rejected": 1
+      },
+      {
+        "net_id": 95,
+        "label": "/NC_HS1",
+        "extra_length_mm": 0.1657116603414508,
+        "before_new_non_octolinear": 3,
+        "before_clearance_rejected": 1
+      },
+      {
+        "net_id": 96,
+        "label": "/NC_HS2",
+        "extra_length_mm": 0.17405794497354776,
+        "before_new_non_octolinear": 4,
+        "before_clearance_rejected": 4
+      },
+      {
+        "net_id": 97,
+        "label": "/NC_HS3",
+        "extra_length_mm": 0.18794225494764305,
+        "before_new_non_octolinear": 3,
+        "before_clearance_rejected": 1
+      },
+      {
+        "net_id": 98,
+        "label": "/NC_HS4",
+        "extra_length_mm": 0.024066583263675057,
+        "before_new_non_octolinear": 5,
+        "before_clearance_rejected": 1
+      },
+      {
+        "net_id": 109,
+        "label": "/I2C/SDA_D",
+        "extra_length_mm": 0.24856793023125334,
+        "before_new_non_octolinear": 2,
+        "before_clearance_rejected": 1
+      },
+      {
+        "net_id": 110,
+        "label": "/I2C/SCL_D",
+        "extra_length_mm": 0.24855680058927732,
+        "before_new_non_octolinear": 1,
+        "before_clearance_rejected": 1
+      },
+      {
+        "net_id": 111,
+        "label": "/I2C/SDA_E",
+        "extra_length_mm": 0.16577709050550027,
+        "before_new_non_octolinear": 4,
+        "before_clearance_rejected": 3
+      },
+      {
+        "net_id": 112,
+        "label": "/I2C/SCL_E",
+        "extra_length_mm": 0.33140721131573514,
+        "before_new_non_octolinear": 4,
+        "before_clearance_rejected": 2
+      },
+      {
+        "net_id": 113,
+        "label": "/I2C/SDA_F",
+        "extra_length_mm": 1.4182414553994391,
+        "before_new_non_octolinear": 7,
+        "before_clearance_rejected": 6
+      },
+      {
+        "net_id": 114,
+        "label": "/I2C/SCL_F",
+        "extra_length_mm": 0.7567787705294364,
+        "before_new_non_octolinear": 7,
+        "before_clearance_rejected": 4
+      },
+      {
+        "net_id": 125,
+        "label": "/GPIO/FLS5",
+        "extra_length_mm": 0.4970976636814797,
+        "before_new_non_octolinear": 6,
+        "before_clearance_rejected": 1
+      },
+      {
+        "net_id": 126,
+        "label": "/GPIO/FLS4",
+        "extra_length_mm": 0.5272172876964873,
+        "before_new_non_octolinear": 3,
+        "before_clearance_rejected": 0
+      },
+      {
+        "net_id": 127,
+        "label": "/GPIO/FLS3",
+        "extra_length_mm": 0.5219228283640476,
+        "before_new_non_octolinear": 4,
+        "before_clearance_rejected": 0
+      },
+      {
+        "net_id": 128,
+        "label": "/GPIO/FLS2",
+        "extra_length_mm": 1.2823223691783454,
+        "before_new_non_octolinear": 3,
+        "before_clearance_rejected": 0
+      },
+      {
+        "net_id": 129,
+        "label": "/GPIO/FLS1",
+        "extra_length_mm": 1.0770115915994722,
+        "before_new_non_octolinear": 6,
+        "before_clearance_rejected": 0
+      },
+      {
+        "net_id": 130,
+        "label": "/NE_HS1",
+        "extra_length_mm": 0.1103857293331032,
+        "before_new_non_octolinear": 2,
+        "before_clearance_rejected": 0
+      },
+      {
+        "net_id": 131,
+        "label": "/NE_HS2",
+        "extra_length_mm": 0.11038008985458703,
+        "before_new_non_octolinear": 2,
+        "before_clearance_rejected": 1
+      },
+      {
+        "net_id": 132,
+        "label": "/NE_HS3",
+        "extra_length_mm": 0.11044961495936434,
+        "before_new_non_octolinear": 2,
+        "before_clearance_rejected": 2
+      },
+      {
+        "net_id": 133,
+        "label": "/NE_HS4",
+        "extra_length_mm": 0.15976325177378214,
+        "before_new_non_octolinear": 2,
+        "before_clearance_rejected": 0
+      },
+      {
+        "net_id": 134,
+        "label": "/ND_HS1",
+        "extra_length_mm": 0.16579072367682102,
+        "before_new_non_octolinear": 6,
+        "before_clearance_rejected": 2
+      },
+      {
+        "net_id": 135,
+        "label": "/ND_HS2",
+        "extra_length_mm": 0.16573204251145057,
+        "before_new_non_octolinear": 3,
+        "before_clearance_rejected": 1
+      },
+      {
+        "net_id": 136,
+        "label": "/ND_HS3",
+        "extra_length_mm": 0.16575501694947548,
+        "before_new_non_octolinear": 5,
+        "before_clearance_rejected": 2
+      },
+      {
+        "net_id": 138,
+        "label": "/SDA_SYS",
+        "extra_length_mm": 0.9094328259824636,
+        "before_new_non_octolinear": 16,
+        "before_clearance_rejected": 2
+      },
+      {
+        "net_id": 139,
+        "label": "/SCL_SYS",
+        "extra_length_mm": 0.6784268180242918,
+        "before_new_non_octolinear": 13,
+        "before_clearance_rejected": 5
+      },
+      {
+        "net_id": 140,
+        "label": "/~{INT_SYS}",
+        "extra_length_mm": 0.052826912067473586,
+        "before_new_non_octolinear": 13,
+        "before_clearance_rejected": 3
+      },
+      {
+        "net_id": 141,
+        "label": "/LED_DATA",
+        "extra_length_mm": 0.1020816964455813,
+        "before_new_non_octolinear": 0,
+        "before_clearance_rejected": 0
+      },
+      {
+        "net_id": 166,
+        "label": "/SCL_TOP",
+        "extra_length_mm": 0.30926432748741206,
+        "before_new_non_octolinear": 7,
+        "before_clearance_rejected": 1
+      },
+      {
+        "net_id": 167,
+        "label": "/I2C_RESET",
+        "extra_length_mm": 0.6628517397992368,
+        "before_new_non_octolinear": 7,
+        "before_clearance_rejected": 5
+      },
+      {
+        "net_id": 173,
+        "label": "/DEV_USB+",
+        "extra_length_mm": 0.2485981794899743,
+        "before_new_non_octolinear": 8,
+        "before_clearance_rejected": 2
+      },
+      {
+        "net_id": 174,
+        "label": "/DEV_USB-",
+        "extra_length_mm": 0.7456878741644104,
+        "before_new_non_octolinear": 8,
+        "before_clearance_rejected": 2
+      },
+      {
+        "net_id": 175,
+        "label": "/USBSEL",
+        "extra_length_mm": 0.019704976580911193,
+        "before_new_non_octolinear": 3,
+        "before_clearance_rejected": 1
+      },
+      {
+        "net_id": 177,
+        "label": "/USB/TX",
+        "extra_length_mm": 0.7045058387075986,
+        "before_new_non_octolinear": 5,
+        "before_clearance_rejected": 2
+      },
+      {
+        "net_id": 179,
+        "label": "/USB/PMID_SW",
+        "extra_length_mm": 0.24856484116537558,
+        "before_new_non_octolinear": 2,
+        "before_clearance_rejected": 0
+      }
+    ]
+  }
+]

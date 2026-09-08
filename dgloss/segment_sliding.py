@@ -166,8 +166,8 @@ def slide_segment(first, middle, last, offset, *, minimum_length=0.0):
         return None
 
     built = tuple(Segment(
-        round(points[index][0], 6), round(points[index][1], 6),
-        round(points[index + 1][0], 6), round(points[index + 1][1], 6),
+        points[index][0], points[index][1],
+        points[index + 1][0], points[index + 1][1],
         middle.width, middle.layer, middle.net_id)
         for index in range(3))
     source = (first, middle, last)

@@ -18,6 +18,9 @@ KRT.
 | `passes` | Arrêt G4 par gain marginal et nombre de passes |
 | `transaction` | Résultat, propriété des entrées et restauration complète |
 | `certification` | Vérifications de passe et certification finale KRT |
+| `corridor`, `reduction_motion` | Construction de déformations continues, sans gonflement artificiel |
+| `krt_clearance`, `krt_sweep` | Composition des formes, distances et règles KRT pour les capsules et surfaces balayées |
+| `krt_merge` | Proposition KRT sur copie, preuve du support cuivre et garde électrique avant publication |
 | `outcome_geometry` | Signatures géométriques et différences visuelles finales |
 | `context` | Cuivre modifiable, application des remplacements, invalidations et obstacles |
 | `board_views` | Vues par net et requêtes de contact pad indexées par KRT |
@@ -48,8 +51,9 @@ uniquement si leurs segments, vias et périmètre modifiable sont identiques.
 
 `GlossContext.apply_replacement` applique le cuivre déjà validé et notifie les
 caches et le périmètre modifiable. Les cartes d'obstacles sont rafraîchies une fois
-par net modifié dans chaque étape. La fusion réalisée par KRT notifie le même
-chemin d'invalidation après son propre remplacement.
+par net modifié dans chaque étape. KRT propose les fusions sur une copie ; seuls
+les remplacements prouvés préserver le support cuivre et la connectivité sont
+publiés par ce même chemin. L'étiquette `geometry_preserving` exige cette preuve.
 
 Le certificat électrique de référence peut être partagé entre recherches sur
 le même état. Toute mutation invalide ce cache, y compris celle d'un autre net

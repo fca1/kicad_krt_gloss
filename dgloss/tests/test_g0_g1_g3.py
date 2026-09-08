@@ -158,14 +158,20 @@ def test_g0_reuses_one_foreign_map_and_keeps_it_synchronized():
 
 
 def test_dgloss_runtime_has_no_pcbnew_or_plugin_dependency():
+    import ast
     runtime_dir = os.path.join(REPO, "dgloss")
     for name in os.listdir(runtime_dir):
         if not name.endswith(".py"):
             continue
         with open(os.path.join(runtime_dir, name), encoding="utf-8") as handle:
             source = handle.read()
-        assert "pcbnew" not in source, name
-        assert "kicad_routing_plugin" not in source, name
+        # The lazy facade contains an optional GUI symbol's module NAME.
+        # Inspect real imports, not strings/comments that do not load a plugin.
+        for node in ast.walk(ast.parse(source)):
+            modules = ([a.name for a in node.names] if isinstance(node, ast.Import)
+                       else [node.module] if isinstance(node, ast.ImportFrom) else [])
+            assert not any(m and m.split('.')[0] in ('pcbnew', 'kicad_routing_plugin')
+                           for m in modules), name
 
 
 def test_g3_5_config_defaults_enable_every_optional_stage():
@@ -434,7 +440,7 @@ def test_g3_uses_legacy_chamfer_when_canonical_bends_are_blocked():
                for change in visible[0]["track_gloss_changes"][kind])
 
 
-def test_a11_style_grid_rejection_uses_exact_krt_only_for_retained_copper():
+def test_grid_rejection_never_eliminates_a_geometrically_clear_candidate():
     source = Segment(2.0, 1.0, 2.0, 6.0, 0.4, "B.Cu", 1)
     first_leg = Segment(0.0, 0.0, 2.0, 2.0, 0.4, "B.Cu", 1)
     retained = Segment(2.0, 2.0, 2.0, 6.0, 0.4, "B.Cu", 1)
@@ -451,7 +457,7 @@ def test_a11_style_grid_rejection_uses_exact_krt_only_for_retained_copper():
             context, object(), [first_leg, retained], "chamfer", [source])
 
         new_rejected = Segment(3.0, 2.0, 3.0, 6.0, 0.4, "B.Cu", 1)
-        assert not _candidate_clearance(
+        assert _candidate_clearance(
             context, object(), [first_leg, new_rejected], "chamfer", [source],
             defer_exact=True)
         assert _candidate_clearance(
@@ -500,12 +506,14 @@ def test_pad_candidates_are_exact_checked_in_gain_order_until_one_passes():
     best_rejected = [
         Segment(0.0, 0.0, 5.0, 5.0, 0.2, "F.Cu", 1)]
     accepted = [
-        Segment(0.0, 0.0, 4.0, 0.0, 0.2, "F.Cu", 1),
-        Segment(4.0, 0.0, 5.0, 5.0, 0.2, "F.Cu", 1),
+        Segment(0.0, 0.0, 1.0, 0.0, 0.2, "F.Cu", 1),
+        Segment(1.0, 0.0, 5.0, 4.0, 0.2, "F.Cu", 1),
+        Segment(5.0, 4.0, 5.0, 5.0, 0.2, "F.Cu", 1),
     ]
     worse_unused = [
-        Segment(0.0, 0.0, 4.5, 0.0, 0.2, "F.Cu", 1),
-        Segment(4.5, 0.0, 5.0, 5.0, 0.2, "F.Cu", 1),
+        Segment(0.0, 0.0, 2.0, 0.0, 0.2, "F.Cu", 1),
+        Segment(2.0, 0.0, 5.0, 3.0, 0.2, "F.Cu", 1),
+        Segment(5.0, 3.0, 5.0, 5.0, 0.2, "F.Cu", 1),
     ]
     checked = []
     adapter = types.SimpleNamespace(
@@ -1182,12 +1190,12 @@ def test_g3_4_optimizes_both_complete_portions_around_mobile_via():
     context = build_gloss_context(pcb, config)
     before = calculate_route_length(pcb.segments)
 
-    with patch("dgloss.via_mobile._clears_krt_grid", return_value=False) as grid, \
-            patch.object(context.clearance_adapter, "connector_clears") as exact:
+    with patch("dgloss.algorithm._clears_krt_grid", return_value=False) as grid, \
+            patch.object(context.clearance_adapter, "connector_clears", return_value=False) as exact:
         _blocked_in, _blocked_out, _blocked_changes, blocked = \
             refine_mobile_vias(context, [], net_ids=context.net_ids)
-    assert grid.call_count > 0
-    exact.assert_not_called()
+    grid.assert_not_called()
+    assert exact.call_count > 0
     assert blocked["vias_moved"] == 0
 
     _s1, _v1, _c1, g31 = move_mobile_vias(

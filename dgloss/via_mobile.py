@@ -9,8 +9,9 @@ from dgloss.krt_api import (Segment, SpatialIndex, calculate_route_length,
                             point_to_pad_distance, point_to_segment_distance,
                             pos_key, via_copper_layers)
 from dgloss.pad_terminals import _pad_on_layer
-from .algorithm import (_clears_krt_grid)
-from .route_geometry import (_right_angle, _touches_other_same_net)
+from .route_geometry import (_right_angle, _touches_other_same_net,
+                             _octolinear_points)
+from .krt_api import FP_EPS_MM
 from .topology import _connectivity_worse
 from .changes import GlossChanges, release_result_custody
 from .route_geometry import _DIRECTIONS
@@ -85,8 +86,7 @@ def _progressing_vias(context, net_id):
 
 
 def _octolinear(a, b):
-    dx, dy = abs(b[0] - a[0]), abs(b[1] - a[1])
-    return dx <= 1e-7 or dy <= 1e-7 or abs(dx - dy) <= 1e-7
+    return _octolinear_points(a, b)
 
 
 def _candidate_positions(context, first_anchor, second_anchor, old_position):
@@ -105,7 +105,7 @@ def _candidate_positions(context, first_anchor, second_anchor, old_position):
                                        second_anchor, second_direction)
             if point is None:
                 continue
-            resolved = round(point[0], 6), round(point[1], 6)
+            resolved = point
             if (_octolinear(first_anchor, resolved) and
                     _octolinear(second_anchor, resolved)):
                 candidates[pos_key(*resolved)] = resolved
@@ -113,7 +113,7 @@ def _candidate_positions(context, first_anchor, second_anchor, old_position):
 
 
 def _segment(anchor, via_position, source):
-    if pos_key(*anchor) == pos_key(*via_position):
+    if math.dist(anchor, via_position) <= FP_EPS_MM:
         return None
     return Segment(anchor[0], anchor[1], via_position[0], via_position[1],
                    source.width, source.layer, source.net_id)
@@ -227,11 +227,6 @@ def move_mobile_vias(context, results, *, net_ids, stage="G3.1",
                     continue
                 if (_creates_boundary_right_angle(legs[0], anchors[0], outside) or
                         _creates_boundary_right_angle(legs[1], anchors[1], outside)):
-                    continue
-                # The KRT grid is only a strict, inexpensive rejection filter.
-                # Survivors are still certified by KRT's exact geometry below.
-                if candidate and full_chains and not _clears_krt_grid(
-                        context, foreign, candidate):
                     continue
                 if candidate and not context.clearance_adapter.connector_clears(candidate):
                     continue

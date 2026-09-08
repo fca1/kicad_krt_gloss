@@ -59,7 +59,6 @@ def _slide_positions(node, anchor, rails):
         point = _line_intersection(node, rail_vector, anchor, direction)
         if point is None:
             continue
-        point = round(point[0], 6), round(point[1], 6)
         if pos_key(*point) == pos_key(*node):
             continue
         if any(_on_segment(point, rail) for rail in rails):

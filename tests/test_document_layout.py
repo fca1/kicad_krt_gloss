@@ -15,8 +15,8 @@ def _project_markdown_files():
         yield path, relative
 
 
-def test_readme_is_the_only_root_markdown_file():
-    assert sorted(path.name for path in ROOT.glob("*.md")) == ["README.md"]
+def test_root_markdown_contains_readme_and_project_instructions():
+    assert sorted(path.name for path in ROOT.glob("*.md")) == ["AGENTS.md", "README.md"]
 
 
 def test_reports_are_kept_in_the_reports_directory():

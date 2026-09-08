@@ -200,10 +200,9 @@ def test_pad_distance_cache_never_caches_movable_copper(monkeypatch):
     adapter._edge_clears = adapter._keepouts_clear = lambda segment: True
     pads = Mock(return_value=1)
     moving = Mock(side_effect=[1, 0])
-    monkeypatch.setattr(krt_clearance, "_seg_foreign_pad_dist", pads)
+    monkeypatch.setattr(krt_clearance, "foreign_pad_clearance_distance", pads)
     monkeypatch.setattr(krt_clearance, "_exact_foreign_segment_distance", moving)
-    monkeypatch.setattr(krt_clearance, "_seg_foreign_via_dist", lambda *a, **k: 1)
-    monkeypatch.setattr(krt_clearance, "_seg_foreign_hole_dist", lambda *a: 1)
+    monkeypatch.setattr(krt_clearance, "_exact_foreign_hole_distance", lambda *a: 1)
     adapter._pad_distance = lru_cache(maxsize=8192)(adapter._uncached_pad_distance)
     segment = Segment(0, 0, 1, 0, .2, "F.Cu", 1)
     assert adapter.segment_clears(segment)

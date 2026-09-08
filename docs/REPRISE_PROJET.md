@@ -1,6 +1,7 @@
 # Reprendre Smooth Gloss KRT
 
-État documenté le 8 septembre 2026, moteur de référence `c06a965` sur `main`,
+État documenté le 8 septembre 2026, refonte `c06a965` puis revue corridor à partir
+de `cc758f9` sur `main`,
 version du package 0.1.3. Ce guide permet de comprendre les décisions avant
 de lire le code concerné par une intervention ; il ne remplace pas cette
 vérification ciblée. Vérifier le HEAD et les modifications locales à la reprise.
@@ -57,6 +58,15 @@ ne suffit pas : aucun segment, via ou nœud mobile ne peut sauter un obstacle.
 Ce n'est ni une bande de largeur constante, ni une région définie par la grille.
 L'échec du certificat d'un déplacement particulier ne prouve pas l'impossibilité
 de tous les contournements. Voir la définition complète dans `gloss_rules.md`.
+Le certificat des pistes utilise désormais des balayages triangulaires à largeur
+réelle, sans gonflement ni discrétisation temporelle liée à la grille. Les vias/T
+utilisent également ces balayages et les capsules physiques cuivre/percement.
+Les refus de grille identifiés ne remplacent plus la validation géométrique.
+Les coordonnées construites et les largeurs ne sont plus arrondies pour ces
+opérations ; une clé de graphe ne prouve pas une jonction physique. Les fusions
+KRT sont proposées sur copie et certifiées avant application (support cuivre et
+connectivité), y compris avant l'exemption `geometry_preserving`.
+[Correctif, reproduction `/A` et revue des limites](reports/CORRIDOR_ARTIFACT_REVIEW_2026_09_08.md).
 
 **Gloss et Centering.** Ce sont deux actions distinctes. L'action Centering
 exécute atomiquement Gloss avec `stay_in_corridor=True`, puis Centering, sans
@@ -181,8 +191,11 @@ hors intégration et nécessitent une nouvelle décision pour être reprises.
   désormais ce cas, y compris par rotation/réflexion. Cela ne nettoie pas les
   chevauchements déjà présents : sur `test_centering2`, `/A`, corridor actif,
   le fichier SHA-256 `02444ca7e2856235f09683a66ef85a7206e1280926a436f780a5c1019d133cec`
-  reste à 63,4121 mm avec son recouvrement de 1,410 mm après le nouvel essai.
-  Ne pas annoncer ce fichier réparé sur la seule base de G5.
+  restait à 63,4121 mm après le seul garde-fou anti-recouvrement. Le remplacement
+  ultérieur du certificat de corridor répare maintenant cet instantané :
+  60,5921 mm, 8 → 7 pistes, zéro paire en recouvrement, sortie octolinéaire et
+  G5 valide. Le test natif est reproductible par `tools/reproduce_corridor_fold.py`.
+  Le fichier source n'est pas sauvegardé ; ce n'est pas une validation visuelle.
 - Demande de sauvegarde après simple ouverture : KiCad 10
   `PCB_EDIT_FRAME::RunActionPlugin` appelle `OnModify()` lorsque son instantané
   d'annulation contient des objets, sans vérifier leur modification effective.
@@ -219,20 +232,28 @@ hors intégration et nécessitent une nouvelle décision pour être reprises.
 
 ## Validation disponible et limites connues
 
-La campagne du 8 septembre après refonte a donné **299 tests réussis et quatre
+La campagne historique du 8 septembre après refonte a donné **299 tests réussis et quatre
 échecs préexistants**, reproduits avant modification : ancien inventaire refusant
 `AGENTS.md`, explication française sans traduction anglaise, contrôle textuel de
 dépendance refusant l'accès optionnel à `NetSelectionPanel`, et
 `test_a_later_gloss_completely_removes_a_longer_centering_path` sans porte centrée.
-Ne pas annoncer une suite entièrement verte sur cette base.
+La revue corridor donne désormais **369 réussites et un échec préexistant**,
+le test Centering sans porte centrée. Ne pas annoncer une suite entièrement verte.
 
 PACK0 contient cinq cartes fixes avec empreintes dans [PACK0.json](PACK0.json).
 La comparaison de refonte conserve exactement les géométries sur les quatre
 cartes réussies, avec environ 5 à 9 % de temps en moins sur des mesures uniques.
-`azukar_fpga` échoue et restaure la carte avant comme après : ce n'est pas une
+Dans cette ancienne campagne, `azukar_fpga` échoue et restaure la carte : ce n'est pas une
 validation fonctionnelle réussie. Le rapport initial PACK0 signalait une
 régression de connectivité sur le net 11 ; ne pas attribuer sans diagnostic
 tout nouvel échec à cette même cause.
+
+La nouvelle campagne corridor traite les cinq cartes avec et sans corridor,
+avec contrôle indépendant des nouvelles directions, et réussit notamment sur
+`azukar_fpga` après rejet des propositions de fusion électriquement invalides.
+Les géométries et les gains changent ; ne pas confondre validité géométrique et
+non-régression de rendement. Voir les mesures, les pertes de gain explicites et
+les limites dans le [rapport corridor](reports/CORRIDOR_ARTIFACT_REVIEW_2026_09_08.md).
 
 Les tests natifs sur `test_centering2` ont aussi validé moteur et application
 sur une carte détachée. Cette carte locale évolue : enregistrer son empreinte,

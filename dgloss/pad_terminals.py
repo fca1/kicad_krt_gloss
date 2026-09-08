@@ -1,13 +1,14 @@
 """G3.2: simplify simple terminal chains up to the pad's native centre."""
 
 from collections import defaultdict
+import math
 from .execution import perf_counter
 
 from .topology import ReplacementGuard
 from .krt_clearance import stable_copper_search
 from dgloss.krt_api import point_to_pad_distance
 from dgloss.krt_api import calculate_route_length
-from dgloss.krt_api import pos_key
+from dgloss.krt_api import pos_key, FP_EPS_MM
 
 from .algorithm import (_candidate_clearance)
 from .route_geometry import (_connector_families, _edge_directions, _right_angle, _touches_other_same_net)
@@ -52,7 +53,7 @@ def _walk_terminal_chain(pcb_data, net_id, pad):
     layer, width = first.layer, first.width
     group = [segment for segment in net_segments
              if segment.layer == layer and
-             abs(segment.width - width) <= 1e-6 and
+             segment.width == width and
              not getattr(segment, "locked", False)]
     adjacency = defaultdict(list)
     actual = {}
@@ -77,7 +78,7 @@ def _walk_terminal_chain(pcb_data, net_id, pad):
     current = pos_key(*terminal)
     segment = first
     used = set()
-    while len(chain) < 100:
+    while True:
         used.add(id(segment))
         chain.append(segment)
         a = pos_key(segment.start_x, segment.start_y)
@@ -95,6 +96,8 @@ def _walk_terminal_chain(pcb_data, net_id, pad):
                      if id(candidate) not in used]
         if len(following) != 1:
             break
+        if math.dist(actual[(id(following[0]), current)], other_point) > FP_EPS_MM:
+            break  # Keep the real endpoint; never bridge a rounded graph gap.
         segment = following[0]
     return chain, points
 

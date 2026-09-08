@@ -2,7 +2,8 @@
 
 from collections import defaultdict
 from dataclasses import dataclass
-from .krt_api import pos_key, point_to_pad_distance
+import math
+from .krt_api import pos_key, point_to_pad_distance, FP_EPS_MM
 from .board_views import board_views
 
 
@@ -40,7 +41,7 @@ def _simple_chains(pcb_data, net_id, allowed_segment_ids=None):
 
     groups = defaultdict(list)
     for seg in net_segments:
-        groups[(seg.layer, round(seg.width, 6))].append(seg)
+        groups[(seg.layer, seg.width)].append(seg)
 
     chains = []
     for (layer, width), segments in sorted(groups.items()):
@@ -57,6 +58,7 @@ def _simple_chains(pcb_data, net_id, allowed_segment_ids=None):
         def interior(key):
             point = actual.get((id(adjacency[key][0]), key), key)
             return (len(adjacency[key]) == 2 and incidence[key] == 2 and
+                    math.dist(actual[(id(adjacency[key][1]), key)], point) <= FP_EPS_MM and
                     key not in via_points and
                     not views.pad_holds(net_id, point, layer, width / 2))
 
@@ -101,7 +103,7 @@ def _walk_branch_chain(pcb_data, net_id, node, branch):
                     not getattr(segment, "graphic", False)]
     group = [segment for segment in net_segments
              if segment.layer == branch.layer and
-             abs(segment.width - branch.width) <= 1e-6 and
+             segment.width == branch.width and
              not getattr(segment, "locked", False)]
     adjacency = defaultdict(list)
     actual = {}
@@ -124,7 +126,7 @@ def _walk_branch_chain(pcb_data, net_id, node, branch):
     segment = branch
     used = set()
     anchor = node
-    while len(chain) < 100:
+    while True:
         used.add(id(segment))
         chain.append(segment)
         a = pos_key(segment.start_x, segment.start_y)
@@ -142,5 +144,7 @@ def _walk_branch_chain(pcb_data, net_id, node, branch):
                      if id(candidate) not in used]
         if len(following) != 1:
             break
+        if math.dist(actual[(id(following[0]), current)], anchor) > FP_EPS_MM:
+            break  # Rounded adjacency must not invent an actual shared vertex.
         segment = following[0]
     return chain, anchor

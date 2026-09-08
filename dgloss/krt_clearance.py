@@ -1,6 +1,5 @@
 """G3 clearance adapter: KRT owns every geometry and rule calculation."""
 
-import math
 from functools import lru_cache
 from functools import wraps
 from contextlib import contextmanager, nullcontext
@@ -15,19 +14,19 @@ from dgloss.krt_api import (board_edge_geometry, check_pad_drill_via_overlap,
                        pads_shared_layer_clearance, _point_on_board,
                        _segment_to_rings_distance)
 from dgloss.krt_api import point_in_polygon, point_to_polygon_edge_distance
+from dgloss.krt_api import (Segment, FP_EPS_MM, check_segment_overlap,
+                           pad_drill_capsule)
+from .krt_sweep import foreign_pad_clearance_distance, pad_axis_distance
 from dgloss.krt_api import HOLE_TO_HOLE_CLEARANCE, NPTH_TO_TRACK_CLEARANCE
-from dgloss.krt_api import (_FOREIGN_PAD_WINDOW,
-                                  _foreign_seg_arrays,
-                                  _seg_capsule_axis_dist,
-                                  _seg_foreign_hole_dist,
-                                  _seg_foreign_pad_dist,
-                                  _seg_foreign_via_dist)
+from dgloss.krt_api import (_foreign_seg_arrays, _foreign_hole_capsules,
+                           _seg_capsule_axis_dist)
 
 
 def _exact_foreign_segment_distance(pcb_data, net_id, x1, y1, x2, y2,
                                     layer, *, net_clearances=None,
                                     base_clearance=0.0,
-                                    track_clearances=None, prepared_copper=None):
+                                    track_clearances=None, prepared_copper=None,
+                                    half_width=None):
     """Compose KRT's cached arrays and exact vectorized capsule distance.
 
     KRT owns the obstacle arrays, broad phase and analytic distance primitive.
@@ -36,38 +35,40 @@ def _exact_foreign_segment_distance(pcb_data, net_id, x1, y1, x2, y2,
     """
     arrays, bounds = (prepared_copper if prepared_copper is not None else
                       (_foreign_seg_arrays(pcb_data, layer), None))
-    nid, fax, fay, fbx, fby, half_width = arrays
+    nid, fax, fay, fbx, fby, foreign_half_width = arrays
     if nid.size == 0:
         return 1e9
 
-    radius = _FOREIGN_PAD_WINDOW
     min_x, max_x, min_y, max_y = (bounds if bounds is not None else (
-        np.minimum(fax, fbx) - half_width, np.maximum(fax, fbx) + half_width,
-        np.minimum(fay, fby) - half_width, np.maximum(fay, fby) + half_width))
-    near = ((max_x >= min(x1, x2) - radius) &
-            (min_x <= max(x1, x2) + radius) &
-            (max_y >= min(y1, y2) - radius) &
-            (min_y <= max(y1, y2) + radius) &
-            (nid != net_id))
+        np.minimum(fax, fbx) - foreign_half_width, np.maximum(fax, fbx) + foreign_half_width,
+        np.minimum(fay, fby) - foreign_half_width, np.maximum(fay, fby) + foreign_half_width))
+    net_rules, track_rules = net_clearances or {}, track_clearances or {}
+    near = nid != net_id
+    if half_width is not None:
+        radius = half_width + max(base_clearance, max(net_rules.values(), default=0.),
+                                  max(track_rules.values(), default=0.))
+        near &= ((max_x >= min(x1, x2) - radius) &
+                 (min_x <= max(x1, x2) + radius) &
+                 (max_y >= min(y1, y2) - radius) &
+                 (min_y <= max(y1, y2) + radius))
     if not near.any():
         return 1e9
 
     distance = (_seg_capsule_axis_dist(
         x1, y1, x2, y2, fax[near], fay[near], fbx[near], fby[near]) -
-        half_width[near])
-    if net_clearances or track_clearances:
-        foreign_net_ids = nid[near]
-        net_rules = net_clearances or {}
-        track_rules = track_clearances or {}
-        excess = np.asarray([
-            max(0.0,
-                max(net_rules.get(int(foreign_net_id), base_clearance),
-                    track_rules.get(int(foreign_net_id), 0.0)) -
-                base_clearance)
-            for foreign_net_id in foreign_net_ids
-        ], dtype=float)
-        distance = distance - excess
-    return float(np.min(distance))
+        foreign_half_width[near])
+    excess = np.asarray([max(0., net_rules.get(int(n), base_clearance)-base_clearance,
+                             track_rules.get(int(n), 0.)-base_clearance) for n in nid[near]])
+    return float(np.min(distance - excess))
+
+
+def _exact_foreign_hole_distance(pcb, net_id, x1, y1, x2, y2, clearance):
+    nid, ax, ay, bx, by, radius, local = _foreign_hole_capsules(pcb)
+    mask = nid != net_id
+    if not mask.any():
+        return float('inf')
+    distance = _seg_capsule_axis_dist(x1, y1, x2, y2, ax[mask], ay[mask], bx[mask], by[mask])
+    return float(np.min(distance-radius[mask]-np.maximum(0., local[mask]-clearance)))
 
 
 def stable_copper_search(function):
@@ -142,10 +143,10 @@ class KrtClearanceAdapter:
         self.copper_data_stats["builds"] += 1
         return batch[layer]
 
-    def _uncached_pad_distance(self, net_id, x1, y1, x2, y2, layer, effective):
-        return _seg_foreign_pad_dist(
-            self.pcb, net_id, x1, y1, x2, y2, layer,
-            base_clearance=effective, net_clearances=self.net_clearances)
+    def _uncached_pad_distance(self, net_id, x1, y1, x2, y2, layer, effective, half_width):
+        return foreign_pad_clearance_distance(
+            self.pcb, net_id, x1, y1, x2, y2, layer, effective,
+            self.net_clearances, half_width)
 
     def _collect_keepouts(self, for_vias=False):
         keepouts = []
@@ -179,8 +180,8 @@ class KrtClearanceAdapter:
             return self.config.layer_clearance(layer, base)
         return base
 
-    def _edge_clears(self, seg):
-        required = self.edge_clearance + seg.width / 2.0 - 1e-4
+    def _edge_clears(self, seg, clearance=None):
+        required = (self.edge_clearance if clearance is None else clearance) + seg.width / 2.0 - FP_EPS_MM
         endpoints = ((seg.start_x, seg.start_y), (seg.end_x, seg.end_y))
         if self.edge_rings:
             return (all(_point_on_board(x, y, self.edge_outer, self.edge_cutouts)
@@ -201,28 +202,77 @@ class KrtClearanceAdapter:
                  bool({"F&B.Cu", "F&B"} & layers)))
 
     def _keepouts_clear(self, seg):
-        margin = self.clearance + seg.width / 2.0
-        for rings, (x0, y0, x1, y1), layers in self.keepouts:
-            if not self._on_layer(layers, seg.layer):
+        return self._regions_clear(seg, self.keepouts, self.clearance)
+
+    def _regions_clear(self, seg, regions, clearance, all_layers=False):
+        margin = clearance + seg.width / 2.0
+        for rings, (x0, y0, x1, y1), layers in regions:
+            if not all_layers and not self._on_layer(layers, seg.layer):
                 continue
             if (max(seg.start_x, seg.end_x) < x0 - margin or
                     min(seg.start_x, seg.end_x) > x1 + margin or
                     max(seg.start_y, seg.end_y) < y0 - margin or
                     min(seg.start_y, seg.end_y) > y1 + margin):
                 continue
-            samples = max(2, int(math.hypot(seg.end_x - seg.start_x,
-                                            seg.end_y - seg.start_y) / 0.1) + 1)
-            for index in range(samples + 1):
-                t = index / samples
-                x = seg.start_x + t * (seg.end_x - seg.start_x)
-                y = seg.start_y + t * (seg.end_y - seg.start_y)
-                inside = False
-                for ring in rings:
-                    if point_in_polygon(x, y, ring):
-                        inside = not inside
-                if inside or any(point_to_polygon_edge_distance(x, y, ring) < margin
-                                 for ring in rings):
-                    return False
+            inside = sum(point_in_polygon(seg.start_x, seg.start_y, ring)
+                         for ring in rings) % 2
+            if inside or _segment_to_rings_distance(
+                    seg.start_x, seg.start_y, seg.end_x, seg.end_y, rings) < margin - FP_EPS_MM:
+                return False
+        return True
+
+    def sweep_triangle_clears(self, points, template):
+        """Validate a filled triangular axis sweep plus the REAL copper radius.
+
+        KRT checks its three boundary capsules. An obstacle wholly enclosed by
+        the triangle need not touch that boundary: test a representative of
+        every connected obstacle component too. No raster or enlarged probe.
+        Degenerate triangles are simply the union of their boundary segments.
+        Guarantees are those of the underlying KRT distance predicates.
+        """
+        for a, b in zip(points, points[1:] + points[:1]):
+            if not self.segment_clears(Segment(*a, *b, template.width,
+                                               template.layer, template.net_id)):
+                return False
+        a, b, c = points
+        if (b[0]-a[0])*(c[1]-a[1]) == (b[1]-a[1])*(c[0]-a[0]):
+            return True
+
+        def inside(p):
+            return point_in_polygon(*p, points)
+
+        x0, y0 = min(p[0] for p in points), min(p[1] for p in points)
+        x1, y1 = max(p[0] for p in points), max(p[1] for p in points)
+
+        def enclosed(nid, xs, ys):
+            near = ((nid != template.net_id) & (xs >= x0) & (xs <= x1) &
+                    (ys >= y0) & (ys <= y1))
+            return any(inside((x, y)) for x, y in zip(xs[near], ys[near]))
+
+        # Use KRT's own obstacle arrays, including wildcard-layer vias,
+        # custom-pad components and offset/slot NPTH hole axes.
+        from .krt_api import _foreign_pad_arrays, _foreign_hole_capsules
+        prepared = self._prepared_copper(template.layer)
+        arrays = prepared[0] if prepared is not None else _foreign_seg_arrays(self.pcb, template.layer)
+        nid, ax, ay, _bx, _by, _half = arrays
+        if enclosed(nid, ax, ay):
+            return False
+        pads = _foreign_pad_arrays(self.pcb, template.layer)
+        if enclosed(pads[0], pads[1], pads[2]):
+            return False
+        for net_id, pad in pads[-1]:
+            if net_id != template.net_id and any(
+                    poly and inside(poly[0]) for poly in pad.polygons):
+                return False
+        nid, ax, ay, _bx, _by, _r, _lc = _foreign_hole_capsules(self.pcb)
+        if enclosed(nid, ax, ay):
+            return False
+        for rings, _bounds, layers in self.keepouts:
+            if self._on_layer(layers, template.layer) and any(
+                    ring and inside(ring[0]) for ring in rings):
+                return False
+        if any(ring and inside(ring[0]) for ring in self.edge_rings):
+            return False
         return True
 
     def segment_clears(self, seg):
@@ -244,26 +294,76 @@ class KrtClearanceAdapter:
         distance = min(
             self._pad_distance(
                 seg.net_id, seg.start_x, seg.start_y,
-                seg.end_x, seg.end_y, seg.layer, effective),
+                seg.end_x, seg.end_y, seg.layer, effective, seg.width/2),
             _exact_foreign_segment_distance(
                 self.pcb, seg.net_id, seg.start_x, seg.start_y,
                 seg.end_x, seg.end_y, seg.layer,
                 net_clearances=self.net_clearances, base_clearance=effective,
                 track_clearances=self.track_clearances,
-                prepared_copper=self._prepared_copper(seg.layer)),
-            _seg_foreign_via_dist(
-                self.pcb, seg.net_id, seg.start_x, seg.start_y,
-                seg.end_x, seg.end_y, seg.layer,
-                net_clearances=self.net_clearances, base_clearance=effective))
-        hole_distance = _seg_foreign_hole_dist(
+                prepared_copper=self._prepared_copper(seg.layer), half_width=seg.width/2))
+        hole_distance = _exact_foreign_hole_distance(
             self.pcb, seg.net_id, seg.start_x, seg.start_y,
-            seg.end_x, seg.end_y)
-        return (distance >= effective + seg.width / 2.0 - 1e-4 and
-                hole_distance >= self.npth_clearance + seg.width / 2.0 - 1e-4 and
+            seg.end_x, seg.end_y, self.npth_clearance)
+        return (distance >= effective + seg.width / 2.0 - FP_EPS_MM and
+                hole_distance >= self.npth_clearance + seg.width / 2.0 - FP_EPS_MM and
                 self._edge_clears(seg) and self._keepouts_clear(seg))
 
     def connector_clears(self, segments):
         return bool(segments) and all(self.segment_clears(seg) for seg in segments)
+
+    def via_sweep_clears(self, old, new):
+        """Translate the physical copper cylinder and drill, using KRT capsules.
+
+        A disk translated along a line sweeps exactly a capsule. The two
+        diameters are physical dimensions, never increased with displacement.
+        KRT's current through-via/layer and rule policies match via_clears.
+        """
+        if (old.size, old.drill, old.net_id, old.layers) != (
+                new.size, new.drill, new.net_id, new.layers):
+            return False
+        own = max(self.clearance, (self.net_clearances or {}).get(old.net_id, self.clearance))
+        hole_clearance = (getattr(self.config, 'hole_to_hole_clearance', None)
+                          or HOLE_TO_HOLE_CLEARANCE)
+        def sweep(width, layer='F.Cu'):
+            return Segment(old.x, old.y, new.x, new.y, width, layer, old.net_id)
+        copper, drill = sweep(old.size), sweep(old.drill)
+        for seg in self.pcb.segments:
+            if seg.net_id == old.net_id or not seg.layer.endswith('.Cu'):
+                continue
+            pair = self.config.stack_clearance(max(
+                own, (self.net_clearances or {}).get(seg.net_id, self.clearance)))
+            if check_segment_overlap(sweep(old.size, seg.layer), seg, pair, 0.)[0]:
+                return False
+        for via in self.pcb.vias:
+            if via is old:
+                continue
+            fixed_drill = Segment(via.x, via.y, via.x, via.y, via.drill, 'F.Cu', via.net_id)
+            if check_segment_overlap(drill, fixed_drill, hole_clearance, 0.)[0]:
+                return False
+            if via.net_id != old.net_id:
+                pair = self.config.stack_clearance(max(
+                    own, (self.net_clearances or {}).get(via.net_id, self.clearance)))
+                if check_via_segment_overlap(via, copper, pair, 0.)[0]:
+                    return False
+        for net_id, pads in self.pcb.pads_by_net.items():
+            for pad in pads:
+                if getattr(pad, 'drill', 0.) > 0:
+                    a, b, radius = pad_drill_capsule(pad)
+                    fixed_drill = Segment(*a, *b, 2*radius, 'F.Cu', net_id)
+                    if check_segment_overlap(drill, fixed_drill, hole_clearance, 0.)[0]:
+                        return False
+                if net_id == old.net_id:
+                    continue
+                layers = pad_copper_layers(pad, self.pcb.board_info.copper_layers)
+                pair = pads_shared_layer_clearance(max(
+                    own, (self.net_clearances or {}).get(net_id, self.clearance)),
+                    getattr(self.config, 'layer_clearances', None), layers)
+                pair = self.config.pad_override_clearance(pair, pad)
+                if layers and pad_axis_distance((old.x, old.y), (new.x, new.y), pad) < pair + old.size/2 - FP_EPS_MM:
+                    return False
+        edge = max(own, getattr(self.config, 'board_edge_clearance', 0.))
+        return (self._edge_clears(copper, edge) and
+                self._regions_clear(copper, self.via_keepouts, own, all_layers=True))
 
     def via_clears(self, via, ignored_via=None):
         """Validate a moved via by composing KRT's exact DRC primitives."""

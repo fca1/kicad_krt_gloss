@@ -178,8 +178,6 @@ def run_optimization_pass(results, context, selected, net_ids, deadline, *, oper
     final_segment_ids = {id(segment) for segment in pcb_data.segments}
     merge_removed = [segment for segment in merge_before
                      if id(segment) not in final_segment_ids]
-    if merge_removed and not context.branch_scoped:
-        context.replace_editable_segments(merge_removed, merge_added)
     merge_changes = GlossChanges(
         segments=([{"old": segment, "stage": "G3.5"}
                    for segment in merge_removed] +
@@ -191,6 +189,12 @@ def run_optimization_pass(results, context, selected, net_ids, deadline, *, oper
         "G3.5 segments", skipped_budget=expired,
         changes=merge.get("joints", 0), saved_mm=0.0,
         elapsed_ms=merge_ms, label="collinear joints removed")
+    if emit_log and merge.get('rejections'):
+        labels = getattr(pcb_data, 'nets', {})
+        reasons = ', '.join(
+            f"{getattr(labels.get(r['net_id']), 'name', r['net_id'])}: {r['reason']}"
+            for r in merge['rejections'])
+        print(f"Track Gloss G3.5: merge proposals not applied ({reasons})")
 
     if not selected.stay_in_corridor:
         local_strips, local_added, local_changes, local_stats = operations.shorten_routes(

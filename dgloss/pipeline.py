@@ -32,24 +32,9 @@ def _grade(pcb_data, net_id):
 
 
 def _merge_collinear_in_scope(results, context, net_ids):
-    """Call KRT's merge while exposing only current BE copper as mutable."""
-    if not context.branch_scoped:
-        return merge_collinear_segments(
-            results, context.pcb_data, set(net_ids))
-    before = [segment for segment in context.pcb_data.segments
-              if id(segment) in context.editable_segment_ids]
-    scratch = [{"new_segments": list(before), "new_vias": [],
-                "cleanup": "track_gloss_be_scope"}]
-    changed, nets, _ignored, added, stats = merge_collinear_segments(
-        scratch, context.pcb_data, set(net_ids), keep_input_copper=True)
-    current_ids = {id(segment) for segment in context.pcb_data.segments}
-    removed = [segment for segment in before if id(segment) not in current_ids]
-    native, _vias = release_result_custody(results, removed)
-    if added:
-        results.append({"new_segments": list(added), "new_vias": [],
-                        "cleanup": "track_gloss_g3_5_segments_be"})
-    context.replace_editable_segments(removed, added)
-    return changed, nets, native, added, stats
+    """KRT proposes; exact support and electrical checks authorize publication."""
+    from .krt_merge import merge_in_scope
+    return merge_in_scope(results, context, net_ids, merge_collinear_segments)
 
 
 def run_final_gloss(results, pcb_data, config, gloss_config=None, *,
@@ -430,6 +415,7 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
             "segments_merged": merged_count,
             "merge_nets_changed": merged_nets,
             "merge_joints": merge.get("joints", 0),
+            "merge_rejected_nets": merge.get("rejected_nets", 0),
             "merge_segments_removed": merge.get("segs_removed", 0),
             "merge_segments_added": merge.get("segs_added", 0),
             "merge_nets_skipped_large": merge.get(

@@ -1,20 +1,18 @@
 """Joint corridor certificate for mobile vias and T junctions.
 
-Certify intervals of a prescribed deformation using inflated KRT probes.
-Clear intervals stop immediately; only inconclusive intervals are subdivided.
-This is a conservative certificate, not a search for a path around obstacles.
+Move shared vertices together and certify their actual triangular sweeps.
+The via body follows its real copper and drill capsules, without inflation.
 """
 from collections import defaultdict
-from dataclasses import replace
-import math
 from .execution import perf_counter
 
-from .krt_api import Segment
 from .corridor import _parameterize, _at
 
 
 def key(p):
-    return tuple(round(v, 6) for v in p)
+    # A motion certificate must start at the actual copper, not at a rounded
+    # graph representative. Near-coincident endpoints are not interchangeable.
+    return tuple(p)
 
 
 def ends(s):
@@ -49,8 +47,7 @@ def path(segments, start, target=None):
 class MotionCertificate:
     def __init__(self):
         self.stats = dict(via_checks=0, junction_checks=0, rejected=0,
-                          intervals=0, segment_probes=0, via_probes=0,
-                          capped=0, seconds=0.)
+                          sweeps=0, via_sweeps=0, timed_out=0, seconds=0.)
 
     def certify(self, context, paths, old_via=None, new_via=None, deadline=None):
         started = perf_counter()
@@ -62,7 +59,7 @@ class MotionCertificate:
     def _certify(self, context, paths, old_via, new_via, deadline):
         prepared = []
         for source, target, template in paths:
-            if source is None or target is None:
+            if not source or not target:
                 self.stats['rejected'] += 1
                 return False
             old_knots = _parameterize(source) or [0., 1.]
@@ -71,45 +68,41 @@ class MotionCertificate:
             old = [_at(source, old_knots, k) for k in knots]
             new = [_at(target, new_knots, k) for k in knots]
             prepared.append((old, new, template))
-        stack, count = [(0., 1., 0)], 0
+        # Shared endpoints (via/T) must move together, never one leg at a time.
+        # Equal source/target pairs define the same moving vertex. An edge
+        # whose two vertices belong to the same group is a translating point.
+        groups = {}
+        for path_index, (old, new, template) in enumerate(prepared):
+            for index, (a, b) in enumerate(zip(old, new)):
+                groups.setdefault((a, b), []).append((path_index, index))
         with context.clearance_adapter.stable_copper():
-            while stack:
-                if (deadline is not None and perf_counter() >= deadline) or count >= 128:
-                    self.stats['capped'] += 1
+            for (start, target), members in groups.items():
+                if deadline is not None and perf_counter() >= deadline:
+                    self.stats['timed_out'] += 1
                     self.stats['rejected'] += 1
                     return False
-                low, high, depth = stack.pop()
-                count += 1
-                self.stats['intervals'] += 1
-                mid, half = (low + high) / 2, (high - low) / 2
-                clear = True
-                for old, new, template in prepared:
-                    pts = [(a[0]+mid*(b[0]-a[0]), a[1]+mid*(b[1]-a[1]))
-                           for a, b in zip(old, new)]
-                    for i, (a, b) in enumerate(zip(pts, pts[1:])):
-                        radius = half * max(math.dist(old[i], new[i]),
-                                            math.dist(old[i+1], new[i+1]))
-                        seg = Segment(*a, *b, template.width + 2*radius,
-                                      template.layer, template.net_id)
-                        self.stats['segment_probes'] += 1
-                        if not context.clearance_adapter.segment_clears(seg):
-                            clear = False
-                            break
-                    if not clear:
-                        break
-                if clear and old_via is not None:
-                    dx, dy = new_via.x-old_via.x, new_via.y-old_via.y
-                    radius = half * math.hypot(dx, dy)
-                    probe = replace(old_via, x=old_via.x+mid*dx,
-                                    y=old_via.y+mid*dy, size=old_via.size+2*radius,
-                                    drill=old_via.drill+2*radius)
-                    self.stats['via_probes'] += 1
-                    clear = context.clearance_adapter.via_clears(probe, ignored_via=old_via)
-                if not clear:
-                    if depth >= 10:
-                        self.stats['rejected'] += 1
-                        return False
-                    stack.extend([(mid, high, depth+1), (low, mid, depth+1)])
+                if start == target:
+                    continue
+                for path_index, index in members:
+                    old, new, template = prepared[path_index]
+                    for neighbor in (index-1, index+1):
+                        if 0 <= neighbor < len(old):
+                            self.stats['sweeps'] += 1
+                            if not context.clearance_adapter.sweep_triangle_clears(
+                                    (old[neighbor], start, target), template):
+                                self.stats['rejected'] += 1
+                                return False
+                for path_index, index in members:
+                    prepared[path_index][0][index] = target
+            if old_via is not None:
+                self.stats['via_sweeps'] += 1
+                if new_via is None or not context.clearance_adapter.via_sweep_clears(old_via, new_via):
+                    self.stats['rejected'] += 1
+                    return False
+        if deadline is not None and perf_counter() >= deadline:
+            self.stats['timed_out'] += 1
+            self.stats['rejected'] += 1
+            return False
         return True
 
     def via(self, context, chains, anchors, old_via, new_via, legs, deadline):

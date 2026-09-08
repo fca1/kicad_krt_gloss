@@ -78,6 +78,46 @@ def test_expired_certificate_never_accepts_unchecked_motion():
     assert not MotionCertificate().certify(ctx, [([(0,0),(2,0)],[(0,0),(2,1)],source)], deadline=0)
 
 
+def test_motion_path_preserves_off_grid_vertices_and_does_not_bridge_a_gap():
+    from dgloss.reduction_motion import path
+    from dgloss.corridor import _at, _parameterize
+    points = [(0.123456789, 0.), (1.123456789, 1.), (3.123456789, 1.)]
+    segments = [Segment(*a, *b, .2, 'F.Cu', 1) for a, b in zip(points, points[1:])]
+    assert path(segments, points[0], points[-1]) == points
+    knots = _parameterize(points)
+    assert [_at(points, knots, knot) for knot in knots] == points
+    segments[1] = Segment(points[1][0] + 1e-7, 1., *points[2], .2, 'F.Cu', 1)
+    assert path(segments, points[0], points[-1]) is None
+
+
+def test_long_via_slide_does_not_inflate_copper_or_drill():
+    obstacle = Segment(0, .5001, 9, .5001, .2, 'F.Cu', 2)
+    old = Via(0, 0, .6, .2, ['F.Cu', 'B.Cu'], 1)
+    new = Via(9, 0, .6, .2, ['F.Cu', 'B.Cu'], 1)
+    ctx = board([obstacle], [old], {1: []})
+    assert ctx.clearance_adapter.via_clears(old, ignored_via=old)
+    assert ctx.clearance_adapter.via_clears(new, ignored_via=old)
+    assert MotionCertificate().certify(ctx, [], old, new)
+    assert (old.size, new.size, old.drill, new.drill) == (.6, .6, .2, .2)
+
+
+def test_via_sweep_checks_same_net_drill_between_valid_endpoints():
+    old = Via(0, 0, .6, .2, ['F.Cu', 'B.Cu'], 1)
+    new = Via(9, 0, .6, .2, ['F.Cu', 'B.Cu'], 1)
+    obstacle = Via(4, 0, .6, .2, ['F.Cu', 'B.Cu'], 1)
+    ctx = board([], [old, obstacle], {1: []})
+    assert ctx.clearance_adapter.via_clears(new, ignored_via=old)
+    assert not MotionCertificate().certify(ctx, [], old, new)
+
+
+def test_joint_track_slide_does_not_have_a_depth_dependent_clearance():
+    obstacle = Segment(0, -.3001, 9, -.3001, .2, 'F.Cu', 2)
+    ctx = board([obstacle], [], {1: []})
+    template = Segment(0, 0, 1, 1, .2, 'F.Cu', 1)
+    assert MotionCertificate().certify(ctx, [(
+        [(0, 0), (1, 1), (9, 1)], [(0, 0), (9, 0)], template)])
+
+
 def test_streaming_pad_retains_certified_candidate_when_next_family_expires(monkeypatch):
     from dgloss import pad_terminals as p
     from dgloss.algorithm import _ClearanceDecision
