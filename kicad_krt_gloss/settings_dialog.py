@@ -8,6 +8,9 @@ import wx.adv
 from .version import __version__
 
 
+_DIALOG_IMAGES = os.path.join(os.path.dirname(__file__), "img_dlg")
+
+
 GENERAL_DEFAULTS = {
     "selection_uses_elementary_branches": True,
     "grid_step": 0.1,
@@ -71,7 +74,7 @@ class GlossSettingsDialog(wx.Dialog):
         self.controls[key] = control
         selection_row.Add(control, 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 8)
         illustration_path = os.path.join(
-            os.path.dirname(__file__), "selection_scope_illustration.png")
+            _DIALOG_IMAGES, "selection_scope_illustration.png")
         if os.path.exists(illustration_path):
             image = wx.Image(illustration_path, wx.BITMAP_TYPE_PNG)
             illustration = wx.StaticBitmap(panel, bitmap=wx.Bitmap(image))
@@ -343,8 +346,7 @@ class GlossSettingsDialog(wx.Dialog):
         columns.Add(net_sizer, 2, wx.EXPAND | wx.ALL, 8)
 
         options = wx.BoxSizer(wx.VERTICAL)
-        icon_path = os.path.join(
-            os.path.dirname(__file__), "centering_illustration.png")
+        icon_path = os.path.join(_DIALOG_IMAGES, "centering_illustration.png")
         self.centering_proximity_mm = wx.SpinCtrlDouble(
             panel, min=0.0, max=5.0,
             initial=float(values["centering_proximity_mm"]), inc=0.1)

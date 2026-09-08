@@ -364,7 +364,8 @@ def test_about_tab_uses_project_versions_and_attribution():
 def test_pcm_package_includes_the_about_logo():
     source = (ROOT / "package_pcm.py").read_text(encoding="utf-8")
     assert '"icon_24.png", "icon_64.png"' in source
-    assert '"selection_scope_illustration.png"' in source
+    assert 'dialog_images = plugins / "img_dlg"' in source
+    assert 'PLUGIN / "img_dlg" / name' in source
 
 
 def test_dialog_exposes_the_integrated_gloss_options_by_public_name():
@@ -387,7 +388,7 @@ def test_dialog_exposes_the_integrated_gloss_options_by_public_name():
     assert 'label="Gloss Operations"' in source
     assert 'label="Calculation Settings"' in source
     assert 'label="Execution Limit"' in source
-    assert '"selection_scope_illustration.png"' in source
+    assert '_DIALOG_IMAGES, "selection_scope_illustration.png"' in source
     assert "wx.ToolTip.SetDelay(250)" in source
     assert "must save strictly more than this value" in source
     assert "KRT defaults to 0.1 mm" not in source
