@@ -44,6 +44,10 @@ Une piste ne peut pas, par exemple, passer de l'autre côté d'un obstacle parce
 que sa seule position finale serait libre. La même règle s'applique aux vias et
 aux jonctions lorsqu'ils sont mobiles.
 
+#### Illustration — Mouvement continu autour des obstacles
+
+![Un trajet continu sûr contourne les obstacles, contrairement au trajet direct barré.](../../docs/assets/admissible-corridor.png)
+
 ## 3. Le Gloss
 
 ### 3.1 Son but
@@ -79,6 +83,10 @@ Un gain trop petit pour être distingué de la résolution de la grille n'est pa
 retenu. Cela évite les changements invisibles, instables ou créant de très
 petits segments.
 
+#### Illustration — Même connexion, moins de segments
+
+![Une piste en zigzag est remplacée par une piste plus simple aux mêmes extrémités.](../../docs/assets/segment-count-reduction.png)
+
 ### 3.4 Ce que le Gloss peut améliorer
 
 Le Gloss peut notamment enlever un détour entre des segments voisins, fusionner
@@ -87,6 +95,10 @@ via ou une jonction lorsque leur mobilité est explicitement autorisée. Chaque
 amélioration reste locale : elle ne donne pas le droit de déplacer un élément
 fixe, de modifier une zone protégée ou de changer la fonction électrique d'une
 connexion.
+
+#### Illustration — Déplacer un via pour raccourcir ses deux jambes
+
+![Un via déplacé sur une position plus directe réduit les deux portions de piste qui y aboutissent.](../../docs/assets/mobile-via-reduces-length.png)
 
 ## 4. Le Centering
 
@@ -120,6 +132,10 @@ axes, tout en raccordant les portions avant et après chaque passage.
 Cette construction est guidée par le passage entre obstacles, et non par la
 longueur minimale. Le résultat peut donc être un peu plus long que celui du
 Gloss seul.
+
+#### Illustration — Centrage à travers plusieurs portes
+
+![Une même piste est recentrée dans deux passages successifs.](../../docs/assets/multiple-gates-centering.png)
 
 ## 5. Enchaînement des actions
 

@@ -55,6 +55,8 @@ Lorsqu'un certificat ne teste qu'une déformation particulière, son échec
 signifie que cette déformation n'est pas certifiée ; il ne prouve pas qu'aucune
 autre déformation admissible n'existe.
 
+![Un mouvement continu admissible contourne les obstacles ; un trajet direct qui les traverse est refusé.](../../docs/assets/admissible-corridor.png)
+
 ## Exclusion
 
 Avant toute transformation, les nets suivants sont exclus intégralement de la
@@ -86,6 +88,8 @@ Lorsqu'un Centering est demandé, l'enchaînement est impératif et atomique :
 Le Centering est ainsi la dernière transformation géométrique de l'action. En
 cas d'échec, de budget expiré ou de non-conformité de cette action combinée, le
 résultat initial est restauré selon la politique transactionnelle.
+
+![Le Gloss réduit d'abord les détours, puis le Centering place la piste dans le passage.](../../docs/assets/centering-before-after.png)
 
 Les mesures publiées pour une action Gloss couvrent toute l'action, depuis le
 cuivre reçu en entrée jusqu'au cuivre final. La longueur initiale, le nombre de
@@ -170,6 +174,8 @@ sont toutes satisfaites :
 Lorsqu'un via est mobile, son diamètre, son percement, son type, son net et sa
 plage de couches restent inchangés. Sa position initiale demeure une solution
 de repli valide.
+
+![Le déplacement d'un via n'est retenu que lorsqu'il raccourcit les deux portions de piste qui y aboutissent.](../../docs/assets/mobile-via-reduces-length.png)
 
 ### T et nœuds
 

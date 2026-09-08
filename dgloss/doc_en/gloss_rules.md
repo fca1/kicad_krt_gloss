@@ -1,5 +1,8 @@
 # Track Gloss — reference specification
 
+This document defines the functional rules and invariants. For an accessible
+explanation of the two actions, see [`gloss_explain.md`](gloss_explain.md).
+
 ## Purpose
 
 Track Gloss is a final treatment of an existing route. It improves route
@@ -50,6 +53,8 @@ When a certificate tests only one particular deformation, failure means that
 this deformation is not certified; it does not prove that no other admissible
 deformation exists.
 
+![A continuous admissible movement goes around obstacles; a direct route through them is rejected.](../../docs/assets/admissible-corridor.png)
+
 ## Exclusion
 
 Before any transformation, the following nets are excluded in full from the
@@ -66,10 +71,22 @@ override their protection.
 
 ## Sequencing
 
-Length-reduction phases run before centering. Centering has a distinct
-objective: it may preserve or slightly increase length to improve passage
-between obstacles. It is therefore not subject to the minimum-gain condition
-required by length-reduction phases.
+Gloss and Centering are distinct actions with different objectives. Gloss
+reduces and simplifies; Centering places a track as well as possible in a
+passage. Centering may preserve or slightly increase length, so it is not
+subject to the minimum-gain condition used by length-reduction phases.
+
+When Centering is requested, the sequence is mandatory and atomic:
+
+1. run Gloss with `stay_in_corridor=True`;
+2. run Centering on that result;
+3. apply no further geometry transformation after Centering.
+
+Centering is therefore the final geometry transformation of the action. On
+failure, budget expiration, or non-compliance, the input is restored according
+to the transaction policy.
+
+![Gloss first removes safe detours; Centering then places the track in its passage.](../../docs/assets/centering-before-after.png)
 
 ## Scope
 
@@ -103,6 +120,8 @@ via may be mobile only when all four conditions below hold:
 
 When a via is mobile, its diameter, drill, type, net, and layer span remain
 unchanged. Its initial position remains a valid fallback solution.
+
+![Moving a via is useful only when it shortens the two track legs leading to it.](../../docs/assets/mobile-via-reduces-length.png)
 
 ### T junctions and nodes
 
