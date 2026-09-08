@@ -19,13 +19,13 @@ from .changes import GlossChanges, release_result_custody
 _DIRECTIONS = ((1.0, 0.0), (0.0, 1.0), (1.0, 1.0), (1.0, -1.0))
 
 
-def _at_pad(context, via):
-    """Whether a via touches copper belonging to a pad of its own net."""
+def _terminal_at_pad(context, via, layer, width):
+    """Whether the absorbed leg ends on same-net pad copper on its layer."""
     index = getattr(context, "_progressive_pad_index", None)
     if index is None:
         pcb = context.pcb_data
         index = SpatialIndex(cell_size=max(
-            1.0, max((item.size / 2 + 1e-6 for item in pcb.vias), default=0.0)))
+            1.0, max((item.width / 2 + 1e-6 for item in pcb.segments), default=0.0)))
         layers = pcb.board_info.copper_layers
         for net_id, pads in pcb.pads_by_net.items():
             for pad in pads:
@@ -34,18 +34,19 @@ def _at_pad(context, via):
         context._progressive_pad_index = index
     return any(
         net_id == via.net_id and
-        point_to_pad_distance(via.x, via.y, pad) <= via.size / 2 + 1e-6
-        for layer in via_copper_layers(via, context.pcb_data.board_info.copper_layers)
+        point_to_pad_distance(via.x, via.y, pad) <= width / 2 + 1e-6
         for pad, net_id in index.get_nearby_pads(via.x, via.y, layer))
 
 
 def _progressing_vias(context, net_id):
     """Yield mobile vias again after a segment absorption creates a new leg."""
     pcb = context.pcb_data
+    if not hasattr(context, "_absorbed_pad_vias"):
+        context._absorbed_pad_vias = set()
     queue = deque(via for via in pcb.vias if via.net_id == net_id)
     while queue:
         old_via = queue.popleft()
-        if _at_pad(context, old_via):
+        if (net_id, pos_key(old_via.x, old_via.y)) in context._absorbed_pad_vias:
             continue
         before_vias, before_segments = pcb.vias, pcb.segments
         yield old_via
@@ -64,7 +65,7 @@ def _progressing_vias(context, net_id):
         if len(added) != 1 or (added[0].x, added[0].y) not in anchors:
             continue
         moved_via = added[0]
-        if _at_pad(context, moved_via):
+        if (net_id, pos_key(moved_via.x, moved_via.y)) in context._absorbed_pad_vias:
             continue
         touching = [
             segment for segment in pcb.segments
@@ -277,6 +278,14 @@ def move_mobile_vias(context, results, *, net_ids, stage="G3.1",
                 continue
 
             _score, moved_via, candidate = best
+            # Remember actual terminal absorption across G3.1, G3.4 and
+            # subsequent passes. Mere via/pad contact is not a stop event.
+            if any(pos_key(moved_via.x, moved_via.y) == pos_key(*anchor) and
+                   _terminal_at_pad(context, moved_via, chain[-1].layer,
+                                    chain[-1].width)
+                   for anchor, chain in zip(anchors, chains)):
+                context._absorbed_pad_vias.add(
+                    (net_id, pos_key(moved_via.x, moved_via.y)))
             trial_segments = outside + candidate
             trial_vias = [via for via in context.pcb_data.vias
                           if via.net_id == net_id and via is not old_via] + [moved_via]

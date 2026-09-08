@@ -6,7 +6,7 @@ from dgloss.context import build_gloss_context
 from dgloss.pipeline import _grade, _certify_g5_copper, run_final_gloss
 from dgloss.reduction_motion import MotionCertificate
 from dgloss import GlossConfig
-from dgloss.via_mobile import move_mobile_vias
+from dgloss.via_mobile import move_mobile_vias, refine_mobile_vias, _progressing_vias
 
 
 def example(points=((8.,5.), (6.,5.), (4.,5.), (2.,5.)), pad_stop=False, junction=False, transform=lambda x,y:(x,y)):
@@ -45,6 +45,39 @@ def test_stops_at_pad_or_multiple_junction(pad_stop,junction):
     assert stats['vias_moved']==1
     assert (pcb.vias[0].x,pcb.vias[0].y)==(6.,5.)
     _certify_g5_copper(ctx,{1:grade},changes)
+    if pad_stop:
+        # A later stage/pass must not restart a via stopped by absorption.
+        assert refine_mobile_vias(ctx,[],net_ids=[1])[3]['vias_moved']==0
+        assert move_mobile_vias(ctx,[],net_ids=[1])[3]['vias_moved']==0
+
+
+def test_initial_pad_contact_does_not_freeze_via():
+    pcb,cfg=example()
+    pcb.pads_by_net[1].append(_pad('TOUCH',8.,5.2,1,size=.1))
+    ctx=build_gloss_context(pcb,cfg,[1])
+    assert list(_progressing_vias(ctx,1))==pcb.vias
+
+
+def test_absorbed_leg_ignores_pad_touching_only_via_edge():
+    pcb,cfg=example()
+    # Via radius .25 reaches this pad; the absorbed .2-wide leg does not.
+    pcb.pads_by_net[1].append(_pad('TOUCH',6.,5.25,1,'B.Cu',size=.1))
+    ctx=build_gloss_context(pcb,cfg,[1])
+    from dgloss.via_mobile import _terminal_at_pad
+    from dataclasses import replace
+    via=replace(pcb.vias[0],x=6.)
+    assert not _terminal_at_pad(ctx,via,'B.Cu',.2)
+
+
+def test_pad_on_other_layer_is_not_absorbed_leg_terminal():
+    pcb,cfg=example()
+    pcb.pads_by_net[1].append(_pad('TOUCH',6.,5.,1,'F.Cu',size=.1))
+    ctx=build_gloss_context(pcb,cfg,[1])
+    from dgloss.via_mobile import _terminal_at_pad
+    from dataclasses import replace
+    via=replace(pcb.vias[0],x=6.)
+    assert not _terminal_at_pad(ctx,via,'B.Cu',.2)
+    assert _terminal_at_pad(ctx,via,'F.Cu',.2)
 
 
 @pytest.mark.parametrize('corridor',[False,True])
