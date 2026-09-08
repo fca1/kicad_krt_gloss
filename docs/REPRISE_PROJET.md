@@ -36,6 +36,11 @@ l'autorité pour les obstacles, distances, clearances et validations électrique
 La façade [krt_api.py](../dgloss/krt_api.py) isole ses imports et adaptations.
 Ne pas disperser de nouvelles dépendances directes dans les stratégies.
 
+Les accès inverses de KRG vers les bindings natifs KiCad sont regroupés dans
+[`kicad_bridge.py`](../kicad_krt_gloss/kicad_bridge.py). Cette façade ne doit
+pas dupliquer l'importeur, les règles ni les validations KRT ; elle délègue ces
+opérations à `dgloss.krt_api` et à l'adaptateur d'application validé.
+
 Les relations géométriques doivent rester valables par rotation et réflexion,
 sans règles particulières fondées sur l'affichage horizontal ou vertical.
 La sortie reste octolinéaire. Les exclusions et éléments protégés définis dans

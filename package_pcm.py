@@ -53,7 +53,7 @@ def build(output_dir):
         stage = Path(temporary)
         plugins = stage / "plugins"
         plugins.mkdir()
-        for name in ("__init__.py", "action_plugin.py", "board_adapter.py",
+        for name in ("__init__.py", "action_plugin.py", "board_adapter.py", "kicad_bridge.py",
                      "debug_overlay.py", "gloss_visualization.py", "runtime.py", "selection.py",
                      "settings_dialog.py", "progress_dialog.py", "version.py", "icon_24.png", "icon_64.png",
                      "icon_24_dark.png"):

@@ -20,6 +20,7 @@ from kicad_krt_gloss.selection import (
 from kicad_krt_gloss.board_adapter import (
     _krt_via_key, _native_segment_key, _native_via_key, _segment_key,
     _refill_and_rebuild, build_krt_config)
+from kicad_krt_gloss.kicad_bridge import KiCadBoardBridge
 from kicad_krt_gloss import runtime
 
 
@@ -121,12 +122,14 @@ def test_plugin_run_accepts_two_item_preparation_for_multiple_selected_nets():
             def _run_gloss(self, board, parent, values, nets, **kwargs):
                 calls.append(("run", nets, kwargs))
 
+        kicad = types.SimpleNamespace(
+            active_board=lambda: object(),
+            selected_net_ids=lambda board: net_ids,
+            selected_pad_pair_distance_mm=lambda board: None)
         namespace = {
-            "pcbnew": types.SimpleNamespace(GetBoard=lambda: object()),
             "wx": types.SimpleNamespace(GetTopLevelWindows=lambda: [],
                                         EVT_CLOSE=object()),
-            "selected_net_ids": lambda board: net_ids,
-            "selected_pad_pair_distance_mm": lambda board: None,
+            "KICAD": kicad,
             "GlossSettingsDialog": Dialog,
         }
         exec(compile(ast.Module(body=[run], type_ignores=[]),
@@ -145,6 +148,34 @@ def test_plugin_run_accepts_two_item_preparation_for_multiple_selected_nets():
             assert ('centering',) in calls
         else:
             assert run_call[2] == {"show_progress": False}
+
+
+def test_kicad_bridge_centralizes_native_board_and_selection_calls():
+    calls = []
+    native = types.SimpleNamespace(
+        GetBoard=lambda: "live-board", Refresh=lambda: calls.append("refresh"))
+    bridge = KiCadBoardBridge(native)
+    bridge.selected_net_ids = lambda _board: [2]
+    board = types.SimpleNamespace(GetNetsByNetcode=lambda: {
+        1: types.SimpleNamespace(GetNetname=lambda: "N1"),
+        2: types.SimpleNamespace(GetNetname=lambda: "N2")})
+
+    assert bridge.active_board() == "live-board"
+    assert bridge.selected_net_names(board) == {"N2"}
+    bridge.refresh()
+    assert calls == ["refresh"]
+
+
+def test_action_plugin_routes_native_board_operations_through_bridge():
+    source = (ROOT / "kicad_krt_gloss" / "action_plugin.py").read_text(
+        encoding="utf-8")
+    assert "KICAD = KiCadBoardBridge()" in source
+    assert "KICAD.active_board()" in source
+    assert "KICAD.build_pcb_data(board)" in source
+    assert "KICAD.apply_outcome(" in source
+    assert source.count("KICAD.refresh()") == 2
+    assert "pcbnew.GetBoard()" not in source
+    assert "pcbnew.Refresh()" not in source
 
 
 @pytest.mark.parametrize("has_zones, failure", [
@@ -467,7 +498,7 @@ def test_dialog_keeps_a_post_run_log_with_krt_style_controls():
     assert "dialog.Show()" in action
     assert "dialog.ShowModal()" not in action
     assert "on_import_centering=import_centering_selection" in action
-    assert "on_refresh_proximity=lambda: selected_pad_pair_distance_mm(board)" in action
+    assert "on_refresh_proximity=lambda: KICAD.selected_pad_pair_distance_mm(board)" in action
     assert "parent.Bind(wx.EVT_CLOSE, close_dialog_with_parent)" in action
     assert "dialog = GlossSettingsDialog(\n                None" in action
     assert 'print("\\n=== Track Gloss result ===")' in action
@@ -493,6 +524,7 @@ def test_about_tab_uses_project_versions_and_attribution():
 def test_pcm_package_includes_the_about_logo():
     source = (ROOT / "package_pcm.py").read_text(encoding="utf-8")
     assert '"icon_24.png", "icon_64.png"' in source
+    assert '"kicad_bridge.py"' in source
     assert 'dialog_images = plugins / "img_dlg"' in source
     assert 'PLUGIN / "img_dlg" / name' in source
 

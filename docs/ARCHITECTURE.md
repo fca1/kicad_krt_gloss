@@ -4,6 +4,10 @@ Le plugin KiCad charge une carte détachée, configure le moteur et applique
 uniquement son résultat certifié. KRT conserve la responsabilité des distances,
 obstacles, clearances et graphes électriques. La façade `dgloss/krt_api.py`
 résout les symboles une fois ; elle n'ajoute pas de dispatch par candidat.
+`kicad_krt_gloss/kicad_bridge.py` est la frontière inverse : elle rassemble les
+accès KRG aux bindings natifs de KiCad (carte active, sélection, application,
+rafraîchissement), sans réimplémenter l'import, les règles ou les validations
+KRT.
 
 ## Responsabilités
 
@@ -25,6 +29,7 @@ résout les symboles une fois ; elle n'ajoute pas de dispatch par candidat.
 | `interpad_geometry`, `interpad_types` | Géométrie d'une porte et descriptions immuables |
 | `interpad_paths` | Construction des chemins candidats de Centering |
 | `interpad` | Ordonnancement, validation et application du Centering |
+| `kicad_bridge` | Façade KRG vers la carte KiCad native ; délégation de l'import et des règles à KRT |
 
 Les anciens points d'import des helpers restent disponibles dans `algorithm`,
 `interpad` et `pipeline` pour les outils de diagnostic. Les stratégies utilisent

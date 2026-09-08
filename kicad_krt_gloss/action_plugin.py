@@ -9,14 +9,14 @@ import traceback
 import pcbnew
 import wx
 
+from .kicad_bridge import KiCadBoardBridge
 from .runtime import configure_krt_runtime, ensure_krt_dependencies
-from .selection import (highlight_net_names, native_arc_net_ids, selected_net_ids,
-                        selected_pad_pair_distance_mm, selected_seed_segments)
 from .settings_dialog import DEFAULTS, GlossSettingsDialog
 from .version import __version__
 
 
 PLUGIN_DIR = os.path.dirname(os.path.abspath(__file__))
+KICAD = KiCadBoardBridge()
 
 
 class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
@@ -43,16 +43,16 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                     return
             except (AttributeError, RuntimeError):
                 self._settings_dialog = None
-        board = pcbnew.GetBoard()
+        board = KICAD.active_board()
         if board is None:
             wx.MessageBox("No PCB board is open.", "KiCad KRT Gloss",
                           wx.OK | wx.ICON_WARNING)
             return
-        net_ids = selected_net_ids(board)
+        net_ids = KICAD.selected_net_ids(board)
         parent = wx.GetTopLevelWindows()[0] if wx.GetTopLevelWindows() else None
         values = dict(self.__class__._settings)
         if len(net_ids) != 1:
-            pad_spacing = selected_pad_pair_distance_mm(board)
+            pad_spacing = KICAD.selected_pad_pair_distance_mm(board)
             open_centering = pad_spacing is not None and 0.0 <= pad_spacing <= 5.0
             if open_centering:
                 values["centering_proximity_mm"] = pad_spacing
@@ -86,12 +86,10 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                     append_log=append_log, prepared=ready)
 
             def import_centering_selection():
-                chosen = set(selected_net_ids(board))
-                return {net.GetNetname() for code, net in board.GetNetsByNetcode().items()
-                        if code in chosen}
+                return KICAD.selected_net_names(board)
 
             def highlight_names(names):
-                highlight_net_names(board, names)
+                KICAD.highlight_net_names(board, names)
 
             # Keep this window top-level; the explicit editor close binding
             # below closes it with the PCB. This does not suppress KiCad's
@@ -105,7 +103,7 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                 initial_log=self.__class__._last_log,
                 on_import_centering=import_centering_selection,
                 on_net_selection_changed=highlight_names,
-                on_refresh_proximity=lambda: selected_pad_pair_distance_mm(board))
+                on_refresh_proximity=lambda: KICAD.selected_pad_pair_distance_mm(board))
 
             def close_dialog_with_parent(event):
                 """Do not leave a modeless plugin window after the PCB editor."""
@@ -158,7 +156,7 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
         from dgloss.context import resolve_gloss_scope
 
         active, _excluded, _reasons = resolve_gloss_scope(
-            pcb_data, excluded_net_ids=native_arc_net_ids(board))
+            pcb_data, excluded_net_ids=KICAD.native_arc_net_ids(board))
         return [(pcb_data.nets[net_id].name, net_id) for net_id in active
                 if net_id in pcb_data.nets and pcb_data.nets[net_id].name]
 
@@ -170,10 +168,8 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
             return None
         try:
             wx.BeginBusyCursor()
-            from dgloss.krt_api import build_pcb_data_from_board
-
-            pcb_data = build_pcb_data_from_board(board)
-            seed_segments = selected_seed_segments(board, pcb_data)
+            pcb_data = KICAD.build_pcb_data(board)
+            seed_segments = KICAD.selected_seed_segments(board, pcb_data)
             return pcb_data, seed_segments
         except Exception:
             wx.MessageBox(
@@ -221,13 +217,11 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                 if not ensure_krt_dependencies(parent):
                     print("Track Gloss cancelled: dependencies are unavailable.")
                     return False
-                from dgloss.krt_api import build_pcb_data_from_board
                 from dgloss import GlossConfig, run_final_gloss
-                from .board_adapter import apply_gloss, build_krt_config
 
                 if prepared is None:
-                    pcb_data = build_pcb_data_from_board(board)
-                    seed_segments = selected_seed_segments(board, pcb_data)
+                    pcb_data = KICAD.build_pcb_data(board)
+                    seed_segments = KICAD.selected_seed_segments(board, pcb_data)
                 else:
                     pcb_data, seed_segments = prepared
                 use_branches = bool(
@@ -239,7 +233,7 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                                       for segment in seed_segments})
                     print(f"Track Gloss BE: {len(seed_segments)} segment "
                           f"seed(s) on {len(net_ids)} net(s)")
-                config = build_krt_config(
+                config = KICAD.build_krt_config(
                     board, pcb_data, values["grid_step"], net_ids=net_ids)
                 gloss_config = GlossConfig(
                     repeat_until_stable=values.get("repeat_until_stable", True),
@@ -251,7 +245,7 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                 )
                 run_kwargs = {
                     "net_ids": net_ids,
-                    "excluded_net_ids": native_arc_net_ids(board),
+                    "excluded_net_ids": KICAD.native_arc_net_ids(board),
                     "seed_segments": seed_segments,
                 }
                 if show_progress:
@@ -280,9 +274,9 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                 if not outcome.stats.get("g5_valid", False):
                     print("Track Gloss validation failed; board unchanged.")
                     return False
-                removed, added, moved, debug_layer = apply_gloss(
+                removed, added, moved, debug_layer = KICAD.apply_outcome(
                     board, results, outcome)
-                pcbnew.Refresh()
+                KICAD.refresh()
                 scope = (f"{len(net_ids)} selected net(s)"
                          if net_ids else "all routed nets")
                 stats = outcome.stats
@@ -372,13 +366,11 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                 if not ensure_krt_dependencies(parent):
                     print("Centering cancelled: dependencies are unavailable.")
                     return False
-                from dgloss.krt_api import build_pcb_data_from_board
                 from dgloss import run_centering
-                from .board_adapter import apply_gloss, build_krt_config
 
                 if prepared is None:
-                    pcb_data = build_pcb_data_from_board(board)
-                    _seed_segments = selected_seed_segments(board, pcb_data)
+                    pcb_data = KICAD.build_pcb_data(board)
+                    _seed_segments = KICAD.selected_seed_segments(board, pcb_data)
                 else:
                     pcb_data, _seed_segments = prepared
                 names_to_ids = {net.name: net_id
@@ -388,20 +380,20 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                 if not net_ids:
                     print("Centering cancelled: no selected modifiable net remains.")
                     return False
-                config = build_krt_config(
+                config = KICAD.build_krt_config(
                     board, pcb_data, values["grid_step"], net_ids=net_ids)
                 results = []
                 outcome = run_centering(
                     results, pcb_data, config, net_ids=net_ids,
                     proximity_mm=values["centering_proximity_mm"],
                     budget_seconds=values["budget_seconds"],
-                    excluded_net_ids=native_arc_net_ids(board),
+                    excluded_net_ids=KICAD.native_arc_net_ids(board),
                     seed_segments=(
                         _seed_segments if values[
                             "selection_uses_elementary_branches"] else None))
-                removed, added, moved, debug_layer = apply_gloss(
+                removed, added, moved, debug_layer = KICAD.apply_outcome(
                     board, results, outcome)
-                pcbnew.Refresh()
+                KICAD.refresh()
                 stats = outcome.stats
                 print("\n=== Track Gloss Centering result ===")
                 print(f"Scope: {len(net_ids)} selected net(s)")
