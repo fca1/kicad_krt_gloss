@@ -6,7 +6,7 @@ from dgloss.context import build_gloss_context
 from dgloss.pipeline import _grade, _certify_g5_copper, run_final_gloss
 from dgloss.reduction_motion import MotionCertificate
 from dgloss import GlossConfig
-from tools.progressive_via import move_mobile_vias, progressive_via
+from dgloss.via_mobile import move_mobile_vias
 
 
 def example(points=((8.,5.), (6.,5.), (4.,5.), (2.,5.)), pad_stop=False, junction=False, transform=lambda x,y:(x,y)):
@@ -50,8 +50,7 @@ def test_stops_at_pad_or_multiple_junction(pad_stop,junction):
 @pytest.mark.parametrize('corridor',[False,True])
 def test_full_pipeline_accepts_both_segments_null(corridor):
     pcb,cfg=example(points=((8.,5.),(2.,5.)))
-    with progressive_via():
-        result=run_final_gloss([],pcb,cfg,GlossConfig(stay_in_corridor=corridor,repeat_until_stable=False,budget_seconds=2.),net_ids=[1])
+    result=run_final_gloss([],pcb,cfg,GlossConfig(stay_in_corridor=corridor,repeat_until_stable=False,budget_seconds=2.),net_ids=[1])
     assert result.stats['g5_valid']
     assert result.stats['saved_mm']==pytest.approx(12.)
     assert not pcb.segments

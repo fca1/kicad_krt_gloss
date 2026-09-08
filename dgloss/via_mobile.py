@@ -1,14 +1,15 @@
 """G3.1/G3.4: move simple two-layer vias with KRT geometry and checks."""
 
 import math
-from collections import defaultdict
+from collections import defaultdict, deque
 from dataclasses import replace
 from .execution import perf_counter
 
 from .topology import check_local_connectivity as check_net_connectivity
-from dgloss.krt_api import Segment
-from dgloss.krt_api import calculate_route_length
-from dgloss.krt_api import pos_key
+from dgloss.krt_api import (Segment, SpatialIndex, calculate_route_length,
+                            point_to_pad_distance, point_to_segment_distance,
+                            pos_key, via_copper_layers)
+from dgloss.pad_terminals import _pad_on_layer
 
 from .algorithm import (_clears_krt_grid, _connectivity_worse, _right_angle,
                         _touches_other_same_net)
@@ -16,6 +17,72 @@ from .changes import GlossChanges, release_result_custody
 
 
 _DIRECTIONS = ((1.0, 0.0), (0.0, 1.0), (1.0, 1.0), (1.0, -1.0))
+
+
+def _at_pad(context, via):
+    """Whether a via touches copper belonging to a pad of its own net."""
+    index = getattr(context, "_progressive_pad_index", None)
+    if index is None:
+        pcb = context.pcb_data
+        index = SpatialIndex(cell_size=max(
+            1.0, max((item.size / 2 + 1e-6 for item in pcb.vias), default=0.0)))
+        layers = pcb.board_info.copper_layers
+        for net_id, pads in pcb.pads_by_net.items():
+            for pad in pads:
+                index.add_pad(pad, net_id,
+                              [layer for layer in layers if _pad_on_layer(pad, layer)])
+        context._progressive_pad_index = index
+    return any(
+        net_id == via.net_id and
+        point_to_pad_distance(via.x, via.y, pad) <= via.size / 2 + 1e-6
+        for layer in via_copper_layers(via, context.pcb_data.board_info.copper_layers)
+        for pad, net_id in index.get_nearby_pads(via.x, via.y, layer))
+
+
+def _progressing_vias(context, net_id):
+    """Yield mobile vias again after a segment absorption creates a new leg."""
+    pcb = context.pcb_data
+    queue = deque(via for via in pcb.vias if via.net_id == net_id)
+    while queue:
+        old_via = queue.popleft()
+        if _at_pad(context, old_via):
+            continue
+        before_vias, before_segments = pcb.vias, pcb.segments
+        yield old_via
+        if pcb.vias is before_vias:
+            continue
+        previous_ids = {id(via) for via in before_vias}
+        anchors = {
+            _other_end(segment, pos_key(old_via.x, old_via.y))
+            for segment in before_segments
+            if segment.net_id == net_id and pos_key(old_via.x, old_via.y) in
+            (pos_key(segment.start_x, segment.start_y),
+             pos_key(segment.end_x, segment.end_y))
+        }
+        added = [via for via in pcb.vias
+                 if id(via) not in previous_ids and via.net_id == net_id]
+        if len(added) != 1 or (added[0].x, added[0].y) not in anchors:
+            continue
+        moved_via = added[0]
+        if _at_pad(context, moved_via):
+            continue
+        touching = [
+            segment for segment in pcb.segments
+            if segment.net_id == net_id and
+            segment.layer in via_copper_layers(
+                moved_via, pcb.board_info.copper_layers) and
+            point_to_segment_distance(
+                moved_via.x, moved_via.y, segment.start_x, segment.start_y,
+                segment.end_x, segment.end_y) <= 1e-7
+        ]
+        if (len(touching) != 2 or touching[0].layer == touching[1].layer or
+                any(getattr(segment, "locked", False) or
+                    getattr(segment, "graphic", False) for segment in touching) or
+                any(via is not moved_via and
+                    pos_key(via.x, via.y) == pos_key(moved_via.x, moved_via.y)
+                    for via in pcb.vias)):
+            continue
+        queue.appendleft(moved_via)
 
 
 def _other_end(segment, at):
@@ -98,6 +165,8 @@ def move_mobile_vias(context, results, *, net_ids, stage="G3.1",
     KRT predicates but follows both simple chains to their next native anchor.
     """
     started = perf_counter()
+    stage_segments = {id(segment) for segment in context.pcb_data.segments}
+    stage_vias = {id(via) for via in context.pcb_data.vias}
     changes = GlossChanges()
     input_vias = []
     emitted_vias = []
@@ -112,7 +181,7 @@ def move_mobile_vias(context, results, *, net_ids, stage="G3.1",
         foreign = context.foreign_obstacles(net_id)
 
         net_changed = False
-        for old_via in list(context.pcb_data.vias):
+        for old_via in _progressing_vias(context, net_id):
             if deadline is not None and perf_counter() >= deadline:
                 break
             if old_via.net_id != net_id or getattr(old_via, "locked", False):
@@ -162,7 +231,10 @@ def move_mobile_vias(context, results, *, net_ids, stage="G3.1",
                 new_length = calculate_route_length(candidate)
                 if old_length - new_length <= context.coord.grid_step + 1e-12:
                     continue
-                score = (new_length, len(candidate), position[0], position[1])
+                score = (new_length, len(candidate),
+                         math.hypot(position[0] - old_via.x,
+                                    position[1] - old_via.y),
+                         position[0], position[1])
                 if best is not None and score >= best[0]:
                     continue
                 if any(calculate_route_length([leg]) <
@@ -173,10 +245,10 @@ def move_mobile_vias(context, results, *, net_ids, stage="G3.1",
                     continue
                 # The KRT grid is only a strict, inexpensive rejection filter.
                 # Survivors are still certified by KRT's exact geometry below.
-                if full_chains and not _clears_krt_grid(
+                if candidate and full_chains and not _clears_krt_grid(
                         context, foreign, candidate):
                     continue
-                if not context.clearance_adapter.connector_clears(candidate):
+                if candidate and not context.clearance_adapter.connector_clears(candidate):
                     continue
                 if _touches_other_same_net(candidate, outside, other_vias,
                                            tuple(anchors)):
@@ -237,6 +309,18 @@ def move_mobile_vias(context, results, *, net_ids, stage="G3.1",
         if net_changed:
             context.refresh_net_obstacles(net_id)
 
+    # Do not export intermediate copper that was later absorbed in this stage.
+    live_segments = {id(segment) for segment in context.pcb_data.segments}
+    live_vias = {id(via) for via in context.pcb_data.vias}
+    input_vias = [via for via in input_vias if id(via) in stage_vias]
+    emitted_vias = [via for via in emitted_vias if id(via) in live_vias]
+    segment_strips = [segment for segment in segment_strips
+                      if id(segment) in stage_segments]
+    added_segments = [segment for segment in added_segments
+                      if id(segment) in live_segments]
+    changes.segments = [change for change in changes.segments
+                        if ("old" in change and id(change["old"]) in stage_segments) or
+                        ("new" in change and id(change["new"]) in live_segments)]
     stats = {"vias_moved": len(changes.vias),
              "saved_mm": round(saved_mm, 4),
              "net_ids_changed": changed_net_ids,
