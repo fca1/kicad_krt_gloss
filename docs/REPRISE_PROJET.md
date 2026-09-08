@@ -126,9 +126,9 @@ inférieur ou égal à 10 % du gain incrémental précédent, comparé d'abord �
 de la passe initiale. Ce n'est pas 10 % de la longueur restante. Un gain précédent
 nul ne déclenche pas le test de ratio ; aucune transformation arrête les passes.
 G4 peut continuer après expiration du budget initial : 20 s n'est donc pas un
-plafond total. `g4_min_gain_percent` reste dans la configuration sans champ de
-dialogue ; la case d'activation G4 et le nombre maximal de passes sont
-disponibles.
+plafond total. `g4_min_gain_percent` reste interne. Le dialogue expose la case
+d'activation G4 et un nombre maximal de passes supplémentaires de 1 à 10 ; ce
+réglage ne modifie ni le seuil de gain ni les garanties transactionnelles.
 [Définition et validation](reports/G4_LIMITS_2026_09_08.md).
 
 ## État des intégrations

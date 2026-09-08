@@ -26,15 +26,17 @@ Editor, optionally select tracks, vias, pads, footprints or zones, then run
 
 The dialog opens when zero or more than one net is selected; an exact one-net
 selection runs immediately with the remembered settings. It reports the
-selected net count, or **ALL** without a selection. The dialog lets you choose
-BE or complete-net selection and enable or disable mobile-via optimization, pad-terminal
-optimization, sliding T-junctions, non-collinear T rails, complete via-chain
-optimization and multi-net convergence passes. It also sets the KRT grid step
-used by the standalone plugin and a 10–240 second dgloss optimization budget,
-in 10-second increments. Every control has a short tooltip explaining
-its purpose. Its **Log** tab retains the latest stage statistics and final
-result; **Clear Log** removes that history. The **Gloss** and **Close** buttons
-let an all-net run complete while the dialog remains available for review.
+selected net count, or **ALL** without a selection. The public controls are
+BE or complete-net scope, KRT grid step, time budget, movable vias, G4 repeat
+and its pass limit. Centering has its own checked-net list, component filter
+and Proxi control. Every control has a short tooltip explaining its purpose.
+Its **Log** tab retains the latest stage statistics and final result; **Clear
+Log** removes that history. The **Gloss** and **Close** buttons let an all-net
+run complete while the dialog remains available for review.
+
+The plugin and CLI gloss the routing state they receive; neither implicitly
+runs KRT's `smooth_octolinear_chains()`. KRT may instead call the documented
+post-smooth API after its own final smooth.
 
 The plugin reuses its existing **TrackGloss Changes** layer or selects the first
 free `User.N` layer in ascending order. It displays the final difference: old

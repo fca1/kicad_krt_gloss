@@ -7,12 +7,12 @@ défini dans [`gloss_rules.md`](gloss_rules.md) et sa réalisation dans
 ## État du composant
 
 - Branche de développement : `main`
-- Version du plugin : `0.1.1`
+- Version du plugin : `0.1.3`
 - Étape intégrée : G5
 - Portée plugin : branches élémentaires des pistes droites sélectionnées ; les
   autres objets sélectionnent des nets complets ; sans sélection, tous les
   nets routés
-- Déclenchement : une fois, après le dernier smooth KRT
+- Déclenchement : Gloss du routage courant, sans smooth KRT implicite
 - Budget plugin par défaut : 20 secondes
 - CLI dédié : `gloss.py`
 
@@ -37,21 +37,26 @@ avec `--json-out`, le bilan JSON complet dans un fichier.
 
 ## Emploi depuis le plugin
 
-Le plugin autonome exécute le dernier smooth KRT puis Track Gloss. L'onglet
-General regroupe les choix visibles suivants, activés par défaut :
+Le plugin autonome applique Track Gloss au routage courant ; il ne lance pas
+`smooth_octolinear_chains()`. L'onglet General regroupe les choix visibles
+suivants :
 
 | Option | Effet |
 |---|---|
 | `Use elementary branches` | Les segments sélectionnés désignent leurs BE ; décochée, ils désignent leurs nets complets |
-| `Optimize movable vias` | Autorise le déplacement local des vias mobiles par G3.1 |
-| `Optimize pad approaches` | Autorise l'optimisation des terminaisons de pads par G3.2 |
-| `Repeat until stable` | Répète G3.5 par net jusqu'à stabilisation ou expiration du budget |
 | `KRT grid step (mm)` | Définit la résolution KRT et le gain minimal utile |
 | `Time budget` | Budget d'optimisation de 10 à 240 secondes, par pas de 10 |
+| `Movable vias` | Autorise le déplacement des vias mobiles éligibles |
+| `G4 — Repeat Gloss until stable` | Active les passes supplémentaires G4 |
+| `G4 passes` | Limite les passes supplémentaires G4 de 1 à 10 |
 
-G3, G3.3 avec sa variante non colinéaire, G3.4 et G5 ne sont pas présentés
-comme des choix. Ils restent actifs. Une option visible décochée ne lance pas
-son étape et ne crée pas sa visualisation.
+G3.2, G3.3 avec sa variante non colinéaire, G3.4 et G5 ne sont pas présentés
+comme des choix et restent actifs. Le Corridor est expérimental et n'est pas
+exposé par l'interface ni l'aide CLI publique.
+
+La sélection Centering est distincte : elle contient une liste de nets
+modifiables, un filtre par composant et Proxi. L'action exécute alors le Gloss
+préparatoire imposé dans le corridor, puis Centering atomiquement.
 
 Une piste droite sélectionnée sert de graine. G0 détermine sa branche
 élémentaire maximale, puis toutes les étapes restent limitées à cette branche.
@@ -69,8 +74,7 @@ complets.
 
 Le budget du plugin vaut 20 secondes par défaut et se règle de 10 à 240
 secondes, par pas de 10. Il limite coopérativement les recherches dgloss, pas le
-temps total comprenant le smooth final KRT, la certification et l'application
-dans KiCad.
+temps total comprenant la certification et l'application dans KiCad.
 
 ## Emploi comme bibliothèque Python
 
@@ -199,5 +203,5 @@ traitement du cuivre n'est jamais conditionné par la couche User.
 ## Comportement en cas d'échec
 
 Si une étape lève une erreur ou si la certification finale échoue, toutes les
-modifications dgloss de l'appel sont annulées. Le cuivre issu du dernier smooth
-KRT est conservé et le plugin poursuit sa restitution vers KiCad.
+modifications dgloss de l'appel sont annulées. Le cuivre d'entrée est conservé
+et le plugin poursuit sa restitution vers KiCad.

@@ -7,11 +7,11 @@ This guide explains how to use and observe Track Gloss. Requirements are in
 ## Component status
 
 - Development branch: `main`
-- Plugin version: `0.1.1`
+- Plugin version: `0.1.3`
 - Integrated stage: G5
 - Plugin scope: elementary branches seeded by selected straight tracks; other
   selected objects choose complete nets; no selection means all routed nets
-- Trigger: once, after final KRT smooth
+- Trigger: Gloss the current routing state, with no implicit KRT smooth
 - Default plugin budget: 20 seconds
 - Dedicated CLI: `gloss.py`
 
@@ -35,21 +35,26 @@ summary, `JSON_SUMMARY`, `JSON_SUMMARY_MIN`, and optionally a full JSON file.
 
 ## Plugin use
 
-The standalone plugin runs final KRT smooth and then Track Gloss. The General
-tab groups these visible options, enabled by default:
+The standalone plugin applies Track Gloss to the current routing state; it
+does not run `smooth_octolinear_chains()`. The General tab groups these visible
+options:
 
 | Option | Effect |
 |---|---|
 | `Use elementary branches` | Selected segments designate their BEs; unchecked, they designate their complete nets |
-| `Optimize movable vias` | Allows G3.1 local movement of eligible vias |
-| `Optimize pad approaches` | Allows G3.2 pad-termination optimization |
-| `Repeat until stable` | Repeats G3.5 per net until stable or the budget expires |
 | `KRT grid step (mm)` | Sets KRT resolution and the minimum useful gain |
 | `Time budget` | 10–240 second optimization budget, in 10-second increments |
+| `Movable vias` | Allows movement of eligible mobile vias |
+| `G4 — Repeat Gloss until stable` | Enables additional G4 passes |
+| `G4 passes` | Limits additional G4 passes from 1 to 10 |
 
-G3, G3.3 with its non-collinear variant, G3.4 and G5 are no longer presented as
-choices. They remain enabled. A disabled visible option runs neither its stage
-nor its visualization.
+G3.2, G3.3 with its non-collinear variant, G3.4 and G5 are not public choices
+and remain enabled. Corridor is experimental and is not exposed by the UI or
+public CLI help.
+
+Centering selection is separate: it has a modifiable-net list, component filter
+and Proxi. The action then runs its required corridor Gloss preparation and
+Centering atomically.
 
 A selected straight track is a seed. G0 finds its maximal elementary branch
 and every stage remains within it. Several tracks may identify several branches
@@ -64,7 +69,7 @@ selection. These are plugin-only choices: the CLI always selects complete nets.
 
 The plugin budget defaults to 20 seconds and can be set from 10 to 240 seconds
 in 10-second increments. It cooperatively limits dgloss searches, not total
-runtime including final KRT smooth, certification, and KiCad application.
+runtime including certification and KiCad application.
 
 ## Python library use
 
@@ -172,5 +177,5 @@ User.1 to User.9. If none is available, only visualization is skipped.
 ## Failure behavior
 
 If a stage fails or final certification rejects the result, all dgloss changes
-from the call are rolled back. Final KRT smooth copper is preserved and the
-plugin can return it to KiCad.
+from the call are rolled back. Input copper is preserved and the plugin can
+return it to KiCad.

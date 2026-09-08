@@ -456,7 +456,7 @@ def test_dialog_configuration_is_partitioned_by_action_scope():
     assert '"grid_step"' in general
     assert '"budget_seconds"' in general
     assert '"move_vias"' in gloss
-    assert '"stay_in_corridor"' in gloss
+    assert '"stay_in_corridor"' not in gloss
     assert '"centering_proximity_mm"' in centering
     assert '"centering_build_new_segments"' not in centering
     assert source.index('AddPage(panel, "General")') < source.index(
@@ -533,13 +533,12 @@ def test_dialog_exposes_the_integrated_gloss_options_by_public_name():
     source = (ROOT / "kicad_krt_gloss" / "settings_dialog.py").read_text(
         encoding="utf-8")
     assert '\"move_vias\": True' in source
-    assert '\"stay_in_corridor\": False' in source
     assert '\"g4_max_passes\": 1' in source
     assert "enable_g4" not in source
     assert source.count("SetToolTip(") >= 2
     assert 'label="Use elementary branches"' in source
     assert '"move_vias", "Movable vias"' in source
-    assert '"stay_in_corridor", "Stay in corridor (prototype)"' in source
+    assert '"stay_in_corridor", "Stay in corridor (prototype)"' not in source
     assert 'label="Proximity max"' in source
     assert 'label="G4 passes:"' in source
     assert "can take significant time" in source
@@ -642,6 +641,8 @@ def test_cli_exposes_optional_auto_or_explicit_debug_layer():
     assert '"--debug-layer"' in source
     assert 'choices=("auto",)' in source
     assert 'write_cli_debug_overlay(' in source
+    assert ('"--stay-in-corridor", action="store_true",\n'
+            '                        help=argparse.SUPPRESS') in source
 
 
 def test_plugin_renders_the_complete_final_delta_once():
