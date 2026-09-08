@@ -663,7 +663,9 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
             gloss_stats.budget_expired = gloss_stats.budget_expired or expired
             return enabled and not expired, expired
 
-        run, expired = available(selected.repeat_until_stable)
+        gloss_stats.budget_expired |= perf_counter() >= deadline
+        run = selected.repeat_until_stable
+        g4_started = perf_counter()
         g4 = run_multinet_passes(
             context, selected, list(context.net_ids), results,
             deadline, _run_optimization_pass) if run else {
@@ -673,8 +675,10 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
                 "segment_reduction": 0,
                 "net_ids_changed": set(), "saved_mm": 0.0,
                 "algorithm_ms": 0.0,
-                "stop_reason": "budget" if expired else "disabled",
+                "stop_reason": "disabled",
             }
+        # G4 consumes passes, not the time available to the other stages.
+        deadline += perf_counter() - g4_started
         # Public operation counters cover every pass, not only the first one.
         for name, counters in (("g3", g3), ("via", via), ("pad", pad),
                                ("node", node), ("refine", refine),
@@ -689,7 +693,7 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
         changes.vias.extend(g4["changes"].vias)
         gloss_stats.record(
             "G4", enabled=selected.repeat_until_stable,
-            skipped_budget=expired and selected.repeat_until_stable,
+            skipped_budget=False,
             changes=g4["transformations"], saved_mm=g4["saved_mm"],
             elapsed_ms=g4["algorithm_ms"], label="multi-net transformations")
 
@@ -742,8 +746,6 @@ def run_post_smooth_gloss(results, pcb_data, config, gloss_config=None, *,
                 _route_signature(pcb_data, net_id)}
         elapsed_ms = (perf_counter() - (
             started if _total_started is None else _total_started)) * 1000.0
-        gloss_stats.budget_expired = (gloss_stats.budget_expired or
-                                      perf_counter() >= deadline)
         input_before_length = (before_length if _input_before_length is None
                                else float(_input_before_length))
         krt_saved = input_before_length - before_length

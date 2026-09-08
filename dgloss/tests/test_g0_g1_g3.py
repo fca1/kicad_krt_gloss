@@ -366,10 +366,19 @@ def test_g3_5_zero_budget_keeps_a_complete_certified_board():
     pcb, config, _segments = _staircase_board()
     before = list(pcb.segments)
     outcome = run_post_smooth_gloss(
-        [], pcb, config, GlossConfig(budget_seconds=0.0))
+        [], pcb, config, GlossConfig(budget_seconds=0.0, repeat_until_stable=False))
     assert pcb.segments == before
     assert outcome.stats["gloss"]["budget_expired"]
     assert outcome.stats["connectivity_regressions"] == 0
+
+
+def test_g4_runs_after_initial_budget_is_exhausted():
+    pcb, config, _segments = _staircase_board()
+    outcome = run_post_smooth_gloss(
+        [], pcb, config, GlossConfig(budget_seconds=0.0))
+    assert outcome.stats['g4_passes_completed'] > 0
+    assert outcome.stats['saved_mm'] > 0
+    assert outcome.stats['g5_valid']
 
 
 def test_g3_shortens_one_net_without_changing_widths():

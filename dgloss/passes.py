@@ -17,7 +17,8 @@ def _collect(target, source, pass_index=1):
 
 def run_multinet_passes(context, gloss_config, net_ids, results,
                         deadline, run_g3_5):
-    """Replay G3.5 once per complete pass, alternating order to convergence."""
+    """Run bounded additional passes, independently of the initial time budget."""
+    deadline = float("inf")
     pcb_data = context.pcb_data
     base_order = sorted(set(net_ids).intersection(context.net_ids))
     changes = GlossChanges()
@@ -31,8 +32,12 @@ def run_multinet_passes(context, gloss_config, net_ids, results,
     started = perf_counter()
     pass_index = 0
     stop_reason = "converged"
+    previous_gain = None
 
     while base_order:
+        if pass_index >= gloss_config.g4_max_passes:
+            stop_reason = "max_passes"
+            break
         if perf_counter() >= deadline:
             stop_reason = "budget"
             break
@@ -92,6 +97,13 @@ def run_multinet_passes(context, gloss_config, net_ids, results,
         if pass_changes == 0:
             stop_reason = "converged"
             break
+        # The second G4 pass is the third total pass. Compare unrounded
+        # incremental gains, not remaining board length.
+        if (previous_gain is not None and previous_gain > 1e-9 and
+                gain <= previous_gain * gloss_config.g4_min_gain_percent / 100):
+            stop_reason = "marginal_gain"
+            break
+        previous_gain = gain
         pass_index += 1
 
     return {

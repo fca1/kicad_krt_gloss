@@ -1,4 +1,5 @@
 from types import SimpleNamespace
+import pytest
 
 from dgloss import GlossConfig
 from dgloss.passes import run_multinet_passes
@@ -6,6 +7,48 @@ from dgloss.passes import run_multinet_passes
 
 class _Board:
     segments = []
+
+
+@pytest.mark.parametrize('gains,limit,threshold,expected,count', [
+    ([10., 1., 5.], 5, 10., 'marginal_gain', 2),
+    ([10., 1.001, 5.], 2, 10., 'max_passes', 2),
+    ([10., 1., .01], 5, 5., 'marginal_gain', 3),
+    ([0., 0., 0.], 2, 10., 'max_passes', 2),
+    ([10.], 0, 10., 'max_passes', 0),
+])
+def test_g4_limits_and_unrounded_gain_with_expired_initial_budget(
+        monkeypatch, gains, limit, threshold, expected, count):
+    length = [100.]
+    calls = []
+    monkeypatch.setitem(run_multinet_passes.__globals__, 'calculate_route_length',
+                        lambda _: length[0])
+    def run(results, context, config, net_ids, deadline, *, emit_log):
+        assert deadline == float('inf')
+        length[0] -= gains[len(calls)]
+        calls.append(net_ids)
+        return dict(
+            segment_strips=[], via_strips=[],
+            changes=SimpleNamespace(as_dict=lambda: dict(segments=[], vias=[])),
+            stage_stats=SimpleNamespace(as_dict=lambda: {'stages': {'G3': {'changes': 1}}}),
+            changed_net_ids={1}, g3={}, via={}, pad={}, node={}, refine={}, merge={},
+            merged_nets=0, merge_ms=0, merged_count=0,
+            equal=dict(segments_removed=0, segments_added=0))
+    out = run_multinet_passes(
+        SimpleNamespace(pcb_data=_Board(), net_ids=[1]),
+        GlossConfig(g4_max_passes=limit, g4_min_gain_percent=threshold),
+        [1], [], 0., run)
+    assert out['stop_reason'] == expected
+    assert out['passes_completed'] == count
+
+
+@pytest.mark.parametrize('values', [
+    {'g4_max_passes': -1}, {'g4_max_passes': 1.5}, {'g4_max_passes': True},
+    {'g4_min_gain_percent': -1}, {'g4_min_gain_percent': 101},
+    {'g4_min_gain_percent': float('nan')},
+])
+def test_invalid_g4_limits(values):
+    with pytest.raises(ValueError):
+        GlossConfig(**values)
 
 
 def test_g4_replays_g3_5_in_alternating_complete_net_orders():

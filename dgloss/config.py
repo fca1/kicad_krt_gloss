@@ -27,9 +27,19 @@ class GlossConfig:
     optimize_pad_approaches: bool = None
     move_junctions: bool = None
     repeat_until_stable: bool = None
+    # Internal G4 limits: additional passes after the time-budgeted first pass.
+    # From total pass 3, compare its gain with the previous pass's gain.
+    g4_min_gain_percent: float = 10.0
+    g4_max_passes: int = 2
 
     def __post_init__(self):
         import math
+        if (not math.isfinite(self.g4_min_gain_percent) or
+                not 0 <= self.g4_min_gain_percent <= 100):
+            raise ValueError("g4_min_gain_percent must be between 0 and 100")
+        if (isinstance(self.g4_max_passes, bool) or
+                not isinstance(self.g4_max_passes, int) or self.g4_max_passes < 0):
+            raise ValueError("g4_max_passes must be a non-negative integer")
         if not math.isfinite(self.budget_seconds) or self.budget_seconds < 0:
             raise ValueError("budget_seconds must be finite and non-negative")
         for name, legacy in (

@@ -116,7 +116,8 @@ class GlossSettingsDialog(wx.Dialog):
             size=(90, -1))
         self.budget_seconds.SetDigits(0)
         budget_help = (
-            "Maximum time allocated to Gloss optimization passes. KRT "
+            "Maximum time allocated to the initial Gloss optimization pass, "
+            "excluding G4. G4 uses its own pass-count and convergence limits. KRT "
             "preprocessing, final validation and applying the result may make "
             "the total runtime longer.")
         budget_label.SetToolTip(budget_help)
@@ -258,7 +259,8 @@ class GlossSettingsDialog(wx.Dialog):
         repeat.SetValue(bool(values["repeat_until_stable"]))
         repeat.SetToolTip(
             "Run additional Gloss passes until no further change is found, "
-            "within the time budget. Local autogloss remains active when "
+            "within the configured G4 pass limit and gain threshold. "
+            "Local autogloss remains active when "
             "this option is disabled.")
         self.controls["repeat_until_stable"] = repeat
         operations.Add(repeat, 0, wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
