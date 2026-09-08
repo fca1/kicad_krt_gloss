@@ -364,6 +364,10 @@ def test_dialog_keeps_a_post_run_log_with_krt_style_controls():
     assert 'label="Refresh"' in source
     assert "def _on_refresh_proximity" in source
     assert "def _clear_centering_highlight" in source
+    assert source.index("def _create_centering_selection") < source.index(
+        "def _create_centering_tab")
+    assert source.count("self._clear_centering_highlight()") >= 2
+    assert "wx.CallAfter(self._clear_centering_highlight)" in source
     assert "panel, min=0.0, max=5.0" in source
     assert "centering_build_multi_door_path" not in source
     assert "centering_build_new_segments" not in source
@@ -378,6 +382,7 @@ def test_dialog_keeps_a_post_run_log_with_krt_style_controls():
     assert "on_import_centering=import_centering_selection" in action
     assert "on_refresh_proximity=lambda: selected_pad_pair_distance_mm(board)" in action
     assert "parent.Bind(wx.EVT_CLOSE, close_dialog_with_parent)" in action
+    assert "dialog = GlossSettingsDialog(\n                None" in action
     assert 'print("\\n=== Track Gloss result ===")' in action
     assert 'stats.get(\'krt_after_mm\'' in action
 
@@ -419,12 +424,15 @@ def test_dialog_exposes_the_integrated_gloss_options_by_public_name():
     assert '"stay_in_corridor", "Stay in corridor (prototype)"' in source
     assert 'label="Proximity max"' in source
     assert 'label="G4 passes:"' in source
+    assert "can take significant time" in source
+    assert "if selected_count == 1:" in source
     assert "def _create_gloss_illustration" in source
     assert 'label="G3.3' not in source
     assert 'label="G3.4' not in source
     assert '"enable_g3_3": True' not in source[source.index("def values(self):"):]
     assert '"enable_g3_4": True' not in source[source.index("def values(self):"):]
-    assert 'label="Selection Scope"' in source
+    assert 'label="Select branch"' in source
+    assert "wx.STAY_ON_TOP" in source
     assert 'label="Gloss Operations"' in source
     assert 'label="Calculation Settings"' in source
     assert 'label="Execution Limit"' in source
@@ -471,7 +479,7 @@ def test_plugin_selection_mode_defaults_to_be_and_cli_stays_net_only():
     key = '"selection_uses_elementary_branches"'
     assert dialog.index(f"{key}: True") < dialog.index('"move_vias": True')
     assert "Selected elementary branches:" not in dialog
-    assert 'selection.Add(selected_net, 0, wx.ALIGN_RIGHT' in dialog
+    assert 'selection.Add(selected_net, 0, wx.ALIGN_CENTER' in dialog
     assert "bounded by pads, free ends or T/X" in dialog
     assert key in action
     assert key not in cli

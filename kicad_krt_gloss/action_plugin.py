@@ -96,8 +96,11 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                     and dialog_pcb_data.nets[net_id].name
                 }
 
+            # A modeless child of the editor can make KiCad consider its
+            # document changed on teardown.  Keep this window top-level; the
+            # explicit parent close binding below still closes it with the PCB.
             dialog = GlossSettingsDialog(
-                parent, values, len(net_ids), on_gloss=run_from_dialog,
+                None, values, len(net_ids), on_gloss=run_from_dialog,
                 on_centering=center_from_dialog, pcb_data=prepared[0],
                 centering_nets=centering_nets,
                 preselected_centering_nets=preselected_names,

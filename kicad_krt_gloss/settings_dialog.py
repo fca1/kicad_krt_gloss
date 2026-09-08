@@ -37,7 +37,9 @@ class GlossSettingsDialog(wx.Dialog):
                  preselected_centering_nets=(), initial_tab=None,
                  initial_log="", on_import_centering=None,
                  on_refresh_proximity=None):
-        super().__init__(parent, title="KiCad KRT Gloss")
+        super().__init__(
+            parent, title="KiCad KRT Gloss",
+            style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER | wx.STAY_ON_TOP)
         values = dict(values or {})
         if "move_vias" not in values and "enable_g3_1" in values:
             values["move_vias"] = values["enable_g3_1"]
@@ -54,8 +56,10 @@ class GlossSettingsDialog(wx.Dialog):
         content = wx.BoxSizer(wx.VERTICAL)
         self.controls = {}
 
-        selection_box = wx.StaticBox(panel, label="Selection Scope")
-        selection = wx.StaticBoxSizer(selection_box, wx.VERTICAL)
+        general_columns = wx.BoxSizer(wx.HORIZONTAL)
+        left_column = wx.BoxSizer(wx.VERTICAL)
+        right_box = wx.StaticBox(panel, label="Select branch")
+        selection = wx.StaticBoxSizer(right_box, wx.VERTICAL)
         selection_label = "Selected Net" if selected_count <= 1 else \
             "Selected Nets"
         selection_value = str(selected_count) if selected_count else "ALL"
@@ -65,9 +69,8 @@ class GlossSettingsDialog(wx.Dialog):
         selected_font.SetPointSize(selected_font.GetPointSize() + 4)
         selected_font.SetWeight(wx.FONTWEIGHT_BOLD)
         selected_net.SetFont(selected_font)
-        selection.Add(selected_net, 0, wx.ALIGN_RIGHT | wx.ALL, 8)
+        selection.Add(selected_net, 0, wx.ALIGN_CENTER | wx.ALL, 8)
 
-        selection_row = wx.BoxSizer(wx.HORIZONTAL)
         key = "selection_uses_elementary_branches"
         control = wx.CheckBox(panel, label="Use elementary branches")
         control.SetValue(bool(values[key]))
@@ -78,16 +81,14 @@ class GlossSettingsDialog(wx.Dialog):
             "are processed.")
         control.SetToolTip(branch_help)
         self.controls[key] = control
-        selection_row.Add(control, 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 8)
         illustration_path = os.path.join(
             _DIALOG_IMAGES, "selection_scope_illustration.png")
         if os.path.exists(illustration_path):
             image = wx.Image(illustration_path, wx.BITMAP_TYPE_PNG)
             illustration = wx.StaticBitmap(panel, bitmap=wx.Bitmap(image))
             illustration.SetToolTip(branch_help)
-            selection_row.Add(illustration, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 8)
-        selection.Add(selection_row, 0, wx.EXPAND)
-        content.Add(selection, 0, wx.EXPAND | wx.ALL, 8)
+            selection.Add(illustration, 0, wx.ALIGN_CENTER | wx.ALL, 8)
+        selection.Add(control, 0, wx.ALIGN_CENTER | wx.ALL, 8)
 
         calculation_box = wx.StaticBox(panel, label="Calculation Settings")
         calculation = wx.StaticBoxSizer(calculation_box, wx.VERTICAL)
@@ -107,8 +108,7 @@ class GlossSettingsDialog(wx.Dialog):
         self.grid_step.SetToolTip(grid_help)
         row.Add(self.grid_step, 0)
         calculation.Add(row, 0, wx.ALL, 8)
-        content.Add(calculation, 0,
-                    wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
+
 
         budget_box = wx.StaticBox(panel, label="Execution Limit")
         budget = wx.StaticBoxSizer(budget_box, wx.VERTICAL)
@@ -132,10 +132,14 @@ class GlossSettingsDialog(wx.Dialog):
         budget_unit.SetToolTip(budget_help)
         budget_row.Add(budget_unit, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
         budget.Add(budget_row, 0, wx.ALL, 8)
-        content.Add(budget, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
         centering_selection = self._create_centering_selection(
             panel, pcb_data, centering_nets, preselected_centering_nets)
-        content.Add(centering_selection, 1, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
+        left_column.Add(centering_selection, 1, wx.EXPAND | wx.BOTTOM, 8)
+        left_column.Add(calculation, 0, wx.EXPAND | wx.BOTTOM, 8)
+        left_column.Add(budget, 0, wx.EXPAND)
+        general_columns.Add(left_column, 1, wx.EXPAND | wx.ALL, 8)
+        general_columns.Add(selection, 0, wx.EXPAND | wx.TOP | wx.RIGHT | wx.BOTTOM, 8)
+        content.Add(general_columns, 1, wx.EXPAND)
         panel.SetSizer(content)
         self.notebook.AddPage(panel, "General")
 
@@ -271,6 +275,7 @@ class GlossSettingsDialog(wx.Dialog):
         repeat.SetToolTip(
             "Run additional Gloss passes until no further change is found, "
             "within the configured G4 pass limit and gain threshold. "
+            "Each additional whole-board pass can take significant time. "
             "Local autogloss remains active when "
             "this option is disabled.")
         self.controls["repeat_until_stable"] = repeat
@@ -287,6 +292,9 @@ class GlossSettingsDialog(wx.Dialog):
         self.g4_max_passes.SetToolTip(g4_passes_help)
         g4_passes.Add(self.g4_max_passes, 0)
         operations.Add(g4_passes, 0, wx.LEFT | wx.RIGHT | wx.BOTTOM, 8)
+        if selected_count == 1:
+            repeat.Disable()
+            self.g4_max_passes.Disable()
         content.Add(operations, 0, wx.EXPAND | wx.ALL, 8)
         content.AddStretchSpacer()
         panel.SetSizer(content)
@@ -417,6 +425,7 @@ class GlossSettingsDialog(wx.Dialog):
         if add:
             imported.update(self.centering_net_panel.get_selected_nets())
         self.centering_net_panel.set_selected_nets(imported)
+        self._clear_centering_highlight()
         selected = self.centering_net_panel.get_selected_nets()
         verb = "Added" if add else "Replaced"
         self.centering_status.SetLabel(
@@ -425,6 +434,7 @@ class GlossSettingsDialog(wx.Dialog):
     def _on_clear_centering_selection(self, _event):
         """Clear the Centering net checklist without affecting KiCad."""
         self.centering_net_panel.set_selected_nets(())
+        self._clear_centering_highlight()
         self.centering_status.SetLabel("Centering net selection cleared.")
 
     def _clear_centering_highlight(self):

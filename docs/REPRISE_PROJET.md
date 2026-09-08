@@ -75,6 +75,12 @@ carte courante. Dans Centering, « Refresh » actualise Proxi seulement depuis
 une sélection exacte de deux pads, si leur entraxe est dans [0, 5] mm. Le flux
 Gloss n'est pas modifié.
 
+Dans General, la liste et les limites de calcul/exécution occupent la colonne
+de gauche ; « Select branch », son illustration et « Use elementary branches »
+occupent la colonne de droite. La boîte de réglages est détachée de l'éditeur
+et maintenue au premier plan, mais l'événement de fermeture de l'éditeur la
+ferme aussi.
+
 **Longueur et segments.** Leur découpage logiciel ne doit pas devenir une
 frontière algorithmique : une réduction peut créer un coude, sa simplification
 peut permettre une nouvelle réduction. L'autogloss intégré réexamine les chaînes
