@@ -23,6 +23,7 @@ def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('board',type=Path)
     parser.add_argument('--action',choices=['gloss','centering'],default='centering')
+    parser.add_argument('--scope',choices=['single','multiple','whole','eb-off'],default='single')
     args=parser.parse_args()
     fingerprint=hashlib.sha256(args.board.read_bytes()).hexdigest()
     board=pcbnew.LoadBoard(str(args.board.resolve()))
@@ -74,6 +75,23 @@ def main():
     dialog._on_import_centering(True)
     dialog._on_import_centering(True)
     assert len(dialog._branch_memory.by_net['/A'])==2
+    listing=dialog.centering_net_panel.net_list
+    assert listing.GetTextValue(listing.FindString('/A'),2)=='2 EB'
+    # The native header adds a small border to the requested width on Windows.
+    assert listing.GetTextExtent('2 EB').width <= listing.GetColumn(2).GetWidth() <= listing.FromDIP(60)
+    import wx.dataview as dv
+    row=listing.FindString('/A')
+    for checked in (False, True):
+        listing.Check(row,checked)
+        event=dv.DataViewEvent(dv.EVT_DATAVIEW_ITEM_VALUE_CHANGED.typeId,listing,listing.GetColumn(0),listing.RowToItem(row))
+        listing.GetEventHandler().ProcessEvent(event)
+        app.ProcessPendingEvents()
+        assert ('/A' in dialog.centering_net_panel.get_selected_nets())==checked
+        assert dialog.centering_button.IsEnabled()==checked
+        assert listing.GetTextValue(row,2)=='2 EB'
+    dialog.centering_net_panel.filter_ctrl.SetValue('/A')
+    assert listing.GetTextValue(listing.FindString('/A'),2)=='2 EB'
+    dialog.centering_net_panel.filter_ctrl.SetValue('')
     select([])
     net_list=dialog.centering_net_panel.net_list
     for i in net_list.GetSelections():net_list.Deselect(i)
@@ -86,9 +104,11 @@ def main():
     ready,chosen=plugin._prepare_checked_nets(board,dialog,['/A'])
     assert len(ready[1])==len(branches[0]|branches[1])
     toggle_eb(False)
+    assert all(listing.GetTextValue(i,2)=='' for i in range(listing.GetCount()))
     whole,_=plugin._prepare_checked_nets(board,dialog,['/A'])
     assert len(whole[1])==sum(s.net_id==net for s in whole[0].segments)
     toggle_eb(True)
+    assert listing.GetTextValue(listing.FindString('/A'),2)=='2 EB'
     assert len(dialog._branch_memory.by_net['/A'])==2
     dialog._on_clear_centering_selection(None)
     assert not dialog._branch_memory.by_net and not dialog.centering_net_panel.get_selected_nets()
@@ -97,11 +117,23 @@ def main():
     assert len(whole[1])==sum(s.net_id==net for s in whole[0].segments)
     select([groups[branches[0]]])
     dialog._on_import_centering(False)
+    scope_uids=set(branches[0])
+    if args.scope=='multiple':
+        select([groups[branches[1]]])
+        dialog._on_import_centering(True)
+        scope_uids.update(branches[1])
+    elif args.scope in ('whole','eb-off'):
+        if args.scope=='whole':
+            dialog._on_clear_centering_selection(None)
+            dialog.centering_net_panel.set_selected_nets(['/A'])
+        else:
+            toggle_eb(False)
+        scope_uids={uid for uid,s in index.items() if s.net_id==net}
     select([groups[branches[1]]])  # Action must ignore this later live selection.
     ready,chosen=plugin._prepare_checked_nets(board,dialog,['/A'])
-    assert len(ready[1])==len(branches[0])
+    assert len(ready[1])==len(scope_uids)
     fixed={t.m_Uuid.AsString():(t.GetStart().x,t.GetStart().y,t.GetEnd().x,t.GetEnd().y,t.GetWidth())
-           for t in board.GetTracks() if t.GetClass()=='PCB_TRACK' and t.m_Uuid.AsString() not in branches[0]}
+           for t in board.GetTracks() if t.GetClass()=='PCB_TRACK' and t.m_Uuid.AsString() not in scope_uids}
     before_ids={t.m_Uuid.AsString() for t in board.GetTracks()}
     if args.action=='centering':
         result=plugin._run_centering(board,dialog,dialog.values(),['/A'],prepared=ready,append_log=dialog.append_log)
@@ -120,11 +152,14 @@ def main():
             assert any((g.GetStart()==track.GetStart() and g.GetEnd()==track.GetEnd()) or
                        (g.GetEnd()==track.GetStart() and g.GetStart()==track.GetEnd()) for g in full)
     stale,_=plugin._prepare_checked_nets(board,dialog,['/A'])
-    assert stale is None  # Replaced UUIDs must not widen the next operation.
+    if args.scope in ('single','multiple'):
+        assert stale is None  # Replaced UUIDs must not widen the next operation.
+    else:
+        assert stale is not None
     dialog._branch_highlighter(())
     dialog.Destroy();app.ProcessPendingEvents();restore()
     assert hashlib.sha256(args.board.read_bytes()).hexdigest()==fingerprint
-    print('PASS',args.action,'remembered branches, Add/Replace/Clear, highlight IDs, whole-net fallback, fonts, outside copper preserved; source unchanged')
+    print('PASS',args.action,args.scope,'remembered branches, Add/Replace/Clear, highlight IDs, whole-net fallback, scope column/filter, fonts, outside copper preserved; source unchanged')
 
 
 if __name__=='__main__':main()

@@ -47,6 +47,10 @@ les branches par net et refuse les références devenues obsolètes ; réimporte
 la sélection après remplacement des pistes. Il inclut les copies User pleines
 à 0.1 mm, les polices Calculation Settings alignées sur Proxi et deux images
 distinctes selon la case EB. Voir le [rapport EB](reports/EB_MEMORY_PROTOTYPE_2026_09_09.md).
+La liste du prototype utilise désormais l'adaptateur multicolonne KRG
+`branch_scope_list.py` (DataView) : colonne droite compacte « n EB », vide pour
+un net entier. Essais natifs Windows : Centering une EB, deux EB, net entier
+sans mémoire et EB désactivé ; validation Linux/macOS non effectuée.
 
 1. [AGENTS.md](../AGENTS.md) : règles de collaboration et autorisations.
 2. Ce guide : état actuel et pièges à connaître.

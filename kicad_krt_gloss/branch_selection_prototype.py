@@ -188,6 +188,8 @@ def activate(action_module, *, board_provider=None):
                 self._branch_board, bridge.refresh, self._branch_memory)
             kwargs['on_net_selection_changed'] = self._preview_branches
             super().__init__(*args, **kwargs)
+            from .branch_scope_list import install
+            install(self)
             panel = self.notebook.GetPage(0)
             def enlarge(sizer):
                 for child in sizer.GetChildren():
@@ -245,6 +247,9 @@ def activate(action_module, *, board_provider=None):
 
         def _preview_branches(self, names):
             enabled = self._eb_enabled()
+            net_list = self.centering_net_panel.net_list
+            if hasattr(net_list, 'refresh_scope'):
+                net_list.refresh_scope()
             if getattr(self, '_scope_illustration', None) is not None:
                 self._scope_illustration.SetBitmap(self._scope_bitmaps[enabled])
                 self._scope_illustration.Refresh()

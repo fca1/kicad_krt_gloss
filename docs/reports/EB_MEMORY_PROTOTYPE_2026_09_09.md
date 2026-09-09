@@ -5,6 +5,7 @@ Ce nouveau prototype est isolé : appeler `branch_selection_prototype.activate(a
 La fonction renvoie une restauration des branchements temporaires.
 Il n'est pas activé par le démarrage normal ; aucun ZIP EB produit à ce stade.
 Un futur ZIP doit inclure le module, la nouvelle image et l'activation explicite.
+Il doit aussi inclure `branch_scope_list.py`, adaptateur de liste multicolonne.
 
 ## Règles
 
@@ -60,3 +61,41 @@ Carte chargée en mémoire, jamais sauvegardée. Empreinte source inchangée :
 Les avertissements wx existants (parentage, gestionnaires images et fermeture)
 restent présents. Les contrôles natifs ne remplacent pas une validation visuelle
 utilisateur dans l'éditeur KiCad ouvert.
+
+## Ajout de la colonne EB
+
+Le prototype remplace uniquement l'instance de liste du panneau par un
+`wx.dataview.DataViewListCtrl`, sans modifier KRT. Adaptateur KRG conservant
+les opérations du panneau (coches, lignes sélectionnées, filtres et boutons).
+Le nom du net reste dans sa colonne ; la colonne droite « EB » contient
+« n EB », ou une chaîne vide pour le net entier. EB désactivé masque les
+comptes sans effacer la mémoire. Une ligne décochée conserve son compte mémorisé.
+
+Largeur demandée : 50 unités logiques, augmentée uniquement si nécessaire pour
+le texte et sa marge ; le nom du net occupe l'espace restant. Sur Windows le
+contrôle ajoute une petite bordure (54 pixels constatés pour 2 EB à DPI 100 %).
+Pas de personnalisation de police/couleur dépendante de Windows.
+Référence API : https://docs.wxpython.org/wx.dataview.DataViewListCtrl.html
+Linux et macOS non exécutés : compatibilité visée, pas qualification annoncée.
+
+Nouvelle vérification native sur la même empreinte source, sans sauvegarde :
+
+| Centering /A, Proxi 2.54 | Résultat | Temps moteur annoncé |
+| --- | --- | --- |
+| Une branche mémorisée | 3 portes, G5 vrai | 108.0 ms |
+| Deux branches mémorisées | 3 portes, G5 vrai | 107.5 ms |
+| Net entier, EB coché sans mémoire | 3 portes, G5 vrai | 114.3 ms |
+| Net entier, EB décoché avec mémoire dormante | 3 portes, G5 vrai | 108.3 ms |
+
+Chaque exécution réimporte une carte neuve, vérifie le nombre exact de segments
+transmis et compare UUID/géométrie/largeur de toutes les pistes hors périmètre.
+Les quatre cas produisent ici le même recentrage (7 pistes vers 7) : les portes
+concernées sont dans la première branche ; ce n'est pas un test de deux branches
+portant chacune une porte indépendante. Les coordonnées hors périmètre restent
+inchangées. La sélection native ultérieure différente est ignorée.
+
+Le runner accepte `--scope single|multiple|whole|eb-off`. Il teste également
+les événements de coches du nouveau composant, boutons d'action, largeur compacte,
+comptes après filtrage et basculement EB. Gloss une branche passe également.
+Les 71 tests ciblés précédents restent verts. Ce contrôle ne valide pas le rendu
+visible de l'éditeur ni toutes les combinaisons multi-net et toutes les cartes.
