@@ -1,5 +1,17 @@
 # Reprendre Smooth Gloss KRT
 
+Frontière KiCad renforcée : l'extension EB n'accède plus aux pistes, UUID,
+sélections ou drapeaux de highlight directement, ni à `bridge._pcbnew()`.
+Elle utilise `branch_track_index`, `capture_branches` et `branch_highlighter`.
+L'implémentation native déplacée sans changement de comportement est dans
+`native_branch_selection.py`, derrière `kicad_bridge.py`, incluse au packaging.
+Le contrôle architectural couvre les modules de production KRG/Gloss, avec
+une liste explicite d'adaptateurs natifs autorisés. KRT reste inchangé.
+Validation : 61 tests ciblés ; six essais natifs sur carte détachée (Centering
+une EB, plusieurs EB, net entier, EB désactivé, couverture complète ; Gloss
+plusieurs EB), sélection/highlight par UUID et cuivre hors portée vérifiés.
+Ces essais ne constituent pas une nouvelle validation visuelle dans l'éditeur.
+
 Contrat CLI : nets entiers exclusivement. Ne jamais exposer d'option EB,
 branches ou graines dans le CLI (décision utilisateur). Cette absence n'est
 pas une fonctionnalité manquante. Le CLI courant exécute Gloss seulement,

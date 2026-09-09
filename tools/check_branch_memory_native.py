@@ -17,7 +17,7 @@ import pcbnew
 import wx
 import wx.dataview as dv
 from _eb_probe import action_plugin as action
-from _eb_probe.branch_selection_prototype import activate, track_index
+from _eb_probe.branch_selection_prototype import activate
 from dgloss.branches import elementary_branch_segment_ids
 
 
@@ -112,7 +112,7 @@ def main():
     net_pixels=toggle_eb(False)
     branch_pixels=toggle_eb(True)
     assert net_pixels!=branch_pixels
-    index=track_index(board,data,pcbnew)
+    index=action.KICAD.branch_track_index(board,data)
     groups={}
     reverse={id(s):uid for uid,s in index.items()}
     for uid,s in index.items():

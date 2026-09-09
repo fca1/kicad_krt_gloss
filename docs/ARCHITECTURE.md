@@ -39,6 +39,17 @@ Les anciens points d'import des helpers restent disponibles dans `algorithm`,
 `interpad` et `pipeline` pour les outils de diagnostic. Les stratégies utilisent
 directement les modules partagés lorsque cela évite une dépendance réciproque.
 
+## Frontière native KiCad
+
+L'orchestration, y compris la mémoire EB intégrée, utilise les méthodes publiques
+de `KiCadBoardBridge`. Les imports `pcbnew` nécessaires à l'enregistrement du
+plugin ne donnent pas accès aux opérations de carte dans l'orchestration.
+Les adaptateurs `selection.py`, `board_adapter.py`, `gloss_visualization.py` et
+`native_branch_selection.py` implémentent les accès natifs derrière cette façade.
+L'adaptateur EB conserve l'index UUID, la capture et le highlight ; il ne change
+ni la sélection native, ni les algorithmes KRT. Le test `test_kicad_boundary.py`
+contrôle les imports et les accès natifs identifiés sur les modules de production.
+
 ## Durée de vie des données
 
 Chaque contexte ouvre une nouvelle durée de vie pour les vues et les certificats.

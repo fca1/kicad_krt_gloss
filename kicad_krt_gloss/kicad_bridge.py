@@ -64,6 +64,21 @@ class KiCadBoardBridge:
         from .selection import NetHighlighter
         return NetHighlighter(board, self.refresh)
 
+    def branch_track_index(self, board, pcb_data):
+        """Map current imported tracks to native UUIDs without leaking bindings."""
+        from .native_branch_selection import track_index
+        return track_index(board, pcb_data, self._pcbnew())
+
+    def capture_branches(self, board, pcb_data, index, allowed_names):
+        """Read native selection and resolve its complete elementary branches."""
+        from .native_branch_selection import capture
+        return capture(board, pcb_data, index, self._pcbnew(), allowed_names)
+
+    def branch_highlighter(self, board, memory):
+        """Create a UUID-filtered highlighter without changing native selection."""
+        from .native_branch_selection import BranchHighlighter
+        return BranchHighlighter(board, self.refresh, memory)
+
     @staticmethod
     def build_krt_config(board, pcb_data, grid_step, net_ids=None):
         from .board_adapter import build_krt_config
