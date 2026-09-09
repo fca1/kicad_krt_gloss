@@ -41,6 +41,13 @@ Les supports collinéaires compatibles sont maintenant acceptés ; les trois
 échecs historiques ci-dessus sont corrigés. Les limites PACK0 et auto-contact
 restent applicables. Cette intégration précède le prototype de sélection EB.
 
+Prototype EB du 9 septembre : `kicad_krt_gloss/branch_selection_prototype.py`,
+activation explicite seulement (pas importé par le plugin normal). Il mémorise
+les branches par net et refuse les références devenues obsolètes ; réimporter
+la sélection après remplacement des pistes. Il inclut les copies User pleines
+à 0.1 mm, les polices Calculation Settings alignées sur Proxi et deux images
+distinctes selon la case EB. Voir le [rapport EB](reports/EB_MEMORY_PROTOTYPE_2026_09_09.md).
+
 1. [AGENTS.md](../AGENTS.md) : règles de collaboration et autorisations.
 2. Ce guide : état actuel et pièges à connaître.
 3. [gloss_rules.md](../dgloss/doc_fr/gloss_rules.md) : spécification fonctionnelle
