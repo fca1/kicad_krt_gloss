@@ -1,6 +1,6 @@
-"""Opt-in dialog prototype: remembered elementary branches, never live seeds.
+"""Integrated dialog extension: remembered elementary branches, never live seeds.
 
-Not imported by the normal plugin. Call activate(action_plugin) to try it.
+Activated by plugin startup. Historical prototype module name retained.
 Memory belongs to one dialog and never writes native selection flags.
 """
 from collections import defaultdict
@@ -190,7 +190,7 @@ from .debug_overlay import overlay_lines as _original_overlay_lines
 
 
 def activate(action_module, *, board_provider=None):
-    """Opt-in runtime wiring; returns a restore function for detached tests."""
+    """Startup wiring; returns a restore function for detached tests."""
     import wx
     bridge = action_module.KICAD
     base_dialog = action_module.GlossSettingsDialog

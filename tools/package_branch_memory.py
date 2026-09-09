@@ -22,7 +22,8 @@ def main():
     startup = contents['plugins/__init__.py'].decode('utf-8')
     anchor = '    KiCadKrtGlossPlugin().register()'
     assert startup.count(anchor) == 1
-    startup = startup.replace(anchor,
+    if '_activate_eb(_action)' not in startup:
+        startup = startup.replace(anchor,
         '    from . import action_plugin as _action\n'
         '    from .branch_selection_prototype import activate as _activate_eb\n'
         '    _restore_eb_prototype = _activate_eb(_action)\n\n' + anchor)

@@ -41,8 +41,9 @@ Les supports collinéaires compatibles sont maintenant acceptés ; les trois
 échecs historiques ci-dessus sont corrigés. Les limites PACK0 et auto-contact
 restent applicables. Cette intégration précède le prototype de sélection EB.
 
-Prototype EB du 9 septembre : `kicad_krt_gloss/branch_selection_prototype.py`,
-activation explicite seulement (pas importé par le plugin normal). Il mémorise
+Intégration EB du 9 septembre, validée par l'utilisateur :
+`kicad_krt_gloss/branch_selection_prototype.py` est maintenant activé au démarrage
+normal et inclus avec sa liste et ses images dans le packaging standard. Il mémorise
 les branches par net et refuse les références devenues obsolètes ; réimporter
 la sélection après remplacement des pistes. Il inclut les copies User pleines
 à 0.1 mm, les polices Calculation Settings alignées sur Proxi et deux images
@@ -186,9 +187,12 @@ Toute simulation temporisée de clic doit rester dans
 un outil de test séparé ; aucun timer de highlight ni clic automatique ne
 doit être intégré au dialogue de production.
 Les deux actions reconstruisent leurs données depuis la carte courante. En mode
-branches élémentaires, les pistes natives désignent les branches uniquement de
-leurs nets cochés ; un net coché sans graine native désigne tout son cuivre.
-Les graines d'un net décoché sont ignorées. Dans Centering, « Refresh » actualise
+branches élémentaires dans le dialogue, Add/Replace mémorise les branches par net.
+Les actions utilisent cette mémoire uniquement pour les nets cochés, sans dépendre
+de la sélection native ultérieure. Sans mémoire, le net est entier. Une référence
+périmée impose une nouvelle importation, sans élargissement silencieux.
+La sélection directe sans dialogue conserve son fonctionnement antérieur.
+Dans Centering, « Refresh » actualise
 Proxi seulement depuis une sélection exacte de deux pads, dans [0, 5] mm.
 
 Dans General, la liste occupe la colonne de gauche ; « Select branch », son

@@ -55,13 +55,14 @@ def build(output_dir):
         plugins.mkdir()
         for name in ("__init__.py", "action_plugin.py", "board_adapter.py", "kicad_bridge.py",
                      "debug_overlay.py", "gloss_visualization.py", "runtime.py", "selection.py",
+                     "branch_selection_prototype.py", "branch_scope_list.py",
                      "settings_dialog.py", "progress_dialog.py", "version.py", "icon_24.png", "icon_64.png",
                      "icon_24_dark.png"):
             shutil.copy2(PLUGIN / name, plugins / name)
         dialog_images = plugins / "img_dlg"
         dialog_images.mkdir()
         for name in ("centering_illustration.png", "selection_scope_illustration.png",
-                     "corridor_illustration.png", "via_illustration.png"):
+                     "corridor_illustration.png", "via_illustration.png", "selection_net_illustration.png"):
             shutil.copy2(PLUGIN / "img_dlg" / name, dialog_images / name)
         package_documents = (
             (ROOT / "docs" / "AUTHORS.md", "AUTHORS.md"),

@@ -1,5 +1,20 @@
 # Prototype de mémoire EB — 9 septembre 2026
 
+## Statut actuel : intégré
+
+À la demande utilisateur « on intègre », activation au démarrage standard dans
+`__init__.py`, inclusion des deux modules EB et de l'image net entier dans
+`package_pcm.py`. KRT inchangé. Le nom historique du module prototype est conservé.
+Les mentions d'activation optionnelle ci-dessous décrivent les essais antérieurs.
+Les limites restent applicables : mémoire de dialogue, réimport après remplacement
+des pistes partielles, validation native Windows seulement.
+
+Validation d'intégration : 75 tests ciblés réussis. ZIP standard
+`dist/integrated-eb-a82be9a/KiCadKrtGloss-0.1.3.zip`, SHA256
+`001dd706b81561b09c7570a3d3c75478ba007816dee3783ecf53e5447b2f675e`.
+Démarrage du package extrait vérifié ; Centering avec promotion de toutes les EB
+au net complet réussi depuis ce package (3 portes, G5 vrai, source inchangée).
+
 Le correctif collinéaire testé par ZIP a été intégré préalablement dans ed31e59.
 Ce nouveau prototype est isolé : appeler `branch_selection_prototype.activate(action_plugin)`.
 La fonction renvoie une restauration des branchements temporaires.

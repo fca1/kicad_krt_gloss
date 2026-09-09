@@ -1,8 +1,18 @@
 from types import SimpleNamespace as NS
+from pathlib import Path
 import pytest
 from kicad_krt_gloss.branch_selection_prototype import Branch, BranchMemory, StaleBranches, thin_overlay_lines
 from kicad_krt_gloss.debug_overlay import overlay_lines
 from dgloss.krt_api import Segment
+
+
+def test_standard_startup_and_packaging_include_eb():
+    root=Path(__file__).resolve().parents[1]
+    startup=(root/'kicad_krt_gloss/__init__.py').read_text(encoding='utf-8')
+    assert startup.index('_activate_eb(_action)') < startup.index('KiCadKrtGlossPlugin().register()')
+    packaging=(root/'package_pcm.py').read_text(encoding='utf-8')
+    for name in ('branch_selection_prototype.py','branch_scope_list.py','selection_net_illustration.png'):
+        assert name in packaging
 
 
 def fixture():
