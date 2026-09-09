@@ -380,12 +380,22 @@ class GlossSettingsDialog(wx.Dialog):
             panel, min=0.0, max=5.0,
             initial=float(values["centering_proximity_mm"]), inc=0.1)
         self.centering_proximity_mm.SetDigits(2)
+        proximity_font = self.centering_proximity_mm.GetFont()
+        proximity_font.SetPointSize(max(14, round(proximity_font.GetPointSize() * 1.5)))
+        self.centering_proximity_mm.SetFont(proximity_font)
+        self.centering_proximity_mm.SetMinSize(self.FromDIP((130, 38)))
         self.centering_proximity_mm.SetToolTip(
             "Maximum absolute proximity to obstacles, in millimetres.")
         if os.path.exists(icon_path):
             image = wx.Image(icon_path, wx.BITMAP_TYPE_PNG)
+            # Enlarge the existing asset and its embedded editor together.
+            # Keep the original composition; these are display sizes only.
+            diagram_size = self.FromDIP((450, 320))
+            image = image.Scale(diagram_size.width, diagram_size.height,
+                                wx.IMAGE_QUALITY_HIGH)
             bitmap = wx.Bitmap(image)
             diagram = wx.Panel(panel, size=bitmap.GetSize())
+            diagram.SetMinSize(bitmap.GetSize())
             diagram.SetBackgroundStyle(wx.BG_STYLE_PAINT)
 
             def paint_diagram(_event):
@@ -397,10 +407,10 @@ class GlossSettingsDialog(wx.Dialog):
             # The diagram already names this value.  Place the editor directly
             # beside that label so the value and its visual meaning stay together.
             self.centering_proximity_mm.Reparent(diagram)
-            self.centering_proximity_mm.SetPosition((123, 31))
-            self.centering_proximity_mm.SetSize((52, -1))
+            self.centering_proximity_mm.SetPosition(tuple(self.FromDIP((307, 77))))
+            self.centering_proximity_mm.SetSize(self.FromDIP((130, 38)))
             proximity_title = wx.StaticText(panel, label="Proximity max")
-            proximity_title.SetFont(proximity_title.GetFont().Bold())
+            proximity_title.SetFont(proximity_font.Bold())
             options.Add(proximity_title, 0, wx.ALIGN_CENTER | wx.TOP, 10)
             options.Add(diagram, 0, wx.ALIGN_CENTER | wx.ALL, 10)
         else:
