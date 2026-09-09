@@ -269,7 +269,7 @@ class GlossSettingsDialog(wx.Dialog):
         minimum = self.GetSizer().CalcMin()
         minimum = self.ClientToWindowSize(minimum)
         self.SetMinSize(minimum)
-        opening = wx.Size(max(minimum.width + self.FromDIP(80), self.FromDIP(960)),
+        opening = wx.Size(minimum.width + self.FromDIP(24),
                           max(minimum.height, self.FromDIP(700)))
         self.SetSize(opening)
         self.Layout()
@@ -388,19 +388,19 @@ class GlossSettingsDialog(wx.Dialog):
 
         selection_actions = wx.BoxSizer(wx.HORIZONTAL)
         self._selection_actions = selection_actions
-        add_selection = wx.Button(panel, label="Add KiCad selection")
+        add_selection = wx.Button(panel, label="Add")
         add_selection.SetToolTip(
             "Check the nets of currently selected KiCad tracks, keeping "
             "the nets already checked here.")
         add_selection.Bind(wx.EVT_BUTTON,
                            lambda _event: self._on_import_centering(True))
-        replace_selection = wx.Button(panel, label="Replace with KiCad selection")
+        replace_selection = wx.Button(panel, label="Replace")
         replace_selection.SetToolTip(
             "Check only the nets of currently selected KiCad tracks.")
         replace_selection.Bind(
             wx.EVT_BUTTON,
             lambda _event: self._on_import_centering(False))
-        clear_selection = wx.Button(panel, label="Clear selection")
+        clear_selection = wx.Button(panel, label="Clear")
         clear_selection.SetToolTip("Uncheck every net for Gloss and Centering.")
         clear_selection.Bind(wx.EVT_BUTTON, self._on_clear_centering_selection)
         selection_actions.Add(add_selection, 1, wx.RIGHT, 5)

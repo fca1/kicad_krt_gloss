@@ -504,9 +504,9 @@ def test_dialog_keeps_a_post_run_log_with_krt_style_controls():
     assert "wx.TE_READONLY" in source
     assert 'self.notebook.AddPage(panel, "Centering")' in source
     assert 'label="Centering"' in source
-    assert 'label="Add KiCad selection"' in source
-    assert 'label="Replace with KiCad selection"' in source
-    assert 'label="Clear selection"' in source
+    assert 'label="Add"' in source
+    assert 'label="Replace"' in source
+    assert 'label="Clear"' in source
     assert "on_import_centering" in source
     assert 'wx.EVT_LISTBOX, self._on_centering_net_row_selected' in source
     assert 'wx.EVT_CHECKLISTBOX, self._on_centering_net_checked' in source

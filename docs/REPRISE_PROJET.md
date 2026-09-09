@@ -1,5 +1,10 @@
 # Reprendre Smooth Gloss KRT
 
+Compacité UI : boutons d'import « Add », « Replace », « Clear », infobulles
+conservées. Largeur initiale = minimum des deux colonnes + 24 DIP, sans plancher
+960 DIP. Essai Windows affiché : ouverture 659 px, minimum 635 px, Net 222 px
+et EB 54 px au minimum. « Stay in corridor » et son illustration restent inchangés.
+
 UI, dernier correctif : seules les valeurs grid step/budget utilisent la police
 Proxi ; titre et libellés gardent la police normale. EB reçoit une largeur
 compacte indépendante de sa largeur native courante, appliquée après le layout
