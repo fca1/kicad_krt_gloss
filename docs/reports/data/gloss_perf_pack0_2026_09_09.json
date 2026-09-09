@@ -1,0 +1,2583 @@
+[
+  {
+    "seconds": 0.4025360999999066,
+    "load_seconds": 0.045813600000201404,
+    "modes": [],
+    "corridor": false,
+    "budget": 120.0,
+    "grid": 0.1,
+    "g4": false,
+    "nets": 29,
+    "saved_mm": 8.424,
+    "g5": true,
+    "expired": false,
+    "geometry": "60c58889df6db1a6469cc3d6c5854165b55717b173569e6b556f01116ca5eddc",
+    "non_octolinear": 0,
+    "new_acute": 0,
+    "clearance_violations": 0,
+    "stages": {
+      "G3": {
+        "enabled": true,
+        "changes": 8,
+        "saved_mm": 7.1456,
+        "elapsed_ms": 112.899,
+        "label": "nets improved",
+        "skipped_budget": false
+      },
+      "G3.1": {
+        "enabled": true,
+        "changes": 1,
+        "saved_mm": 0.5208,
+        "elapsed_ms": 10.324,
+        "label": "vias moved",
+        "skipped_budget": false
+      },
+      "G3.2": {
+        "enabled": true,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 30.474,
+        "label": "pads optimized",
+        "skipped_budget": false
+      },
+      "G3.3": {
+        "enabled": true,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 4.085,
+        "label": "T branches moved",
+        "skipped_budget": false
+      },
+      "G3.4": {
+        "enabled": true,
+        "changes": 1,
+        "saved_mm": 0.7577,
+        "elapsed_ms": 11.577,
+        "label": "vias refined",
+        "skipped_budget": false
+      },
+      "G3.5 equal length": {
+        "enabled": true,
+        "changes": 3,
+        "saved_mm": 0.0,
+        "elapsed_ms": 12.966,
+        "label": "segments removed at equal length",
+        "skipped_budget": false
+      },
+      "G3.5 segments": {
+        "enabled": true,
+        "changes": 5,
+        "saved_mm": 0.0,
+        "elapsed_ms": 5.389,
+        "label": "collinear joints removed",
+        "skipped_budget": false
+      },
+      "G3 local": {
+        "enabled": true,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 14.624,
+        "label": "local reductions",
+        "skipped_budget": false
+      },
+      "G4": {
+        "enabled": false,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 0.0,
+        "label": "multi-net transformations",
+        "skipped_budget": false
+      },
+      "G3.6": {
+        "enabled": false,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 0.0,
+        "label": "doors centered",
+        "skipped_budget": false
+      },
+      "G5": {
+        "enabled": true,
+        "changes": 34,
+        "saved_mm": 0.0,
+        "elapsed_ms": 9.78,
+        "label": "final objects certified",
+        "skipped_budget": false
+      }
+    },
+    "log": [
+      "--board-edge-clearance not given; using 0.5mm [board constraint].",
+      "--hole-to-hole-clearance not given; using 0.25mm [board constraint].",
+      "Copper-to-hole clearance 0.25mm (from the board's own min_hole_clearance, above the 0.2mm fab floor)",
+      "Track Gloss G3: 8 nets improved, -7.1456 mm, 112.9 ms",
+      "Track Gloss G3.1: 1 vias moved, -0.5208 mm, 10.3 ms",
+      "Track Gloss G3.4: 1 vias refined, -0.7577 mm, 11.6 ms",
+      "Track Gloss G3.5 equal length: 3 segments removed at equal length, 0.0000 mm, 13.0 ms",
+      "Track Gloss G3.5 segments: 5 collinear joints removed, 0.0000 mm, 5.4 ms",
+      "Track Gloss G5: 34 final objects certified, 0.0000 mm, 9.8 ms",
+      "Track Gloss final: 29 nets processed, 11 changed, -8.4240 mm, 401.7 ms"
+    ],
+    "board": "micro_dmm",
+    "variant": "baseline",
+    "sha256": "e4c246f797d22445c3821edc722a0a02b92039e07b9f2257c3b2b4c8b34e05a9",
+    "identical_geometry": true,
+    "gain_percent": 0.0
+  },
+  {
+    "seconds": 0.32091740000032587,
+    "load_seconds": 0.026539899999988847,
+    "modes": [
+      "early",
+      "pads",
+      "vias",
+      "references",
+      "views"
+    ],
+    "corridor": false,
+    "budget": 120.0,
+    "grid": 0.1,
+    "g4": false,
+    "nets": 29,
+    "saved_mm": 8.424,
+    "g5": true,
+    "expired": false,
+    "geometry": "60c58889df6db1a6469cc3d6c5854165b55717b173569e6b556f01116ca5eddc",
+    "non_octolinear": 0,
+    "new_acute": 0,
+    "clearance_violations": 0,
+    "stages": {
+      "G3": {
+        "enabled": true,
+        "changes": 8,
+        "saved_mm": 7.1456,
+        "elapsed_ms": 100.024,
+        "label": "nets improved",
+        "skipped_budget": false
+      },
+      "G3.1": {
+        "enabled": true,
+        "changes": 1,
+        "saved_mm": 0.5208,
+        "elapsed_ms": 10.336,
+        "label": "vias moved",
+        "skipped_budget": false
+      },
+      "G3.2": {
+        "enabled": true,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 24.276,
+        "label": "pads optimized",
+        "skipped_budget": false
+      },
+      "G3.3": {
+        "enabled": true,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 4.145,
+        "label": "T branches moved",
+        "skipped_budget": false
+      },
+      "G3.4": {
+        "enabled": true,
+        "changes": 1,
+        "saved_mm": 0.7577,
+        "elapsed_ms": 10.698,
+        "label": "vias refined",
+        "skipped_budget": false
+      },
+      "G3.5 equal length": {
+        "enabled": true,
+        "changes": 3,
+        "saved_mm": 0.0,
+        "elapsed_ms": 11.602,
+        "label": "segments removed at equal length",
+        "skipped_budget": false
+      },
+      "G3.5 segments": {
+        "enabled": true,
+        "changes": 5,
+        "saved_mm": 0.0,
+        "elapsed_ms": 3.807,
+        "label": "collinear joints removed",
+        "skipped_budget": false
+      },
+      "G3 local": {
+        "enabled": true,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 11.229,
+        "label": "local reductions",
+        "skipped_budget": false
+      },
+      "G4": {
+        "enabled": false,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 0.0,
+        "label": "multi-net transformations",
+        "skipped_budget": false
+      },
+      "G3.6": {
+        "enabled": false,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 0.0,
+        "label": "doors centered",
+        "skipped_budget": false
+      },
+      "G5": {
+        "enabled": true,
+        "changes": 34,
+        "saved_mm": 0.0,
+        "elapsed_ms": 9.694,
+        "label": "final objects certified",
+        "skipped_budget": false
+      }
+    },
+    "log": [
+      "--board-edge-clearance not given; using 0.5mm [board constraint].",
+      "--hole-to-hole-clearance not given; using 0.25mm [board constraint].",
+      "Track Gloss G3: 8 nets improved, -7.1456 mm, 100.0 ms",
+      "Track Gloss G3.1: 1 vias moved, -0.5208 mm, 10.3 ms",
+      "Track Gloss G3.4: 1 vias refined, -0.7577 mm, 10.7 ms",
+      "Track Gloss G3.5 equal length: 3 segments removed at equal length, 0.0000 mm, 11.6 ms",
+      "Track Gloss G3.5 segments: 5 collinear joints removed, 0.0000 mm, 3.8 ms",
+      "Track Gloss G5: 34 final objects certified, 0.0000 mm, 9.7 ms",
+      "Track Gloss final: 29 nets processed, 11 changed, -8.4240 mm, 319.8 ms"
+    ],
+    "board": "micro_dmm",
+    "variant": "combined",
+    "sha256": "e4c246f797d22445c3821edc722a0a02b92039e07b9f2257c3b2b4c8b34e05a9",
+    "identical_geometry": true,
+    "gain_percent": 20.276119334290676
+  },
+  {
+    "seconds": 0.2301582000000053,
+    "load_seconds": 0.026135699999940698,
+    "modes": [
+      "early",
+      "pads",
+      "vias",
+      "references",
+      "views"
+    ],
+    "corridor": true,
+    "budget": 120.0,
+    "grid": 0.1,
+    "g4": false,
+    "nets": 29,
+    "saved_mm": 2.5919,
+    "g5": true,
+    "expired": false,
+    "geometry": "ef67bc0fc07e09805419b2ff655f3bf2503bfe6ae9521ed0ebca577067585ed0",
+    "non_octolinear": 0,
+    "new_acute": 0,
+    "clearance_violations": 0,
+    "stages": {
+      "G3": {
+        "enabled": true,
+        "changes": 5,
+        "saved_mm": 1.8339,
+        "elapsed_ms": 41.846,
+        "label": "nets improved",
+        "skipped_budget": false
+      },
+      "G3.1": {
+        "enabled": true,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 4.745,
+        "label": "vias moved",
+        "skipped_budget": false
+      },
+      "G3.2": {
+        "enabled": true,
+        "changes": 1,
+        "saved_mm": 0.758,
+        "elapsed_ms": 50.985,
+        "label": "pads optimized",
+        "skipped_budget": false
+      },
+      "G3.3": {
+        "enabled": true,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 4.19,
+        "label": "T branches moved",
+        "skipped_budget": false
+      },
+      "G3.4": {
+        "enabled": true,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 5.656,
+        "label": "vias refined",
+        "skipped_budget": false
+      },
+      "G3.5 equal length": {
+        "enabled": true,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 8.139,
+        "label": "segments removed at equal length",
+        "skipped_budget": false
+      },
+      "G3.5 segments": {
+        "enabled": true,
+        "changes": 2,
+        "saved_mm": 0.0,
+        "elapsed_ms": 2.473,
+        "label": "collinear joints removed",
+        "skipped_budget": false
+      },
+      "G3 local": {
+        "enabled": true,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 2.171,
+        "label": "local reductions",
+        "skipped_budget": false
+      },
+      "G4": {
+        "enabled": false,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 0.0,
+        "label": "multi-net transformations",
+        "skipped_budget": false
+      },
+      "G3.6": {
+        "enabled": false,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 0.0,
+        "label": "doors centered",
+        "skipped_budget": false
+      },
+      "G5": {
+        "enabled": true,
+        "changes": 16,
+        "saved_mm": 0.0,
+        "elapsed_ms": 7.747,
+        "label": "final objects certified",
+        "skipped_budget": false
+      }
+    },
+    "log": [
+      "--board-edge-clearance not given; using 0.5mm [board constraint].",
+      "--hole-to-hole-clearance not given; using 0.25mm [board constraint].",
+      "Track Gloss G3: 5 nets improved, -1.8339 mm, 41.8 ms",
+      "Track Gloss G3.2: 1 pads optimized, -0.7580 mm, 51.0 ms",
+      "Track Gloss G3.5 segments: 2 collinear joints removed, 0.0000 mm, 2.5 ms",
+      "Track Gloss G5: 16 final objects certified, 0.0000 mm, 7.7 ms",
+      "Track Gloss final: 29 nets processed, 7 changed, -2.5919 mm, 229.2 ms"
+    ],
+    "board": "micro_dmm",
+    "variant": "combined",
+    "sha256": "e4c246f797d22445c3821edc722a0a02b92039e07b9f2257c3b2b4c8b34e05a9",
+    "identical_geometry": true,
+    "gain_percent": 6.066312412610467
+  },
+  {
+    "seconds": 0.24502199999960794,
+    "load_seconds": 0.026076999999986583,
+    "modes": [],
+    "corridor": true,
+    "budget": 120.0,
+    "grid": 0.1,
+    "g4": false,
+    "nets": 29,
+    "saved_mm": 2.5919,
+    "g5": true,
+    "expired": false,
+    "geometry": "ef67bc0fc07e09805419b2ff655f3bf2503bfe6ae9521ed0ebca577067585ed0",
+    "non_octolinear": 0,
+    "new_acute": 0,
+    "clearance_violations": 0,
+    "stages": {
+      "G3": {
+        "enabled": true,
+        "changes": 5,
+        "saved_mm": 1.8339,
+        "elapsed_ms": 45.143,
+        "label": "nets improved",
+        "skipped_budget": false
+      },
+      "G3.1": {
+        "enabled": true,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 4.919,
+        "label": "vias moved",
+        "skipped_budget": false
+      },
+      "G3.2": {
+        "enabled": true,
+        "changes": 1,
+        "saved_mm": 0.758,
+        "elapsed_ms": 64.243,
+        "label": "pads optimized",
+        "skipped_budget": false
+      },
+      "G3.3": {
+        "enabled": true,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 4.205,
+        "label": "T branches moved",
+        "skipped_budget": false
+      },
+      "G3.4": {
+        "enabled": true,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 5.81,
+        "label": "vias refined",
+        "skipped_budget": false
+      },
+      "G3.5 equal length": {
+        "enabled": true,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 7.41,
+        "label": "segments removed at equal length",
+        "skipped_budget": false
+      },
+      "G3.5 segments": {
+        "enabled": true,
+        "changes": 2,
+        "saved_mm": 0.0,
+        "elapsed_ms": 2.559,
+        "label": "collinear joints removed",
+        "skipped_budget": false
+      },
+      "G3 local": {
+        "enabled": true,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 2.36,
+        "label": "local reductions",
+        "skipped_budget": false
+      },
+      "G4": {
+        "enabled": false,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 0.0,
+        "label": "multi-net transformations",
+        "skipped_budget": false
+      },
+      "G3.6": {
+        "enabled": false,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 0.0,
+        "label": "doors centered",
+        "skipped_budget": false
+      },
+      "G5": {
+        "enabled": true,
+        "changes": 16,
+        "saved_mm": 0.0,
+        "elapsed_ms": 7.763,
+        "label": "final objects certified",
+        "skipped_budget": false
+      }
+    },
+    "log": [
+      "--board-edge-clearance not given; using 0.5mm [board constraint].",
+      "--hole-to-hole-clearance not given; using 0.25mm [board constraint].",
+      "Track Gloss G3: 5 nets improved, -1.8339 mm, 45.1 ms",
+      "Track Gloss G3.2: 1 pads optimized, -0.7580 mm, 64.2 ms",
+      "Track Gloss G3.5 segments: 2 collinear joints removed, 0.0000 mm, 2.6 ms",
+      "Track Gloss G5: 16 final objects certified, 0.0000 mm, 7.8 ms",
+      "Track Gloss final: 29 nets processed, 7 changed, -2.5919 mm, 244.0 ms"
+    ],
+    "board": "micro_dmm",
+    "variant": "baseline",
+    "sha256": "e4c246f797d22445c3821edc722a0a02b92039e07b9f2257c3b2b4c8b34e05a9",
+    "identical_geometry": true,
+    "gain_percent": 0.0
+  },
+  {
+    "seconds": 3.4796737000001485,
+    "load_seconds": 0.08100920000015321,
+    "modes": [],
+    "corridor": false,
+    "budget": 120.0,
+    "grid": 0.1,
+    "g4": false,
+    "nets": 63,
+    "saved_mm": 62.6098,
+    "g5": true,
+    "expired": false,
+    "geometry": "47618069676396f5e8edf2292d19a0d87e080bf4a602844ced8dc86c2e86fbf4",
+    "non_octolinear": 0,
+    "new_acute": 0,
+    "clearance_violations": 0,
+    "stages": {
+      "G3": {
+        "enabled": true,
+        "changes": 32,
+        "saved_mm": 38.8766,
+        "elapsed_ms": 1122.479,
+        "label": "nets improved",
+        "skipped_budget": false
+      },
+      "G3.1": {
+        "enabled": true,
+        "changes": 18,
+        "saved_mm": 14.9338,
+        "elapsed_ms": 167.137,
+        "label": "vias moved",
+        "skipped_budget": false
+      },
+      "G3.2": {
+        "enabled": true,
+        "changes": 2,
+        "saved_mm": 0.5,
+        "elapsed_ms": 616.169,
+        "label": "pads optimized",
+        "skipped_budget": false
+      },
+      "G3.3": {
+        "enabled": true,
+        "changes": 1,
+        "saved_mm": 1.3576,
+        "elapsed_ms": 85.408,
+        "label": "T branches moved",
+        "skipped_budget": false
+      },
+      "G3.4": {
+        "enabled": true,
+        "changes": 8,
+        "saved_mm": 5.0847,
+        "elapsed_ms": 187.377,
+        "label": "vias refined",
+        "skipped_budget": false
+      },
+      "G3.5 equal length": {
+        "enabled": true,
+        "changes": 35,
+        "saved_mm": 0.0,
+        "elapsed_ms": 209.439,
+        "label": "segments removed at equal length",
+        "skipped_budget": false
+      },
+      "G3.5 segments": {
+        "enabled": true,
+        "changes": 5,
+        "saved_mm": 0.0,
+        "elapsed_ms": 7.175,
+        "label": "collinear joints removed",
+        "skipped_budget": false
+      },
+      "G3 local": {
+        "enabled": true,
+        "changes": 6,
+        "saved_mm": 1.8571,
+        "elapsed_ms": 224.5,
+        "label": "local reductions",
+        "skipped_budget": false
+      },
+      "G4": {
+        "enabled": false,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 0.0,
+        "label": "multi-net transformations",
+        "skipped_budget": false
+      },
+      "G3.6": {
+        "enabled": false,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 0.0,
+        "label": "doors centered",
+        "skipped_budget": false
+      },
+      "G5": {
+        "enabled": true,
+        "changes": 195,
+        "saved_mm": 0.0,
+        "elapsed_ms": 103.339,
+        "label": "final objects certified",
+        "skipped_budget": false
+      }
+    },
+    "log": [
+      "--board-edge-clearance not given; using 0.075mm [board constraint].",
+      "--hole-to-hole-clearance not given; using 0.25mm [board constraint].",
+      "Copper-to-hole clearance 0.25mm (from the board's own min_hole_clearance, above the 0.2mm fab floor)",
+      "Track Gloss G3: 32 nets improved, -38.8766 mm, 1122.5 ms",
+      "Track Gloss G3.1: 18 vias moved, -14.9338 mm, 167.1 ms",
+      "Track Gloss G3.2: 2 pads optimized, -0.5000 mm, 616.2 ms",
+      "Track Gloss G3.3: 1 T branches moved, -1.3576 mm, 85.4 ms",
+      "Track Gloss G3.3 non-collinear variant: 1 T junction(s) without a collinear rail, 0 90-degree bend(s) cleaned",
+      "Track Gloss G3.4: 8 vias refined, -5.0847 mm, 187.4 ms",
+      "Track Gloss G3.5 equal length: 35 segments removed at equal length, 0.0000 mm, 209.4 ms",
+      "Track Gloss G3.5 segments: 5 collinear joints removed, 0.0000 mm, 7.2 ms",
+      "Track Gloss G3 local: 6 local reductions, -1.8571 mm, 224.5 ms",
+      "Track Gloss G5: 195 final objects certified, 0.0000 mm, 103.3 ms",
+      "Track Gloss final: 63 nets processed, 50 changed, -62.6098 mm, 3475.8 ms"
+    ],
+    "board": "chart_plotter_hat",
+    "variant": "baseline",
+    "sha256": "e5c8a670216dddc3e3e5e28555eecb3543b1515e7aebbff1785cb5998a1e8598",
+    "identical_geometry": true,
+    "gain_percent": 0.0
+  },
+  {
+    "seconds": 3.356536199999937,
+    "load_seconds": 0.07180860000016764,
+    "modes": [
+      "early",
+      "pads",
+      "vias",
+      "references",
+      "views"
+    ],
+    "corridor": false,
+    "budget": 120.0,
+    "grid": 0.1,
+    "g4": false,
+    "nets": 63,
+    "saved_mm": 62.6098,
+    "g5": true,
+    "expired": false,
+    "geometry": "47618069676396f5e8edf2292d19a0d87e080bf4a602844ced8dc86c2e86fbf4",
+    "non_octolinear": 0,
+    "new_acute": 0,
+    "clearance_violations": 0,
+    "stages": {
+      "G3": {
+        "enabled": true,
+        "changes": 32,
+        "saved_mm": 38.8766,
+        "elapsed_ms": 1242.374,
+        "label": "nets improved",
+        "skipped_budget": false
+      },
+      "G3.1": {
+        "enabled": true,
+        "changes": 18,
+        "saved_mm": 14.9338,
+        "elapsed_ms": 202.741,
+        "label": "vias moved",
+        "skipped_budget": false
+      },
+      "G3.2": {
+        "enabled": true,
+        "changes": 2,
+        "saved_mm": 0.5,
+        "elapsed_ms": 427.516,
+        "label": "pads optimized",
+        "skipped_budget": false
+      },
+      "G3.3": {
+        "enabled": true,
+        "changes": 1,
+        "saved_mm": 1.3576,
+        "elapsed_ms": 92.125,
+        "label": "T branches moved",
+        "skipped_budget": false
+      },
+      "G3.4": {
+        "enabled": true,
+        "changes": 8,
+        "saved_mm": 5.0847,
+        "elapsed_ms": 169.61,
+        "label": "vias refined",
+        "skipped_budget": false
+      },
+      "G3.5 equal length": {
+        "enabled": true,
+        "changes": 35,
+        "saved_mm": 0.0,
+        "elapsed_ms": 188.026,
+        "label": "segments removed at equal length",
+        "skipped_budget": false
+      },
+      "G3.5 segments": {
+        "enabled": true,
+        "changes": 5,
+        "saved_mm": 0.0,
+        "elapsed_ms": 6.642,
+        "label": "collinear joints removed",
+        "skipped_budget": false
+      },
+      "G3 local": {
+        "enabled": true,
+        "changes": 6,
+        "saved_mm": 1.8571,
+        "elapsed_ms": 236.896,
+        "label": "local reductions",
+        "skipped_budget": false
+      },
+      "G4": {
+        "enabled": false,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 0.0,
+        "label": "multi-net transformations",
+        "skipped_budget": false
+      },
+      "G3.6": {
+        "enabled": false,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 0.0,
+        "label": "doors centered",
+        "skipped_budget": false
+      },
+      "G5": {
+        "enabled": true,
+        "changes": 195,
+        "saved_mm": 0.0,
+        "elapsed_ms": 100.412,
+        "label": "final objects certified",
+        "skipped_budget": false
+      }
+    },
+    "log": [
+      "--board-edge-clearance not given; using 0.075mm [board constraint].",
+      "--hole-to-hole-clearance not given; using 0.25mm [board constraint].",
+      "Track Gloss G3: 32 nets improved, -38.8766 mm, 1242.4 ms",
+      "Track Gloss G3.1: 18 vias moved, -14.9338 mm, 202.7 ms",
+      "Track Gloss G3.2: 2 pads optimized, -0.5000 mm, 427.5 ms",
+      "Track Gloss G3.3: 1 T branches moved, -1.3576 mm, 92.1 ms",
+      "Track Gloss G3.3 non-collinear variant: 1 T junction(s) without a collinear rail, 0 90-degree bend(s) cleaned",
+      "Track Gloss G3.4: 8 vias refined, -5.0847 mm, 169.6 ms",
+      "Track Gloss G3.5 equal length: 35 segments removed at equal length, 0.0000 mm, 188.0 ms",
+      "Track Gloss G3.5 segments: 5 collinear joints removed, 0.0000 mm, 6.6 ms",
+      "Track Gloss G3 local: 6 local reductions, -1.8571 mm, 236.9 ms",
+      "Track Gloss G5: 195 final objects certified, 0.0000 mm, 100.4 ms",
+      "Track Gloss final: 63 nets processed, 50 changed, -62.6098 mm, 3352.2 ms"
+    ],
+    "board": "chart_plotter_hat",
+    "variant": "combined",
+    "sha256": "e5c8a670216dddc3e3e5e28555eecb3543b1515e7aebbff1785cb5998a1e8598",
+    "identical_geometry": true,
+    "gain_percent": 3.538765718182325
+  },
+  {
+    "seconds": 3.4075277999995706,
+    "load_seconds": 0.06919599999991988,
+    "modes": [
+      "early",
+      "pads",
+      "vias",
+      "references",
+      "views"
+    ],
+    "corridor": true,
+    "budget": 120.0,
+    "grid": 0.1,
+    "g4": false,
+    "nets": 63,
+    "saved_mm": 39.5795,
+    "g5": true,
+    "expired": false,
+    "geometry": "ee8a460cca238d04dba37f2e0d0cf32dcf2a31fa397ccccdb1723d4b97bf03b8",
+    "non_octolinear": 0,
+    "new_acute": 0,
+    "clearance_violations": 0,
+    "stages": {
+      "G3": {
+        "enabled": true,
+        "changes": 32,
+        "saved_mm": 15.7979,
+        "elapsed_ms": 750.395,
+        "label": "nets improved",
+        "skipped_budget": false
+      },
+      "G3.1": {
+        "enabled": true,
+        "changes": 18,
+        "saved_mm": 15.5427,
+        "elapsed_ms": 786.155,
+        "label": "vias moved",
+        "skipped_budget": false
+      },
+      "G3.2": {
+        "enabled": true,
+        "changes": 4,
+        "saved_mm": 1.3055,
+        "elapsed_ms": 496.444,
+        "label": "pads optimized",
+        "skipped_budget": false
+      },
+      "G3.3": {
+        "enabled": true,
+        "changes": 1,
+        "saved_mm": 0.3757,
+        "elapsed_ms": 91.074,
+        "label": "T branches moved",
+        "skipped_budget": false
+      },
+      "G3.4": {
+        "enabled": true,
+        "changes": 7,
+        "saved_mm": 5.8969,
+        "elapsed_ms": 398.429,
+        "label": "vias refined",
+        "skipped_budget": false
+      },
+      "G3.5 equal length": {
+        "enabled": true,
+        "changes": 8,
+        "saved_mm": 0.0,
+        "elapsed_ms": 110.788,
+        "label": "segments removed at equal length",
+        "skipped_budget": false
+      },
+      "G3.5 segments": {
+        "enabled": true,
+        "changes": 5,
+        "saved_mm": 0.0,
+        "elapsed_ms": 7.82,
+        "label": "collinear joints removed",
+        "skipped_budget": false
+      },
+      "G3 local": {
+        "enabled": true,
+        "changes": 1,
+        "saved_mm": 0.6608,
+        "elapsed_ms": 49.027,
+        "label": "local reductions",
+        "skipped_budget": false
+      },
+      "G4": {
+        "enabled": false,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 0.0,
+        "label": "multi-net transformations",
+        "skipped_budget": false
+      },
+      "G3.6": {
+        "enabled": false,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 0.0,
+        "label": "doors centered",
+        "skipped_budget": false
+      },
+      "G5": {
+        "enabled": true,
+        "changes": 157,
+        "saved_mm": 0.0,
+        "elapsed_ms": 78.127,
+        "label": "final objects certified",
+        "skipped_budget": false
+      }
+    },
+    "log": [
+      "--board-edge-clearance not given; using 0.075mm [board constraint].",
+      "--hole-to-hole-clearance not given; using 0.25mm [board constraint].",
+      "Track Gloss G3: 32 nets improved, -15.7979 mm, 750.4 ms",
+      "Track Gloss G3.1: 18 vias moved, -15.5427 mm, 786.2 ms",
+      "Track Gloss G3.2: 4 pads optimized, -1.3055 mm, 496.4 ms",
+      "Track Gloss G3.3: 1 T branches moved, -0.3757 mm, 91.1 ms",
+      "Track Gloss G3.3 non-collinear variant: 1 T junction(s) without a collinear rail, 0 90-degree bend(s) cleaned",
+      "Track Gloss G3.4: 7 vias refined, -5.8969 mm, 398.4 ms",
+      "Track Gloss G3.5 equal length: 8 segments removed at equal length, 0.0000 mm, 110.8 ms",
+      "Track Gloss G3.5 segments: 5 collinear joints removed, 0.0000 mm, 7.8 ms",
+      "Track Gloss G3 local: 1 local reductions, -0.6608 mm, 49.0 ms",
+      "Track Gloss G5: 157 final objects certified, 0.0000 mm, 78.1 ms",
+      "Track Gloss final: 63 nets processed, 39 changed, -39.5795 mm, 3403.5 ms"
+    ],
+    "board": "chart_plotter_hat",
+    "variant": "combined",
+    "sha256": "e5c8a670216dddc3e3e5e28555eecb3543b1515e7aebbff1785cb5998a1e8598",
+    "identical_geometry": true,
+    "gain_percent": 8.71743891218895
+  },
+  {
+    "seconds": 3.7329450000002,
+    "load_seconds": 0.07749889999968218,
+    "modes": [],
+    "corridor": true,
+    "budget": 120.0,
+    "grid": 0.1,
+    "g4": false,
+    "nets": 63,
+    "saved_mm": 39.5795,
+    "g5": true,
+    "expired": false,
+    "geometry": "ee8a460cca238d04dba37f2e0d0cf32dcf2a31fa397ccccdb1723d4b97bf03b8",
+    "non_octolinear": 0,
+    "new_acute": 0,
+    "clearance_violations": 0,
+    "stages": {
+      "G3": {
+        "enabled": true,
+        "changes": 32,
+        "saved_mm": 15.7979,
+        "elapsed_ms": 835.159,
+        "label": "nets improved",
+        "skipped_budget": false
+      },
+      "G3.1": {
+        "enabled": true,
+        "changes": 18,
+        "saved_mm": 15.5427,
+        "elapsed_ms": 715.025,
+        "label": "vias moved",
+        "skipped_budget": false
+      },
+      "G3.2": {
+        "enabled": true,
+        "changes": 4,
+        "saved_mm": 1.3055,
+        "elapsed_ms": 787.875,
+        "label": "pads optimized",
+        "skipped_budget": false
+      },
+      "G3.3": {
+        "enabled": true,
+        "changes": 1,
+        "saved_mm": 0.3757,
+        "elapsed_ms": 91.233,
+        "label": "T branches moved",
+        "skipped_budget": false
+      },
+      "G3.4": {
+        "enabled": true,
+        "changes": 7,
+        "saved_mm": 5.8969,
+        "elapsed_ms": 458.229,
+        "label": "vias refined",
+        "skipped_budget": false
+      },
+      "G3.5 equal length": {
+        "enabled": true,
+        "changes": 8,
+        "saved_mm": 0.0,
+        "elapsed_ms": 143.567,
+        "label": "segments removed at equal length",
+        "skipped_budget": false
+      },
+      "G3.5 segments": {
+        "enabled": true,
+        "changes": 5,
+        "saved_mm": 0.0,
+        "elapsed_ms": 6.206,
+        "label": "collinear joints removed",
+        "skipped_budget": false
+      },
+      "G3 local": {
+        "enabled": true,
+        "changes": 1,
+        "saved_mm": 0.6608,
+        "elapsed_ms": 43.378,
+        "label": "local reductions",
+        "skipped_budget": false
+      },
+      "G4": {
+        "enabled": false,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 0.0,
+        "label": "multi-net transformations",
+        "skipped_budget": false
+      },
+      "G3.6": {
+        "enabled": false,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 0.0,
+        "label": "doors centered",
+        "skipped_budget": false
+      },
+      "G5": {
+        "enabled": true,
+        "changes": 157,
+        "saved_mm": 0.0,
+        "elapsed_ms": 68.702,
+        "label": "final objects certified",
+        "skipped_budget": false
+      }
+    },
+    "log": [
+      "--board-edge-clearance not given; using 0.075mm [board constraint].",
+      "--hole-to-hole-clearance not given; using 0.25mm [board constraint].",
+      "Track Gloss G3: 32 nets improved, -15.7979 mm, 835.2 ms",
+      "Track Gloss G3.1: 18 vias moved, -15.5427 mm, 715.0 ms",
+      "Track Gloss G3.2: 4 pads optimized, -1.3055 mm, 787.9 ms",
+      "Track Gloss G3.3: 1 T branches moved, -0.3757 mm, 91.2 ms",
+      "Track Gloss G3.3 non-collinear variant: 1 T junction(s) without a collinear rail, 0 90-degree bend(s) cleaned",
+      "Track Gloss G3.4: 7 vias refined, -5.8969 mm, 458.2 ms",
+      "Track Gloss G3.5 equal length: 8 segments removed at equal length, 0.0000 mm, 143.6 ms",
+      "Track Gloss G3.5 segments: 5 collinear joints removed, 0.0000 mm, 6.2 ms",
+      "Track Gloss G3 local: 1 local reductions, -0.6608 mm, 43.4 ms",
+      "Track Gloss G5: 157 final objects certified, 0.0000 mm, 68.7 ms",
+      "Track Gloss final: 63 nets processed, 39 changed, -39.5795 mm, 3728.8 ms"
+    ],
+    "board": "chart_plotter_hat",
+    "variant": "baseline",
+    "sha256": "e5c8a670216dddc3e3e5e28555eecb3543b1515e7aebbff1785cb5998a1e8598",
+    "identical_geometry": true,
+    "gain_percent": 0.0
+  },
+  {
+    "seconds": 3.405257200000051,
+    "load_seconds": 0.5459657999999763,
+    "modes": [],
+    "corridor": false,
+    "budget": 120.0,
+    "grid": 0.1,
+    "g4": false,
+    "nets": 52,
+    "saved_mm": 22.4942,
+    "g5": true,
+    "expired": false,
+    "geometry": "442b7dd37e7b1e0273d4e856cc8657709a8cc781e9c11650c6b296bfa0797d89",
+    "non_octolinear": 0,
+    "new_acute": 0,
+    "clearance_violations": 0,
+    "stages": {
+      "G3": {
+        "enabled": true,
+        "changes": 22,
+        "saved_mm": 16.2105,
+        "elapsed_ms": 1042.983,
+        "label": "nets improved",
+        "skipped_budget": false
+      },
+      "G3.1": {
+        "enabled": true,
+        "changes": 5,
+        "saved_mm": 4.3016,
+        "elapsed_ms": 100.771,
+        "label": "vias moved",
+        "skipped_budget": false
+      },
+      "G3.2": {
+        "enabled": true,
+        "changes": 2,
+        "saved_mm": 0.3448,
+        "elapsed_ms": 118.408,
+        "label": "pads optimized",
+        "skipped_budget": false
+      },
+      "G3.3": {
+        "enabled": true,
+        "changes": 3,
+        "saved_mm": 0.959,
+        "elapsed_ms": 71.107,
+        "label": "T branches moved",
+        "skipped_budget": false
+      },
+      "G3.4": {
+        "enabled": true,
+        "changes": 2,
+        "saved_mm": 0.3997,
+        "elapsed_ms": 95.656,
+        "label": "vias refined",
+        "skipped_budget": false
+      },
+      "G3.5 equal length": {
+        "enabled": true,
+        "changes": 49,
+        "saved_mm": 0.0,
+        "elapsed_ms": 501.175,
+        "label": "segments removed at equal length",
+        "skipped_budget": false
+      },
+      "G3.5 segments": {
+        "enabled": true,
+        "changes": 13,
+        "saved_mm": 0.0,
+        "elapsed_ms": 173.167,
+        "label": "collinear joints removed",
+        "skipped_budget": false
+      },
+      "G3 local": {
+        "enabled": true,
+        "changes": 7,
+        "saved_mm": 0.2786,
+        "elapsed_ms": 394.321,
+        "label": "local reductions",
+        "skipped_budget": false
+      },
+      "G4": {
+        "enabled": false,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 0.0,
+        "label": "multi-net transformations",
+        "skipped_budget": false
+      },
+      "G3.6": {
+        "enabled": false,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 0.0,
+        "label": "doors centered",
+        "skipped_budget": false
+      },
+      "G5": {
+        "enabled": true,
+        "changes": 180,
+        "saved_mm": 0.0,
+        "elapsed_ms": 83.21,
+        "label": "final objects certified",
+        "skipped_budget": false
+      }
+    },
+    "log": [
+      "--board-edge-clearance not given; using 0.0mm [fixed default].",
+      "--hole-to-hole-clearance not given; using 0.25mm [board constraint].",
+      "Track Gloss G3: 22 nets improved, -16.2105 mm, 1043.0 ms",
+      "Track Gloss G3.1: 5 vias moved, -4.3016 mm, 100.8 ms",
+      "Track Gloss G3.2: 2 pads optimized, -0.3448 mm, 118.4 ms",
+      "Track Gloss G3.3: 3 T branches moved, -0.9590 mm, 71.1 ms",
+      "Track Gloss G3.3 non-collinear variant: 3 T junction(s) without a collinear rail, 0 90-degree bend(s) cleaned",
+      "Track Gloss G3.4: 2 vias refined, -0.3997 mm, 95.7 ms",
+      "Track Gloss G3.5 equal length: 49 segments removed at equal length, 0.0000 mm, 501.2 ms",
+      "Track Gloss G3.5 segments: 13 collinear joints removed, 0.0000 mm, 173.2 ms",
+      "Track Gloss G3 local: 7 local reductions, -0.2786 mm, 394.3 ms",
+      "Track Gloss G5: 180 final objects certified, 0.0000 mm, 83.2 ms",
+      "Track Gloss final: 52 nets processed, 38 changed, -22.4942 mm, 3401.9 ms"
+    ],
+    "board": "environment_sensor",
+    "variant": "baseline",
+    "sha256": "493b0ee9eb319d68ea5c16f3ffa0dfcabeb585e1d0c35b6c45223b357ea2febc",
+    "identical_geometry": true,
+    "gain_percent": 0.0
+  },
+  {
+    "seconds": 2.7776551000001746,
+    "load_seconds": 0.5617964000002758,
+    "modes": [
+      "early",
+      "pads",
+      "vias",
+      "references",
+      "views"
+    ],
+    "corridor": false,
+    "budget": 120.0,
+    "grid": 0.1,
+    "g4": false,
+    "nets": 52,
+    "saved_mm": 22.4942,
+    "g5": true,
+    "expired": false,
+    "geometry": "442b7dd37e7b1e0273d4e856cc8657709a8cc781e9c11650c6b296bfa0797d89",
+    "non_octolinear": 0,
+    "new_acute": 0,
+    "clearance_violations": 0,
+    "stages": {
+      "G3": {
+        "enabled": true,
+        "changes": 22,
+        "saved_mm": 16.2105,
+        "elapsed_ms": 882.882,
+        "label": "nets improved",
+        "skipped_budget": false
+      },
+      "G3.1": {
+        "enabled": true,
+        "changes": 5,
+        "saved_mm": 4.3016,
+        "elapsed_ms": 114.878,
+        "label": "vias moved",
+        "skipped_budget": false
+      },
+      "G3.2": {
+        "enabled": true,
+        "changes": 2,
+        "saved_mm": 0.3448,
+        "elapsed_ms": 110.688,
+        "label": "pads optimized",
+        "skipped_budget": false
+      },
+      "G3.3": {
+        "enabled": true,
+        "changes": 3,
+        "saved_mm": 0.959,
+        "elapsed_ms": 72.154,
+        "label": "T branches moved",
+        "skipped_budget": false
+      },
+      "G3.4": {
+        "enabled": true,
+        "changes": 2,
+        "saved_mm": 0.3997,
+        "elapsed_ms": 70.931,
+        "label": "vias refined",
+        "skipped_budget": false
+      },
+      "G3.5 equal length": {
+        "enabled": true,
+        "changes": 49,
+        "saved_mm": 0.0,
+        "elapsed_ms": 395.112,
+        "label": "segments removed at equal length",
+        "skipped_budget": false
+      },
+      "G3.5 segments": {
+        "enabled": true,
+        "changes": 13,
+        "saved_mm": 0.0,
+        "elapsed_ms": 163.659,
+        "label": "collinear joints removed",
+        "skipped_budget": false
+      },
+      "G3 local": {
+        "enabled": true,
+        "changes": 7,
+        "saved_mm": 0.2786,
+        "elapsed_ms": 258.079,
+        "label": "local reductions",
+        "skipped_budget": false
+      },
+      "G4": {
+        "enabled": false,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 0.0,
+        "label": "multi-net transformations",
+        "skipped_budget": false
+      },
+      "G3.6": {
+        "enabled": false,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 0.0,
+        "label": "doors centered",
+        "skipped_budget": false
+      },
+      "G5": {
+        "enabled": true,
+        "changes": 180,
+        "saved_mm": 0.0,
+        "elapsed_ms": 85.701,
+        "label": "final objects certified",
+        "skipped_budget": false
+      }
+    },
+    "log": [
+      "--board-edge-clearance not given; using 0.0mm [fixed default].",
+      "--hole-to-hole-clearance not given; using 0.25mm [board constraint].",
+      "Track Gloss G3: 22 nets improved, -16.2105 mm, 882.9 ms",
+      "Track Gloss G3.1: 5 vias moved, -4.3016 mm, 114.9 ms",
+      "Track Gloss G3.2: 2 pads optimized, -0.3448 mm, 110.7 ms",
+      "Track Gloss G3.3: 3 T branches moved, -0.9590 mm, 72.2 ms",
+      "Track Gloss G3.3 non-collinear variant: 3 T junction(s) without a collinear rail, 0 90-degree bend(s) cleaned",
+      "Track Gloss G3.4: 2 vias refined, -0.3997 mm, 70.9 ms",
+      "Track Gloss G3.5 equal length: 49 segments removed at equal length, 0.0000 mm, 395.1 ms",
+      "Track Gloss G3.5 segments: 13 collinear joints removed, 0.0000 mm, 163.7 ms",
+      "Track Gloss G3 local: 7 local reductions, -0.2786 mm, 258.1 ms",
+      "Track Gloss G5: 180 final objects certified, 0.0000 mm, 85.7 ms",
+      "Track Gloss final: 52 nets processed, 38 changed, -22.4942 mm, 2774.3 ms"
+    ],
+    "board": "environment_sensor",
+    "variant": "combined",
+    "sha256": "493b0ee9eb319d68ea5c16f3ffa0dfcabeb585e1d0c35b6c45223b357ea2febc",
+    "identical_geometry": true,
+    "gain_percent": 18.430387578355813
+  },
+  {
+    "seconds": 2.292082599999958,
+    "load_seconds": 0.5555199999998877,
+    "modes": [
+      "early",
+      "pads",
+      "vias",
+      "references",
+      "views"
+    ],
+    "corridor": true,
+    "budget": 120.0,
+    "grid": 0.1,
+    "g4": false,
+    "nets": 52,
+    "saved_mm": 13.8244,
+    "g5": true,
+    "expired": false,
+    "geometry": "49aa4c44f9eb9a64914774aa7b9f00c1305e7f21489dceb89a4abce03596d511",
+    "non_octolinear": 0,
+    "new_acute": 0,
+    "clearance_violations": 0,
+    "stages": {
+      "G3": {
+        "enabled": true,
+        "changes": 28,
+        "saved_mm": 10.805,
+        "elapsed_ms": 852.688,
+        "label": "nets improved",
+        "skipped_budget": false
+      },
+      "G3.1": {
+        "enabled": true,
+        "changes": 2,
+        "saved_mm": 1.7499,
+        "elapsed_ms": 167.65,
+        "label": "vias moved",
+        "skipped_budget": false
+      },
+      "G3.2": {
+        "enabled": true,
+        "changes": 3,
+        "saved_mm": 0.5499,
+        "elapsed_ms": 161.624,
+        "label": "pads optimized",
+        "skipped_budget": false
+      },
+      "G3.3": {
+        "enabled": true,
+        "changes": 2,
+        "saved_mm": 0.3199,
+        "elapsed_ms": 96.286,
+        "label": "T branches moved",
+        "skipped_budget": false
+      },
+      "G3.4": {
+        "enabled": true,
+        "changes": 2,
+        "saved_mm": 0.3997,
+        "elapsed_ms": 142.74,
+        "label": "vias refined",
+        "skipped_budget": false
+      },
+      "G3.5 equal length": {
+        "enabled": true,
+        "changes": 4,
+        "saved_mm": 0.0,
+        "elapsed_ms": 117.192,
+        "label": "segments removed at equal length",
+        "skipped_budget": false
+      },
+      "G3.5 segments": {
+        "enabled": true,
+        "changes": 10,
+        "saved_mm": 0.0,
+        "elapsed_ms": 46.912,
+        "label": "collinear joints removed",
+        "skipped_budget": false
+      },
+      "G3 local": {
+        "enabled": true,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 60.603,
+        "label": "local reductions",
+        "skipped_budget": false
+      },
+      "G4": {
+        "enabled": false,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 0.0,
+        "label": "multi-net transformations",
+        "skipped_budget": false
+      },
+      "G3.6": {
+        "enabled": false,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 0.0,
+        "label": "doors centered",
+        "skipped_budget": false
+      },
+      "G5": {
+        "enabled": true,
+        "changes": 140,
+        "saved_mm": 0.0,
+        "elapsed_ms": 69.007,
+        "label": "final objects certified",
+        "skipped_budget": false
+      }
+    },
+    "log": [
+      "--board-edge-clearance not given; using 0.0mm [fixed default].",
+      "--hole-to-hole-clearance not given; using 0.25mm [board constraint].",
+      "Track Gloss G3: 28 nets improved, -10.8050 mm, 852.7 ms",
+      "Track Gloss G3.1: 2 vias moved, -1.7499 mm, 167.7 ms",
+      "Track Gloss G3.2: 3 pads optimized, -0.5499 mm, 161.6 ms",
+      "Track Gloss G3.3: 2 T branches moved, -0.3199 mm, 96.3 ms",
+      "Track Gloss G3.3 non-collinear variant: 2 T junction(s) without a collinear rail, 0 90-degree bend(s) cleaned",
+      "Track Gloss G3.4: 2 vias refined, -0.3997 mm, 142.7 ms",
+      "Track Gloss G3.5 equal length: 4 segments removed at equal length, 0.0000 mm, 117.2 ms",
+      "Track Gloss G3.5 segments: 10 collinear joints removed, 0.0000 mm, 46.9 ms",
+      "Track Gloss G5: 140 final objects certified, 0.0000 mm, 69.0 ms",
+      "Track Gloss final: 52 nets processed, 28 changed, -13.8244 mm, 2289.1 ms"
+    ],
+    "board": "environment_sensor",
+    "variant": "combined",
+    "sha256": "493b0ee9eb319d68ea5c16f3ffa0dfcabeb585e1d0c35b6c45223b357ea2febc",
+    "identical_geometry": true,
+    "gain_percent": 5.357329478291456
+  },
+  {
+    "seconds": 2.421827900000153,
+    "load_seconds": 0.5627568999998402,
+    "modes": [],
+    "corridor": true,
+    "budget": 120.0,
+    "grid": 0.1,
+    "g4": false,
+    "nets": 52,
+    "saved_mm": 13.8244,
+    "g5": true,
+    "expired": false,
+    "geometry": "49aa4c44f9eb9a64914774aa7b9f00c1305e7f21489dceb89a4abce03596d511",
+    "non_octolinear": 0,
+    "new_acute": 0,
+    "clearance_violations": 0,
+    "stages": {
+      "G3": {
+        "enabled": true,
+        "changes": 28,
+        "saved_mm": 10.805,
+        "elapsed_ms": 968.346,
+        "label": "nets improved",
+        "skipped_budget": false
+      },
+      "G3.1": {
+        "enabled": true,
+        "changes": 2,
+        "saved_mm": 1.7499,
+        "elapsed_ms": 175.23,
+        "label": "vias moved",
+        "skipped_budget": false
+      },
+      "G3.2": {
+        "enabled": true,
+        "changes": 3,
+        "saved_mm": 0.5499,
+        "elapsed_ms": 198.478,
+        "label": "pads optimized",
+        "skipped_budget": false
+      },
+      "G3.3": {
+        "enabled": true,
+        "changes": 2,
+        "saved_mm": 0.3199,
+        "elapsed_ms": 96.156,
+        "label": "T branches moved",
+        "skipped_budget": false
+      },
+      "G3.4": {
+        "enabled": true,
+        "changes": 2,
+        "saved_mm": 0.3997,
+        "elapsed_ms": 168.037,
+        "label": "vias refined",
+        "skipped_budget": false
+      },
+      "G3.5 equal length": {
+        "enabled": true,
+        "changes": 4,
+        "saved_mm": 0.0,
+        "elapsed_ms": 137.684,
+        "label": "segments removed at equal length",
+        "skipped_budget": false
+      },
+      "G3.5 segments": {
+        "enabled": true,
+        "changes": 10,
+        "saved_mm": 0.0,
+        "elapsed_ms": 39.215,
+        "label": "collinear joints removed",
+        "skipped_budget": false
+      },
+      "G3 local": {
+        "enabled": true,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 67.682,
+        "label": "local reductions",
+        "skipped_budget": false
+      },
+      "G4": {
+        "enabled": false,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 0.0,
+        "label": "multi-net transformations",
+        "skipped_budget": false
+      },
+      "G3.6": {
+        "enabled": false,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 0.0,
+        "label": "doors centered",
+        "skipped_budget": false
+      },
+      "G5": {
+        "enabled": true,
+        "changes": 140,
+        "saved_mm": 0.0,
+        "elapsed_ms": 52.402,
+        "label": "final objects certified",
+        "skipped_budget": false
+      }
+    },
+    "log": [
+      "--board-edge-clearance not given; using 0.0mm [fixed default].",
+      "--hole-to-hole-clearance not given; using 0.25mm [board constraint].",
+      "Track Gloss G3: 28 nets improved, -10.8050 mm, 968.3 ms",
+      "Track Gloss G3.1: 2 vias moved, -1.7499 mm, 175.2 ms",
+      "Track Gloss G3.2: 3 pads optimized, -0.5499 mm, 198.5 ms",
+      "Track Gloss G3.3: 2 T branches moved, -0.3199 mm, 96.2 ms",
+      "Track Gloss G3.3 non-collinear variant: 2 T junction(s) without a collinear rail, 0 90-degree bend(s) cleaned",
+      "Track Gloss G3.4: 2 vias refined, -0.3997 mm, 168.0 ms",
+      "Track Gloss G3.5 equal length: 4 segments removed at equal length, 0.0000 mm, 137.7 ms",
+      "Track Gloss G3.5 segments: 10 collinear joints removed, 0.0000 mm, 39.2 ms",
+      "Track Gloss G5: 140 final objects certified, 0.0000 mm, 52.4 ms",
+      "Track Gloss final: 52 nets processed, 28 changed, -13.8244 mm, 2419.1 ms"
+    ],
+    "board": "environment_sensor",
+    "variant": "baseline",
+    "sha256": "493b0ee9eb319d68ea5c16f3ffa0dfcabeb585e1d0c35b6c45223b357ea2febc",
+    "identical_geometry": true,
+    "gain_percent": 0.0
+  },
+  {
+    "seconds": 28.278775400000086,
+    "load_seconds": 0.35683259999996153,
+    "modes": [],
+    "corridor": false,
+    "budget": 120.0,
+    "grid": 0.1,
+    "g4": false,
+    "nets": 142,
+    "saved_mm": 116.7258,
+    "g5": true,
+    "expired": false,
+    "geometry": "a662ac6ad5be2d630ea38884dd9602d24b8108ebee8be3e79e9cd06dce706127",
+    "non_octolinear": 0,
+    "new_acute": 0,
+    "clearance_violations": 0,
+    "stages": {
+      "G3": {
+        "enabled": true,
+        "changes": 72,
+        "saved_mm": 109.2841,
+        "elapsed_ms": 5990.695,
+        "label": "nets improved",
+        "skipped_budget": false
+      },
+      "G3.1": {
+        "enabled": true,
+        "changes": 13,
+        "saved_mm": 3.1532,
+        "elapsed_ms": 719.295,
+        "label": "vias moved",
+        "skipped_budget": false
+      },
+      "G3.2": {
+        "enabled": true,
+        "changes": 6,
+        "saved_mm": 1.2043,
+        "elapsed_ms": 913.098,
+        "label": "pads optimized",
+        "skipped_budget": false
+      },
+      "G3.3": {
+        "enabled": true,
+        "changes": 4,
+        "saved_mm": 1.7627,
+        "elapsed_ms": 1186.205,
+        "label": "T branches moved",
+        "skipped_budget": false
+      },
+      "G3.4": {
+        "enabled": true,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 410.824,
+        "label": "vias refined",
+        "skipped_budget": false
+      },
+      "G3.5 equal length": {
+        "enabled": true,
+        "changes": 84,
+        "saved_mm": 0.0,
+        "elapsed_ms": 1927.028,
+        "label": "segments removed at equal length",
+        "skipped_budget": false
+      },
+      "G3.5 segments": {
+        "enabled": true,
+        "changes": 22,
+        "saved_mm": 0.0,
+        "elapsed_ms": 546.093,
+        "label": "collinear joints removed",
+        "skipped_budget": false
+      },
+      "G3 local": {
+        "enabled": true,
+        "changes": 22,
+        "saved_mm": 1.3215,
+        "elapsed_ms": 1996.17,
+        "label": "local reductions",
+        "skipped_budget": false
+      },
+      "G4": {
+        "enabled": false,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 0.0,
+        "label": "multi-net transformations",
+        "skipped_budget": false
+      },
+      "G3.6": {
+        "enabled": false,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 0.0,
+        "label": "doors centered",
+        "skipped_budget": false
+      },
+      "G5": {
+        "enabled": true,
+        "changes": 511,
+        "saved_mm": 0.0,
+        "elapsed_ms": 252.326,
+        "label": "final objects certified",
+        "skipped_budget": false
+      }
+    },
+    "log": [
+      "--board-edge-clearance not given; using 0.5mm [board constraint].",
+      "--hole-to-hole-clearance not given; using 0.25mm [board constraint].",
+      "Copper-to-hole clearance 0.25mm (from the board's own min_hole_clearance, above the 0.2mm fab floor)",
+      "Track Gloss G3: 72 nets improved, -109.2841 mm, 5990.7 ms",
+      "Track Gloss G3.1: 13 vias moved, -3.1532 mm, 719.3 ms",
+      "Track Gloss G3.2: 6 pads optimized, -1.2043 mm, 913.1 ms",
+      "Track Gloss G3.3: 4 T branches moved, -1.7627 mm, 1186.2 ms",
+      "Track Gloss G3.3 non-collinear variant: 2 T junction(s) without a collinear rail, 2 90-degree bend(s) cleaned",
+      "Track Gloss G3.5 equal length: 84 segments removed at equal length, 0.0000 mm, 1927.0 ms",
+      "Track Gloss G3.5 segments: 22 collinear joints removed, 0.0000 mm, 546.1 ms",
+      "Track Gloss G3.5: merge proposals not applied (+3V3: connectivity_changed)",
+      "Track Gloss G3 local: 22 local reductions, -1.3215 mm, 1996.2 ms",
+      "Track Gloss G5: 511 final objects certified, 0.0000 mm, 252.3 ms",
+      "Track Gloss final: 142 nets processed, 98 changed, -116.7258 mm, 28267.4 ms"
+    ],
+    "board": "azukar_fpga",
+    "variant": "baseline",
+    "sha256": "8534f62e77e04c7169aa2f3ffaee795f1da493b7d1de4813620cde6f770d13fe",
+    "identical_geometry": true,
+    "gain_percent": 0.0
+  },
+  {
+    "seconds": 26.497897199999898,
+    "load_seconds": 0.27918629999976474,
+    "modes": [
+      "early",
+      "pads",
+      "vias",
+      "references",
+      "views"
+    ],
+    "corridor": false,
+    "budget": 120.0,
+    "grid": 0.1,
+    "g4": false,
+    "nets": 142,
+    "saved_mm": 116.7258,
+    "g5": true,
+    "expired": false,
+    "geometry": "a662ac6ad5be2d630ea38884dd9602d24b8108ebee8be3e79e9cd06dce706127",
+    "non_octolinear": 0,
+    "new_acute": 0,
+    "clearance_violations": 0,
+    "stages": {
+      "G3": {
+        "enabled": true,
+        "changes": 72,
+        "saved_mm": 109.2841,
+        "elapsed_ms": 5586.191,
+        "label": "nets improved",
+        "skipped_budget": false
+      },
+      "G3.1": {
+        "enabled": true,
+        "changes": 13,
+        "saved_mm": 3.1532,
+        "elapsed_ms": 700.879,
+        "label": "vias moved",
+        "skipped_budget": false
+      },
+      "G3.2": {
+        "enabled": true,
+        "changes": 6,
+        "saved_mm": 1.2043,
+        "elapsed_ms": 696.672,
+        "label": "pads optimized",
+        "skipped_budget": false
+      },
+      "G3.3": {
+        "enabled": true,
+        "changes": 4,
+        "saved_mm": 1.7627,
+        "elapsed_ms": 1088.246,
+        "label": "T branches moved",
+        "skipped_budget": false
+      },
+      "G3.4": {
+        "enabled": true,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 399.118,
+        "label": "vias refined",
+        "skipped_budget": false
+      },
+      "G3.5 equal length": {
+        "enabled": true,
+        "changes": 84,
+        "saved_mm": 0.0,
+        "elapsed_ms": 1970.811,
+        "label": "segments removed at equal length",
+        "skipped_budget": false
+      },
+      "G3.5 segments": {
+        "enabled": true,
+        "changes": 22,
+        "saved_mm": 0.0,
+        "elapsed_ms": 486.375,
+        "label": "collinear joints removed",
+        "skipped_budget": false
+      },
+      "G3 local": {
+        "enabled": true,
+        "changes": 22,
+        "saved_mm": 1.3215,
+        "elapsed_ms": 1759.123,
+        "label": "local reductions",
+        "skipped_budget": false
+      },
+      "G4": {
+        "enabled": false,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 0.0,
+        "label": "multi-net transformations",
+        "skipped_budget": false
+      },
+      "G3.6": {
+        "enabled": false,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 0.0,
+        "label": "doors centered",
+        "skipped_budget": false
+      },
+      "G5": {
+        "enabled": true,
+        "changes": 511,
+        "saved_mm": 0.0,
+        "elapsed_ms": 243.091,
+        "label": "final objects certified",
+        "skipped_budget": false
+      }
+    },
+    "log": [
+      "--board-edge-clearance not given; using 0.5mm [board constraint].",
+      "--hole-to-hole-clearance not given; using 0.25mm [board constraint].",
+      "Track Gloss G3: 72 nets improved, -109.2841 mm, 5586.2 ms",
+      "Track Gloss G3.1: 13 vias moved, -3.1532 mm, 700.9 ms",
+      "Track Gloss G3.2: 6 pads optimized, -1.2043 mm, 696.7 ms",
+      "Track Gloss G3.3: 4 T branches moved, -1.7627 mm, 1088.2 ms",
+      "Track Gloss G3.3 non-collinear variant: 2 T junction(s) without a collinear rail, 2 90-degree bend(s) cleaned",
+      "Track Gloss G3.5 equal length: 84 segments removed at equal length, 0.0000 mm, 1970.8 ms",
+      "Track Gloss G3.5 segments: 22 collinear joints removed, 0.0000 mm, 486.4 ms",
+      "Track Gloss G3.5: merge proposals not applied (+3V3: connectivity_changed)",
+      "Track Gloss G3 local: 22 local reductions, -1.3215 mm, 1759.1 ms",
+      "Track Gloss G5: 511 final objects certified, 0.0000 mm, 243.1 ms",
+      "Track Gloss final: 142 nets processed, 98 changed, -116.7258 mm, 26485.8 ms"
+    ],
+    "board": "azukar_fpga",
+    "variant": "combined",
+    "sha256": "8534f62e77e04c7169aa2f3ffaee795f1da493b7d1de4813620cde6f770d13fe",
+    "identical_geometry": true,
+    "gain_percent": 6.297578925571802
+  },
+  {
+    "seconds": 24.314929199999824,
+    "load_seconds": 0.29668790000005174,
+    "modes": [
+      "early",
+      "pads",
+      "vias",
+      "references",
+      "views"
+    ],
+    "corridor": true,
+    "budget": 120.0,
+    "grid": 0.1,
+    "g4": false,
+    "nets": 142,
+    "saved_mm": 64.4087,
+    "g5": true,
+    "expired": false,
+    "geometry": "5a415617ddab692310990434130406bc90fa3d257b4946bfc43ebce6229ab758",
+    "non_octolinear": 0,
+    "new_acute": 0,
+    "clearance_violations": 0,
+    "stages": {
+      "G3": {
+        "enabled": true,
+        "changes": 76,
+        "saved_mm": 55.5002,
+        "elapsed_ms": 5348.714,
+        "label": "nets improved",
+        "skipped_budget": false
+      },
+      "G3.1": {
+        "enabled": true,
+        "changes": 13,
+        "saved_mm": 4.1874,
+        "elapsed_ms": 1694.477,
+        "label": "vias moved",
+        "skipped_budget": false
+      },
+      "G3.2": {
+        "enabled": true,
+        "changes": 10,
+        "saved_mm": 2.9501,
+        "elapsed_ms": 1523.583,
+        "label": "pads optimized",
+        "skipped_budget": false
+      },
+      "G3.3": {
+        "enabled": true,
+        "changes": 2,
+        "saved_mm": 1.3028,
+        "elapsed_ms": 618.901,
+        "label": "T branches moved",
+        "skipped_budget": false
+      },
+      "G3.4": {
+        "enabled": true,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 519.729,
+        "label": "vias refined",
+        "skipped_budget": false
+      },
+      "G3.5 equal length": {
+        "enabled": true,
+        "changes": 7,
+        "saved_mm": 0.0,
+        "elapsed_ms": 295.672,
+        "label": "segments removed at equal length",
+        "skipped_budget": false
+      },
+      "G3.5 segments": {
+        "enabled": true,
+        "changes": 17,
+        "saved_mm": 0.0,
+        "elapsed_ms": 312.171,
+        "label": "collinear joints removed",
+        "skipped_budget": false
+      },
+      "G3 local": {
+        "enabled": true,
+        "changes": 3,
+        "saved_mm": 0.4682,
+        "elapsed_ms": 438.523,
+        "label": "local reductions",
+        "skipped_budget": false
+      },
+      "G4": {
+        "enabled": false,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 0.0,
+        "label": "multi-net transformations",
+        "skipped_budget": false
+      },
+      "G3.6": {
+        "enabled": false,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 0.0,
+        "label": "doors centered",
+        "skipped_budget": false
+      },
+      "G5": {
+        "enabled": true,
+        "changes": 334,
+        "saved_mm": 0.0,
+        "elapsed_ms": 202.315,
+        "label": "final objects certified",
+        "skipped_budget": false
+      }
+    },
+    "log": [
+      "--board-edge-clearance not given; using 0.5mm [board constraint].",
+      "--hole-to-hole-clearance not given; using 0.25mm [board constraint].",
+      "Track Gloss G3: 76 nets improved, -55.5002 mm, 5348.7 ms",
+      "Track Gloss G3.1: 13 vias moved, -4.1874 mm, 1694.5 ms",
+      "Track Gloss G3.2: 10 pads optimized, -2.9501 mm, 1523.6 ms",
+      "Track Gloss G3.3: 2 T branches moved, -1.3028 mm, 618.9 ms",
+      "Track Gloss G3.5 equal length: 7 segments removed at equal length, 0.0000 mm, 295.7 ms",
+      "Track Gloss G3.5 segments: 17 collinear joints removed, 0.0000 mm, 312.2 ms",
+      "Track Gloss G3.5: merge proposals not applied (+3V3: connectivity_changed, /Perifericos/VUART_RTS: connectivity_changed)",
+      "Track Gloss G3 local: 3 local reductions, -0.4682 mm, 438.5 ms",
+      "Track Gloss G5: 334 final objects certified, 0.0000 mm, 202.3 ms",
+      "Track Gloss final: 142 nets processed, 71 changed, -64.4087 mm, 24302.1 ms"
+    ],
+    "board": "azukar_fpga",
+    "variant": "combined",
+    "sha256": "8534f62e77e04c7169aa2f3ffaee795f1da493b7d1de4813620cde6f770d13fe",
+    "identical_geometry": true,
+    "gain_percent": 7.173175479346632
+  },
+  {
+    "seconds": 26.193860799999584,
+    "load_seconds": 0.29813679999961096,
+    "modes": [],
+    "corridor": true,
+    "budget": 120.0,
+    "grid": 0.1,
+    "g4": false,
+    "nets": 142,
+    "saved_mm": 64.4087,
+    "g5": true,
+    "expired": false,
+    "geometry": "5a415617ddab692310990434130406bc90fa3d257b4946bfc43ebce6229ab758",
+    "non_octolinear": 0,
+    "new_acute": 0,
+    "clearance_violations": 0,
+    "stages": {
+      "G3": {
+        "enabled": true,
+        "changes": 76,
+        "saved_mm": 55.5002,
+        "elapsed_ms": 5550.176,
+        "label": "nets improved",
+        "skipped_budget": false
+      },
+      "G3.1": {
+        "enabled": true,
+        "changes": 13,
+        "saved_mm": 4.1874,
+        "elapsed_ms": 1761.207,
+        "label": "vias moved",
+        "skipped_budget": false
+      },
+      "G3.2": {
+        "enabled": true,
+        "changes": 10,
+        "saved_mm": 2.9501,
+        "elapsed_ms": 1779.493,
+        "label": "pads optimized",
+        "skipped_budget": false
+      },
+      "G3.3": {
+        "enabled": true,
+        "changes": 2,
+        "saved_mm": 1.3028,
+        "elapsed_ms": 626.015,
+        "label": "T branches moved",
+        "skipped_budget": false
+      },
+      "G3.4": {
+        "enabled": true,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 612.893,
+        "label": "vias refined",
+        "skipped_budget": false
+      },
+      "G3.5 equal length": {
+        "enabled": true,
+        "changes": 7,
+        "saved_mm": 0.0,
+        "elapsed_ms": 319.483,
+        "label": "segments removed at equal length",
+        "skipped_budget": false
+      },
+      "G3.5 segments": {
+        "enabled": true,
+        "changes": 17,
+        "saved_mm": 0.0,
+        "elapsed_ms": 303.922,
+        "label": "collinear joints removed",
+        "skipped_budget": false
+      },
+      "G3 local": {
+        "enabled": true,
+        "changes": 3,
+        "saved_mm": 0.4682,
+        "elapsed_ms": 462.994,
+        "label": "local reductions",
+        "skipped_budget": false
+      },
+      "G4": {
+        "enabled": false,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 0.0,
+        "label": "multi-net transformations",
+        "skipped_budget": false
+      },
+      "G3.6": {
+        "enabled": false,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 0.0,
+        "label": "doors centered",
+        "skipped_budget": false
+      },
+      "G5": {
+        "enabled": true,
+        "changes": 334,
+        "saved_mm": 0.0,
+        "elapsed_ms": 205.119,
+        "label": "final objects certified",
+        "skipped_budget": false
+      }
+    },
+    "log": [
+      "--board-edge-clearance not given; using 0.5mm [board constraint].",
+      "--hole-to-hole-clearance not given; using 0.25mm [board constraint].",
+      "Track Gloss G3: 76 nets improved, -55.5002 mm, 5550.2 ms",
+      "Track Gloss G3.1: 13 vias moved, -4.1874 mm, 1761.2 ms",
+      "Track Gloss G3.2: 10 pads optimized, -2.9501 mm, 1779.5 ms",
+      "Track Gloss G3.3: 2 T branches moved, -1.3028 mm, 626.0 ms",
+      "Track Gloss G3.5 equal length: 7 segments removed at equal length, 0.0000 mm, 319.5 ms",
+      "Track Gloss G3.5 segments: 17 collinear joints removed, 0.0000 mm, 303.9 ms",
+      "Track Gloss G3.5: merge proposals not applied (+3V3: connectivity_changed, /Perifericos/VUART_RTS: connectivity_changed)",
+      "Track Gloss G3 local: 3 local reductions, -0.4682 mm, 463.0 ms",
+      "Track Gloss G5: 334 final objects certified, 0.0000 mm, 205.1 ms",
+      "Track Gloss final: 142 nets processed, 71 changed, -64.4087 mm, 26181.4 ms"
+    ],
+    "board": "azukar_fpga",
+    "variant": "baseline",
+    "sha256": "8534f62e77e04c7169aa2f3ffaee795f1da493b7d1de4813620cde6f770d13fe",
+    "identical_geometry": true,
+    "gain_percent": 0.0
+  },
+  {
+    "seconds": 39.48724009999978,
+    "load_seconds": 0.6749927999999272,
+    "modes": [],
+    "corridor": false,
+    "budget": 120.0,
+    "grid": 0.1,
+    "g4": false,
+    "nets": 164,
+    "saved_mm": 88.9842,
+    "g5": true,
+    "expired": false,
+    "geometry": "783eec3fa7cb2bef770be32769c6d799591f03712673c3f5482b27f7e4aef163",
+    "non_octolinear": 0,
+    "new_acute": 0,
+    "clearance_violations": 0,
+    "stages": {
+      "G3": {
+        "enabled": true,
+        "changes": 90,
+        "saved_mm": 69.7687,
+        "elapsed_ms": 18145.253,
+        "label": "nets improved",
+        "skipped_budget": false
+      },
+      "G3.1": {
+        "enabled": true,
+        "changes": 14,
+        "saved_mm": 8.7962,
+        "elapsed_ms": 1016.621,
+        "label": "vias moved",
+        "skipped_budget": false
+      },
+      "G3.2": {
+        "enabled": true,
+        "changes": 3,
+        "saved_mm": 0.3734,
+        "elapsed_ms": 2572.349,
+        "label": "pads optimized",
+        "skipped_budget": false
+      },
+      "G3.3": {
+        "enabled": true,
+        "changes": 6,
+        "saved_mm": 1.9309,
+        "elapsed_ms": 967.461,
+        "label": "T branches moved",
+        "skipped_budget": false
+      },
+      "G3.4": {
+        "enabled": true,
+        "changes": 3,
+        "saved_mm": 3.8228,
+        "elapsed_ms": 1258.976,
+        "label": "vias refined",
+        "skipped_budget": false
+      },
+      "G3.5 equal length": {
+        "enabled": true,
+        "changes": 216,
+        "saved_mm": 0.0,
+        "elapsed_ms": 5353.742,
+        "label": "segments removed at equal length",
+        "skipped_budget": false
+      },
+      "G3.5 segments": {
+        "enabled": true,
+        "changes": 67,
+        "saved_mm": 0.0,
+        "elapsed_ms": 852.714,
+        "label": "collinear joints removed",
+        "skipped_budget": false
+      },
+      "G3 local": {
+        "enabled": true,
+        "changes": 37,
+        "saved_mm": 4.2922,
+        "elapsed_ms": 3391.546,
+        "label": "local reductions",
+        "skipped_budget": false
+      },
+      "G4": {
+        "enabled": false,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 0.0,
+        "label": "multi-net transformations",
+        "skipped_budget": false
+      },
+      "G3.6": {
+        "enabled": false,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 0.0,
+        "label": "doors centered",
+        "skipped_budget": false
+      },
+      "G5": {
+        "enabled": true,
+        "changes": 813,
+        "saved_mm": 0.0,
+        "elapsed_ms": 576.64,
+        "label": "final objects certified",
+        "skipped_budget": false
+      }
+    },
+    "log": [
+      "--board-edge-clearance not given; using 0.0mm [fixed default].",
+      "--hole-to-hole-clearance not given; using 0.25mm [board constraint].",
+      "Track Gloss G3: 90 nets improved, -69.7687 mm, 18145.3 ms",
+      "Track Gloss G3.1: 14 vias moved, -8.7962 mm, 1016.6 ms",
+      "Track Gloss G3.2: 3 pads optimized, -0.3734 mm, 2572.3 ms",
+      "Track Gloss G3.3: 6 T branches moved, -1.9309 mm, 967.5 ms",
+      "Track Gloss G3.3 non-collinear variant: 2 T junction(s) without a collinear rail, 1 90-degree bend(s) cleaned",
+      "Track Gloss G3.4: 3 vias refined, -3.8228 mm, 1259.0 ms",
+      "Track Gloss G3.5 equal length: 216 segments removed at equal length, 0.0000 mm, 5353.7 ms",
+      "Track Gloss G3.5 segments: 67 collinear joints removed, 0.0000 mm, 852.7 ms",
+      "Track Gloss G3 local: 37 local reductions, -4.2922 mm, 3391.5 ms",
+      "Track Gloss G5: 813 final objects certified, 0.0000 mm, 576.6 ms",
+      "Track Gloss final: 164 nets processed, 128 changed, -88.9842 mm, 39470.3 ms"
+    ],
+    "board": "tildagon_base",
+    "variant": "baseline",
+    "sha256": "d751d4b1aa20c047496b231f3f0bd5041d5e3c936fafa7fca779883d09777e91",
+    "identical_geometry": true,
+    "gain_percent": 0.0
+  },
+  {
+    "seconds": 27.272833000000446,
+    "load_seconds": 0.5336248999997224,
+    "modes": [
+      "early",
+      "pads",
+      "vias",
+      "references",
+      "views"
+    ],
+    "corridor": false,
+    "budget": 120.0,
+    "grid": 0.1,
+    "g4": false,
+    "nets": 164,
+    "saved_mm": 88.9842,
+    "g5": true,
+    "expired": false,
+    "geometry": "783eec3fa7cb2bef770be32769c6d799591f03712673c3f5482b27f7e4aef163",
+    "non_octolinear": 0,
+    "new_acute": 0,
+    "clearance_violations": 0,
+    "stages": {
+      "G3": {
+        "enabled": true,
+        "changes": 90,
+        "saved_mm": 69.7687,
+        "elapsed_ms": 11827.255,
+        "label": "nets improved",
+        "skipped_budget": false
+      },
+      "G3.1": {
+        "enabled": true,
+        "changes": 14,
+        "saved_mm": 8.7962,
+        "elapsed_ms": 785.046,
+        "label": "vias moved",
+        "skipped_budget": false
+      },
+      "G3.2": {
+        "enabled": true,
+        "changes": 3,
+        "saved_mm": 0.3734,
+        "elapsed_ms": 1406.568,
+        "label": "pads optimized",
+        "skipped_budget": false
+      },
+      "G3.3": {
+        "enabled": true,
+        "changes": 6,
+        "saved_mm": 1.9309,
+        "elapsed_ms": 791.268,
+        "label": "T branches moved",
+        "skipped_budget": false
+      },
+      "G3.4": {
+        "enabled": true,
+        "changes": 3,
+        "saved_mm": 3.8228,
+        "elapsed_ms": 777.72,
+        "label": "vias refined",
+        "skipped_budget": false
+      },
+      "G3.5 equal length": {
+        "enabled": true,
+        "changes": 216,
+        "saved_mm": 0.0,
+        "elapsed_ms": 3787.115,
+        "label": "segments removed at equal length",
+        "skipped_budget": false
+      },
+      "G3.5 segments": {
+        "enabled": true,
+        "changes": 67,
+        "saved_mm": 0.0,
+        "elapsed_ms": 842.469,
+        "label": "collinear joints removed",
+        "skipped_budget": false
+      },
+      "G3 local": {
+        "enabled": true,
+        "changes": 37,
+        "saved_mm": 4.2922,
+        "elapsed_ms": 3025.509,
+        "label": "local reductions",
+        "skipped_budget": false
+      },
+      "G4": {
+        "enabled": false,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 0.0,
+        "label": "multi-net transformations",
+        "skipped_budget": false
+      },
+      "G3.6": {
+        "enabled": false,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 0.0,
+        "label": "doors centered",
+        "skipped_budget": false
+      },
+      "G5": {
+        "enabled": true,
+        "changes": 813,
+        "saved_mm": 0.0,
+        "elapsed_ms": 519.868,
+        "label": "final objects certified",
+        "skipped_budget": false
+      }
+    },
+    "log": [
+      "--board-edge-clearance not given; using 0.0mm [fixed default].",
+      "--hole-to-hole-clearance not given; using 0.25mm [board constraint].",
+      "Track Gloss G3: 90 nets improved, -69.7687 mm, 11827.3 ms",
+      "Track Gloss G3.1: 14 vias moved, -8.7962 mm, 785.0 ms",
+      "Track Gloss G3.2: 3 pads optimized, -0.3734 mm, 1406.6 ms",
+      "Track Gloss G3.3: 6 T branches moved, -1.9309 mm, 791.3 ms",
+      "Track Gloss G3.3 non-collinear variant: 2 T junction(s) without a collinear rail, 1 90-degree bend(s) cleaned",
+      "Track Gloss G3.4: 3 vias refined, -3.8228 mm, 777.7 ms",
+      "Track Gloss G3.5 equal length: 216 segments removed at equal length, 0.0000 mm, 3787.1 ms",
+      "Track Gloss G3.5 segments: 67 collinear joints removed, 0.0000 mm, 842.5 ms",
+      "Track Gloss G3 local: 37 local reductions, -4.2922 mm, 3025.5 ms",
+      "Track Gloss G5: 813 final objects certified, 0.0000 mm, 519.9 ms",
+      "Track Gloss final: 164 nets processed, 128 changed, -88.9842 mm, 27257.3 ms"
+    ],
+    "board": "tildagon_base",
+    "variant": "combined",
+    "sha256": "d751d4b1aa20c047496b231f3f0bd5041d5e3c936fafa7fca779883d09777e91",
+    "identical_geometry": true,
+    "gain_percent": 30.932541927637537
+  },
+  {
+    "seconds": 26.360636500000055,
+    "load_seconds": 0.5329176000000189,
+    "modes": [
+      "early",
+      "pads",
+      "vias",
+      "references",
+      "views"
+    ],
+    "corridor": true,
+    "budget": 120.0,
+    "grid": 0.1,
+    "g4": false,
+    "nets": 164,
+    "saved_mm": 41.6603,
+    "g5": true,
+    "expired": false,
+    "geometry": "cbbe58abba673f0e132c1597606b96758816862e81da5692bdab9e77d2db2b8d",
+    "non_octolinear": 0,
+    "new_acute": 0,
+    "clearance_violations": 0,
+    "stages": {
+      "G3": {
+        "enabled": true,
+        "changes": 102,
+        "saved_mm": 27.2287,
+        "elapsed_ms": 8536.542,
+        "label": "nets improved",
+        "skipped_budget": false
+      },
+      "G3.1": {
+        "enabled": true,
+        "changes": 12,
+        "saved_mm": 7.6024,
+        "elapsed_ms": 2136.374,
+        "label": "vias moved",
+        "skipped_budget": false
+      },
+      "G3.2": {
+        "enabled": true,
+        "changes": 6,
+        "saved_mm": 0.9592,
+        "elapsed_ms": 3679.78,
+        "label": "pads optimized",
+        "skipped_budget": false
+      },
+      "G3.3": {
+        "enabled": true,
+        "changes": 6,
+        "saved_mm": 2.0009,
+        "elapsed_ms": 1090.177,
+        "label": "T branches moved",
+        "skipped_budget": false
+      },
+      "G3.4": {
+        "enabled": true,
+        "changes": 2,
+        "saved_mm": 2.3504,
+        "elapsed_ms": 1306.065,
+        "label": "vias refined",
+        "skipped_budget": false
+      },
+      "G3.5 equal length": {
+        "enabled": true,
+        "changes": 26,
+        "saved_mm": 0.0,
+        "elapsed_ms": 3039.153,
+        "label": "segments removed at equal length",
+        "skipped_budget": false
+      },
+      "G3.5 segments": {
+        "enabled": true,
+        "changes": 61,
+        "saved_mm": 0.0,
+        "elapsed_ms": 1064.381,
+        "label": "collinear joints removed",
+        "skipped_budget": false
+      },
+      "G3 local": {
+        "enabled": true,
+        "changes": 4,
+        "saved_mm": 1.5187,
+        "elapsed_ms": 1234.24,
+        "label": "local reductions",
+        "skipped_budget": false
+      },
+      "G4": {
+        "enabled": false,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 0.0,
+        "label": "multi-net transformations",
+        "skipped_budget": false
+      },
+      "G3.6": {
+        "enabled": false,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 0.0,
+        "label": "doors centered",
+        "skipped_budget": false
+      },
+      "G5": {
+        "enabled": true,
+        "changes": 545,
+        "saved_mm": 0.0,
+        "elapsed_ms": 527.951,
+        "label": "final objects certified",
+        "skipped_budget": false
+      }
+    },
+    "log": [
+      "--board-edge-clearance not given; using 0.0mm [fixed default].",
+      "--hole-to-hole-clearance not given; using 0.25mm [board constraint].",
+      "Track Gloss G3: 102 nets improved, -27.2287 mm, 8536.5 ms",
+      "Track Gloss G3.1: 12 vias moved, -7.6024 mm, 2136.4 ms",
+      "Track Gloss G3.2: 6 pads optimized, -0.9592 mm, 3679.8 ms",
+      "Track Gloss G3.3: 6 T branches moved, -2.0009 mm, 1090.2 ms",
+      "Track Gloss G3.3 non-collinear variant: 3 T junction(s) without a collinear rail, 1 90-degree bend(s) cleaned",
+      "Track Gloss G3.4: 2 vias refined, -2.3504 mm, 1306.1 ms",
+      "Track Gloss G3.5 equal length: 26 segments removed at equal length, 0.0000 mm, 3039.2 ms",
+      "Track Gloss G3.5 segments: 61 collinear joints removed, 0.0000 mm, 1064.4 ms",
+      "Track Gloss G3.5: merge proposals not applied (/GPIO/DET_F: non_octolinear)",
+      "Track Gloss G3 local: 4 local reductions, -1.5187 mm, 1234.2 ms",
+      "Track Gloss G5: 545 final objects certified, 0.0000 mm, 528.0 ms",
+      "Track Gloss final: 164 nets processed, 103 changed, -41.6603 mm, 26343.3 ms"
+    ],
+    "board": "tildagon_base",
+    "variant": "combined",
+    "sha256": "d751d4b1aa20c047496b231f3f0bd5041d5e3c936fafa7fca779883d09777e91",
+    "identical_geometry": true,
+    "gain_percent": 10.350098219706442
+  },
+  {
+    "seconds": 29.40397699999994,
+    "load_seconds": 0.6755289000002449,
+    "modes": [],
+    "corridor": true,
+    "budget": 120.0,
+    "grid": 0.1,
+    "g4": false,
+    "nets": 164,
+    "saved_mm": 41.6603,
+    "g5": true,
+    "expired": false,
+    "geometry": "cbbe58abba673f0e132c1597606b96758816862e81da5692bdab9e77d2db2b8d",
+    "non_octolinear": 0,
+    "new_acute": 0,
+    "clearance_violations": 0,
+    "stages": {
+      "G3": {
+        "enabled": true,
+        "changes": 102,
+        "saved_mm": 27.2287,
+        "elapsed_ms": 9380.999,
+        "label": "nets improved",
+        "skipped_budget": false
+      },
+      "G3.1": {
+        "enabled": true,
+        "changes": 12,
+        "saved_mm": 7.6024,
+        "elapsed_ms": 2398.018,
+        "label": "vias moved",
+        "skipped_budget": false
+      },
+      "G3.2": {
+        "enabled": true,
+        "changes": 6,
+        "saved_mm": 0.9592,
+        "elapsed_ms": 4440.449,
+        "label": "pads optimized",
+        "skipped_budget": false
+      },
+      "G3.3": {
+        "enabled": true,
+        "changes": 6,
+        "saved_mm": 2.0009,
+        "elapsed_ms": 1076.398,
+        "label": "T branches moved",
+        "skipped_budget": false
+      },
+      "G3.4": {
+        "enabled": true,
+        "changes": 2,
+        "saved_mm": 2.3504,
+        "elapsed_ms": 1512.462,
+        "label": "vias refined",
+        "skipped_budget": false
+      },
+      "G3.5 equal length": {
+        "enabled": true,
+        "changes": 26,
+        "saved_mm": 0.0,
+        "elapsed_ms": 3089.697,
+        "label": "segments removed at equal length",
+        "skipped_budget": false
+      },
+      "G3.5 segments": {
+        "enabled": true,
+        "changes": 61,
+        "saved_mm": 0.0,
+        "elapsed_ms": 1077.165,
+        "label": "collinear joints removed",
+        "skipped_budget": false
+      },
+      "G3 local": {
+        "enabled": true,
+        "changes": 4,
+        "saved_mm": 1.5187,
+        "elapsed_ms": 1472.153,
+        "label": "local reductions",
+        "skipped_budget": false
+      },
+      "G4": {
+        "enabled": false,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 0.0,
+        "label": "multi-net transformations",
+        "skipped_budget": false
+      },
+      "G3.6": {
+        "enabled": false,
+        "changes": 0,
+        "saved_mm": 0.0,
+        "elapsed_ms": 0.0,
+        "label": "doors centered",
+        "skipped_budget": false
+      },
+      "G5": {
+        "enabled": true,
+        "changes": 545,
+        "saved_mm": 0.0,
+        "elapsed_ms": 607.383,
+        "label": "final objects certified",
+        "skipped_budget": false
+      }
+    },
+    "log": [
+      "--board-edge-clearance not given; using 0.0mm [fixed default].",
+      "--hole-to-hole-clearance not given; using 0.25mm [board constraint].",
+      "Track Gloss G3: 102 nets improved, -27.2287 mm, 9381.0 ms",
+      "Track Gloss G3.1: 12 vias moved, -7.6024 mm, 2398.0 ms",
+      "Track Gloss G3.2: 6 pads optimized, -0.9592 mm, 4440.4 ms",
+      "Track Gloss G3.3: 6 T branches moved, -2.0009 mm, 1076.4 ms",
+      "Track Gloss G3.3 non-collinear variant: 3 T junction(s) without a collinear rail, 1 90-degree bend(s) cleaned",
+      "Track Gloss G3.4: 2 vias refined, -2.3504 mm, 1512.5 ms",
+      "Track Gloss G3.5 equal length: 26 segments removed at equal length, 0.0000 mm, 3089.7 ms",
+      "Track Gloss G3.5 segments: 61 collinear joints removed, 0.0000 mm, 1077.2 ms",
+      "Track Gloss G3.5: merge proposals not applied (/GPIO/DET_F: non_octolinear)",
+      "Track Gloss G3 local: 4 local reductions, -1.5187 mm, 1472.2 ms",
+      "Track Gloss G5: 545 final objects certified, 0.0000 mm, 607.4 ms",
+      "Track Gloss final: 164 nets processed, 103 changed, -41.6603 mm, 29384.9 ms"
+    ],
+    "board": "tildagon_base",
+    "variant": "baseline",
+    "sha256": "d751d4b1aa20c047496b231f3f0bd5041d5e3c936fafa7fca779883d09777e91",
+    "identical_geometry": true,
+    "gain_percent": 0.0
+  }
+]

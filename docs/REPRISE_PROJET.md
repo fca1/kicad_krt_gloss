@@ -1,5 +1,17 @@
 # Reprendre Smooth Gloss KRT
 
+Prototype performances Gloss non intégré : `tools/prototype_gloss_perf.py`,
+base f704f48, cinq variantes (rejets précoces, pads préparés, filtrage physique
+des obstacles de vias, références électriques conservées pour nets inchangés
+sans zone, vues par net). PACK0 sans G4 : géométries exactes identiques dans
+les 10 comparaisons, gains temporels cumulés mesurés 19,8 % sans corridor et
+8,7 % avec corridor ; mesures uniques, pas une garantie par variante.
+Voir le [rapport](reports/GLOSS_PERFORMANCE_PROTOTYPE_2026_09_09.md).
+ALERTE préexistante : le balayage d'un via peut manquer un croisement
+perpendiculaire précis via le prédicat KRT utilisé ; test adversarial xfail
+explicite, non corrigé par le prototype. Ne pas conclure à l'absence globale
+d'artefacts. KRT et le moteur de production ne sont pas modifiés ici.
+
 Frontière KiCad renforcée : l'extension EB n'accède plus aux pistes, UUID,
 sélections ou drapeaux de highlight directement, ni à `bridge._pcbnew()`.
 Elle utilise `branch_track_index`, `capture_branches` et `branch_highlighter`.
