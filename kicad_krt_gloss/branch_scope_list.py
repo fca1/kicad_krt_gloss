@@ -9,6 +9,8 @@ class BranchScopeList(dv.DataViewListCtrl):
                          style=dv.DV_MULTIPLE | dv.DV_ROW_LINES)
         self._scope_label = scope_label
         self._silent = False
+        self._scope_width = self.FromDIP(50)
+        self._resize_pending = False
         check_column = self.AppendToggleColumn('', width=self.FromDIP(32))
         check_column.SetMinWidth(self.FromDIP(24))
         check_column.SetWidth(self.FromDIP(32))
@@ -29,12 +31,29 @@ class BranchScopeList(dv.DataViewListCtrl):
         self.Bind(dv.EVT_DATAVIEW_SELECTION_CHANGED, preview)
         self.Bind(dv.EVT_DATAVIEW_ITEM_VALUE_CHANGED, checked)
         self.Bind(wx.EVT_SIZE, self._resize_columns)
+        self.Bind(wx.EVT_SHOW, self._resize_columns)
 
     def _resize_columns(self, event=None):
-        remaining = self.GetClientSize().width - self.GetColumn(0).GetWidth() - self.GetColumn(2).GetWidth()
-        self.GetColumn(1).SetWidth(max(self.FromDIP(100), remaining - self.FromDIP(4)))
+        self._apply_column_widths()
         if event is not None:
             event.Skip()
+            # Native layout can adjust columns after EVT_SIZE/EVT_SHOW.
+            # Reapply from the requested EB width, never its expanded width.
+            if not self._resize_pending:
+                self._resize_pending = True
+                wx.CallAfter(self._finish_column_resize)
+
+    def _finish_column_resize(self):
+        if not self:
+            return
+        self._resize_pending = False
+        self._apply_column_widths()
+
+    def _apply_column_widths(self):
+        remaining = self.GetClientSize().width - self.FromDIP(32) - self._scope_width
+        self.GetColumn(0).SetWidth(self.FromDIP(32))
+        self.GetColumn(1).SetWidth(max(self.FromDIP(100), remaining - self.FromDIP(4)))
+        self.GetColumn(2).SetWidth(self._scope_width)
 
     def Clear(self):
         self._silent = True
@@ -105,7 +124,7 @@ class BranchScopeList(dv.DataViewListCtrl):
             widest = max(widest, self.GetTextExtent(text).width)
             if self.GetTextValue(row, 2) != text:
                 self.SetTextValue(text, row, 2)
-        self.GetColumn(2).SetWidth(max(self.FromDIP(50), widest + self.FromDIP(12)))
+        self._scope_width = max(self.FromDIP(50), widest + self.FromDIP(12))
         self._resize_columns()
 
 

@@ -216,7 +216,7 @@ def activate(action_module, *, board_provider=None):
             def enlarge(sizer):
                 for child in sizer.GetChildren():
                     window = child.GetWindow()
-                    if window:
+                    if window in (self.grid_step, self.budget_seconds):
                         window.SetFont(self.centering_proximity_mm.GetFont())
                         window.InvalidateBestSize()
                         window.SetMinSize(window.GetBestSize())
@@ -225,7 +225,6 @@ def activate(action_module, *, board_provider=None):
 
             def find_calculation(sizer):
                 if isinstance(sizer, wx.StaticBoxSizer) and sizer.GetStaticBox().GetLabel() == 'Calculation Settings / Execution Limit':
-                    sizer.GetStaticBox().SetFont(self.centering_proximity_mm.GetFont().Bold())
                     enlarge(sizer)
                     rows = [item.GetSizer() for item in sizer.GetChildren()]
                     grid = wx.FlexGridSizer(cols=3, hgap=8, vgap=8)

@@ -1,5 +1,11 @@
 # Reprendre Smooth Gloss KRT
 
+UI, dernier correctif : seules les valeurs grid step/budget utilisent la police
+Proxi ; titre et libellés gardent la police normale. EB reçoit une largeur
+compacte indépendante de sa largeur native courante, appliquée après le layout
+via CallAfter (pas de timer). Fenêtre affichée sous Windows : Net 431 px,
+EB 54 px, minimum du dialogue 844 px, disposition gauche/droite conservée.
+
 Dernière correction ULPI2_DATA6 : validation des passages sur la chaîne finale
 complète, y compris le cuivre inchangé, distincte du sous-ensemble à remplacer.
 Portes déplacées et déjà centrées comptées séparément ; deltas nuls omis du log.

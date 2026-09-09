@@ -25,6 +25,7 @@ def main():
     parser.add_argument('board',type=Path)
     parser.add_argument('--action',choices=['gloss','centering'],default='centering')
     parser.add_argument('--scope',choices=['single','multiple','whole','eb-off','complete'],default='single')
+    parser.add_argument('--show-layout',action='store_true')
     args=parser.parse_args()
     fingerprint=hashlib.sha256(args.board.read_bytes()).hexdigest()
     board=pcbnew.LoadBoard(str(args.board.resolve()))
@@ -51,8 +52,15 @@ def main():
         reveal_calls.append((set(names),row))
         return row
     scope_list.reveal_first_changed=record_reveal
+    if args.show_layout:
+        dialog.Show()
+        wx.Yield()
     assert dialog.grid_step.GetFont().GetPointSize()==dialog.centering_proximity_mm.GetFont().GetPointSize()
     assert dialog.budget_seconds.GetFont().GetPointSize()==dialog.centering_proximity_mm.GetFont().GetPointSize()
+    for child in dialog._general_panel.GetChildren():
+        if isinstance(child,(wx.StaticText,wx.StaticBox)) and child.GetLabel() in (
+                'Calculation Settings / Execution Limit','KRT grid step (mm):','Time budget:','s'):
+            assert child.GetFont().GetPointSize()==dialog._general_panel.GetFont().GetPointSize()
     dialog.notebook.GetPage(0).Layout()
     assert dialog.grid_step.GetRect().GetRight()==dialog.budget_seconds.GetRect().GetRight()
     opening=dialog.GetSize()
@@ -61,6 +69,16 @@ def main():
     dialog.SetSize(minimum)
     dialog.Layout()
     dialog._on_general_size()
+    if args.show_layout:
+        wx.Yield()
+        item=scope_list.RowToItem(0)
+        scope_list.EnsureVisible(item)
+        wx.Yield()
+        eb_rect=scope_list.GetItemRect(item,scope_list.GetColumn(2))
+        net_rect=scope_list.GetItemRect(item,scope_list.GetColumn(1))
+        print('VISIBLE COLUMNS:',net_rect,eb_rect)
+        assert eb_rect.width <= scope_list.FromDIP(60)
+        assert net_rect.width > eb_rect.width
     assert dialog.GetSize().width==minimum.width
     assert dialog._general_columns.GetOrientation()==wx.HORIZONTAL
     assert dialog._selection_actions.GetOrientation()==wx.HORIZONTAL
