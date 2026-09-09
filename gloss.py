@@ -82,7 +82,7 @@ def build_parser():
     parser.add_argument("--no-noncollinear-t-rails", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--no-multipasses", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--stay-in-corridor", action="store_true",
-                        help=argparse.SUPPRESS)
+                        help="Keep Gloss movements within the admissible routing corridor")
     return parser
 
 

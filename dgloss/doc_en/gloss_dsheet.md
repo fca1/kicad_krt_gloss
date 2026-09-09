@@ -10,7 +10,8 @@ This guide explains how to use and observe Track Gloss. Requirements are in
 - Plugin version: `0.1.3`
 - Integrated stage: G5
 - Plugin scope: elementary branches seeded by selected straight tracks; other
-  selected objects choose complete nets; no selection means all routed nets
+  selected objects choose complete nets; an empty dialog selection means no
+  checked nets and disabled actions
 - Trigger: Gloss the current routing state, with no implicit KRT smooth
 - Default plugin budget: 20 seconds
 - Dedicated CLI: `gloss.py`
@@ -21,6 +22,9 @@ The CLI follows KRT conventions for net names and patterns, `--nets`,
 `--component`, `--group`, `--group-by`, `--group-scope`, and `--list-groups`.
 Without a selection it processes all routed nets. CLI selections always mean
 complete nets.
+Never expose an EB option in the CLI: this choice belongs to the dialog.
+The current CLI runs Gloss, not Centering, and exposes neither Proxi nor the
+dialog's G4 pass limit. `--stay-in-corridor` is available in public help.
 
 ```text
 python gloss.py input.kicad_pcb output.kicad_pcb --nets "/Cpu/*"
@@ -36,7 +40,7 @@ summary, `JSON_SUMMARY`, `JSON_SUMMARY_MIN`, and optionally a full JSON file.
 ## Plugin use
 
 The standalone plugin applies Track Gloss to the current routing state; it
-does not run `smooth_octolinear_chains()`. The General tab groups these visible
+does not run `smooth_octolinear_chains()`. General and Gloss group these visible
 options:
 
 | Option | Effect |
@@ -45,16 +49,20 @@ options:
 | `KRT grid step (mm)` | Sets KRT resolution and the minimum useful gain |
 | `Time budget` | 10–240 second optimization budget, in 10-second increments |
 | `Movable vias` | Allows movement of eligible mobile vias |
+| `Stay in corridor` | Enforces the admissible corridor for Gloss; always enforced for the preparation before Centering |
 | `G4 — Repeat Gloss until stable` | Enables additional G4 passes |
 | `G4 passes` | Limits additional G4 passes from 1 to 10 |
 
 G3.2, G3.3 with its non-collinear variant, G3.4 and G5 are not public choices
-and remain enabled. Corridor is experimental and is not exposed by the UI or
-public CLI help.
+and remain enabled. Corridor is exposed in Gloss and public CLI help.
 
-Centering selection is separate: it has a modifiable-net list, component filter
-and Proxi. Clicking a net row previews it through KiCad highlighting; checking
-it defines action scope. The action then runs its required corridor Gloss
+General contains the shared Gloss/Centering net list and component filters;
+Proxi stays in Centering. With EB enabled, Add unions imported KiCad branches,
+Replace replaces remembered scope, and Clear unchecks all nets. Partial scope
+shows `n EB`; whole-net scope is blank. Without remembered branches the net is
+whole. Complete coverage becomes whole-net scope; stale references require
+reimporting. Clicking previews remembered scope; checking defines action scope.
+Centering then runs its required corridor Gloss
 preparation and Centering atomically.
 
 A selected straight track is a seed. G0 finds its maximal elementary branch
@@ -65,12 +73,13 @@ track retains complete-net behavior.
 
 The dialog opens when zero or several nets are selected. With exactly one net,
 processing starts immediately with the remembered settings; initial settings
-use BEs. A read-only label shows the selected-net count, or `ALL` without a
+use BEs. A read-only label shows the checked-net count, zero without a
 selection. These are plugin-only choices: the CLI always selects complete nets.
 
 The plugin budget defaults to 20 seconds and can be set from 10 to 240 seconds
 in 10-second increments. It cooperatively limits dgloss searches, not total
-runtime including certification and KiCad application.
+runtime including certification and KiCad application. G4 may continue after
+the initial budget expires.
 
 ## Python library use
 

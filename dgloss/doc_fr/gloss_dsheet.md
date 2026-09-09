@@ -10,8 +10,8 @@ défini dans [`gloss_rules.md`](gloss_rules.md) et sa réalisation dans
 - Version du plugin : `0.1.3`
 - Étape intégrée : G5
 - Portée plugin : branches élémentaires des pistes droites sélectionnées ; les
-  autres objets sélectionnent des nets complets ; sans sélection, tous les
-  nets routés
+  autres objets sélectionnent des nets complets ; dialogue sans sélection :
+  aucun net coché, actions désactivées
 - Déclenchement : Gloss du routage courant, sans smooth KRT implicite
 - Budget plugin par défaut : 20 secondes
 - CLI dédié : `gloss.py`
@@ -22,6 +22,9 @@ Le CLI reprend les conventions KRT : noms et motifs de nets, `--nets`,
 `--component`, `--group`, `--group-by`, `--group-scope` et `--list-groups`.
 Sans sélection, tous les nets routés sont traités. Une sélection désigne
 toujours des nets complets.
+Ne jamais exposer d'option EB dans le CLI : ce choix est réservé au dialogue.
+Le CLI actuel exécute Gloss, pas Centering, et n'expose pas Proxi ni la limite
+de passes G4 du dialogue. `--stay-in-corridor` est disponible dans l'aide.
 
 ```text
 python gloss.py input.kicad_pcb output.kicad_pcb --nets "/Cpu/*"
@@ -38,7 +41,7 @@ avec `--json-out`, le bilan JSON complet dans un fichier.
 ## Emploi depuis le plugin
 
 Le plugin autonome applique Track Gloss au routage courant ; il ne lance pas
-`smooth_octolinear_chains()`. L'onglet General regroupe les choix visibles
+`smooth_octolinear_chains()`. Les onglets General et Gloss regroupent les choix visibles
 suivants :
 
 | Option | Effet |
@@ -47,16 +50,21 @@ suivants :
 | `KRT grid step (mm)` | Définit la résolution KRT et le gain minimal utile |
 | `Time budget` | Budget d'optimisation de 10 à 240 secondes, par pas de 10 |
 | `Movable vias` | Autorise le déplacement des vias mobiles éligibles |
+| `Stay in corridor` | Impose le corridor admissible au Gloss ; toujours imposé pour son étape préparatoire au Centering |
 | `G4 — Repeat Gloss until stable` | Active les passes supplémentaires G4 |
 | `G4 passes` | Limite les passes supplémentaires G4 de 1 à 10 |
 
 G3.2, G3.3 avec sa variante non colinéaire, G3.4 et G5 ne sont pas présentés
-comme des choix et restent actifs. Le Corridor est expérimental et n'est pas
-exposé par l'interface ni l'aide CLI publique.
+comme des choix et restent actifs. Le corridor est exposé dans Gloss et dans
+l'aide CLI publique.
 
-La sélection Centering est distincte : elle contient une liste de nets
-modifiables, un filtre par composant et Proxi. Un clic sur une ligne prévisualise
-le net par surlignage dans KiCad ; la coche définit la portée de l'action.
+General contient la liste commune à Gloss et Centering et les filtres par
+composant. Proxi reste dans Centering. Avec EB activé, Add cumule les branches
+importées depuis KiCad, Replace remplace la portée mémorisée, Clear vide les
+coches. Une portée partielle affiche `n EB` ; un net entier laisse la colonne
+vide. Sans branches mémorisées, le net est entier. Une couverture complète
+devient un net entier ; des références périmées nécessitent une réimportation.
+Un clic prévisualise la portée mémorisée ; la coche définit la portée de l'action.
 L'action exécute alors le Gloss préparatoire imposé dans le corridor, puis
 Centering atomiquement.
 
@@ -70,13 +78,14 @@ conserve la sélection historique du net complet.
 La boîte s'affiche si zéro net ou plusieurs nets sont sélectionnés. Avec un
 seul net sélectionné, le traitement démarre immédiatement avec les derniers
 réglages mémorisés ; le réglage initial utilise les BE. La boîte affiche en
-lecture seule le nombre de nets sélectionnés, ou `ALL` sans sélection. Ces
+lecture seule le nombre de nets cochés, zéro sans sélection. Ces
 options sont propres au plugin : le CLI continue toujours à désigner des nets
 complets.
 
 Le budget du plugin vaut 20 secondes par défaut et se règle de 10 à 240
 secondes, par pas de 10. Il limite coopérativement les recherches dgloss, pas le
-temps total comprenant la certification et l'application dans KiCad.
+temps total comprenant la certification et l'application dans KiCad. G4 peut
+continuer après expiration du budget initial.
 
 ## Emploi comme bibliothèque Python
 

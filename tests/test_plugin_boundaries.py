@@ -721,8 +721,16 @@ def test_cli_exposes_optional_auto_or_explicit_debug_layer():
     assert '"--debug-layer"' in source
     assert 'choices=("auto",)' in source
     assert 'write_cli_debug_overlay(' in source
-    assert ('"--stay-in-corridor", action="store_true",\n'
-            '                        help=argparse.SUPPRESS') in source
+
+
+def test_cli_public_corridor_and_whole_net_only_contract():
+    import gloss
+    parser = gloss.build_parser()
+    assert '--stay-in-corridor' in parser.format_help()
+    assert parser.parse_args(['input.kicad_pcb', '--stay-in-corridor']).stay_in_corridor
+    options = {option for action in parser._actions for option in action.option_strings}
+    assert not any('branch' in option or 'seed' in option or option.lower() == '--eb'
+                   for option in options)
 
 
 def test_plugin_renders_the_complete_final_delta_once():

@@ -1,5 +1,14 @@
 # Reprendre Smooth Gloss KRT
 
+Contrat CLI : nets entiers exclusivement. Ne jamais exposer d'option EB,
+branches ou graines dans le CLI (décision utilisateur). Cette absence n'est
+pas une fonctionnalité manquante. Le CLI courant exécute Gloss seulement,
+sans Centering/Proxi ni réglage public du nombre de passes G4.
+`--stay-in-corridor`, déjà implémenté, figure maintenant dans l'aide publique.
+README et fiches d'emploi FR/EN corrigés : sélection vide du dialogue,
+liste commune, mémoire EB, corridor et limites du budget. Les rapports
+historiques ne décrivent pas nécessairement l'état actuel.
+
 Dernier ajustement netlist : panneau gauche compacté dans son ensemble (texte
 d'aide sur deux lignes, boutons Add/Replace/Clear ajustés à leurs libellés).
 La liste remplit toute la largeur de son conteneur : ne pas lui imposer
@@ -208,7 +217,7 @@ Le dialogue de réglages est non modal et
 se ferme avec son éditeur PCB : l'éditeur reste utilisable pour sélectionner
 des pistes. La liste commune est située dans General. Ses boutons d'import
 ajoutent ou remplacent les coches par les nets des pistes actuellement
-sélectionnées ; « Clear selection » vide les coches. Elles pilotent aussi la
+sélectionnées ; « Clear » vide les coches. Elles pilotent aussi la
 surbrillance native des nets sur le PCB, sans modifier la sélection des objets.
 La fermeture du dialogue retire cette surbrillance. La sélection visuelle des
 lignes de liste est annulée à son ouverture.
