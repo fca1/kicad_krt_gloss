@@ -84,7 +84,8 @@ def test_finite_passages_keep_a_straight_route_under_rotation(angle):
     pcb = SimpleNamespace(segments=segments, vias=[], pads_by_net={})
     context = SimpleNamespace(pcb_data=pcb, coord=SimpleNamespace(grid_step=.1),
         segments_editable=lambda items: True,
-        clearance_adapter=SimpleNamespace(connector_clears=lambda items: True))
+        clearance_adapter=SimpleNamespace(connector_clears=lambda items: True,
+                                          segment_clears=lambda item: True))
     candidate = build_protected_path(context, doors)
     assert candidate is not None
     assert candidate.after_length == pytest.approx(20)

@@ -27,6 +27,14 @@ Ces régressions concernent les supports collinéaires refusés par le construct
 validé sur `/A`. Elles sont conservées visibles, sans adaptation des attentes.
 Ne pas annoncer une validation générale du Centering.
 
+Prototype suivant : tag `before_colli` sur `f56597f`, correctif isolé dans
+`tools/prototype_collinear_supports.py`. Les 3 tests collinéaires passent avec
+ce correctif (37 tests ciblés réussis), `/A` reste identique. La campagne PACK0
+est partielle : budgets Centering expirés sur trois cartes, blocage d'import
+natif azukar et comparaison CLI sur les deux grosses cartes. Voir le
+[rapport collinéaire](reports/COLLINEAR_SUPPORT_PROTOTYPE_2026_09_09.md).
+Ce correctif n'est pas activé dans la production ni dans le ZIP validé.
+
 1. [AGENTS.md](../AGENTS.md) : règles de collaboration et autorisations.
 2. Ce guide : état actuel et pièges à connaître.
 3. [gloss_rules.md](../dgloss/doc_fr/gloss_rules.md) : spécification fonctionnelle
