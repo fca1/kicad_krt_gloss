@@ -420,7 +420,7 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                               "the detected gate(s); geometry was not tested.")
                     else:
                         labels = {
-                            "construction": "geometry", "passage": "passage",
+                            "construction": "construction (see detailed rejection)", "passage": "passage",
                             "scope": "scope", "unchanged": "unchanged geometry",
                             "grid": "grid", "clearance": "clearance",
                             "same_net": "same-net contact",
@@ -432,13 +432,15 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                         if details:
                             print("Centering diagnosis: no valid candidate (" +
                                   ", ".join(details) + ").")
-                print("Length delta: "
-                      f"{stats.get('centering_length_delta_mm', 0.0):+.4f} mm")
-                print("Corridor cleanup saved: "
-                      f"{stats.get('cleanup_saved_mm', 0.0):.4f} mm")
-                print("Final length delta: "
-                      f"{stats.get('after_mm', 0.0) - stats.get('before_mm', 0.0):+.4f} mm")
-                print(f"Tracks replaced: {removed} -> {added}")
+                if stats.get('centering_length_delta_mm', 0.0):
+                    print(f"Length delta: {stats['centering_length_delta_mm']:+.4f} mm")
+                if stats.get('cleanup_saved_mm', 0.0):
+                    print(f"Corridor cleanup saved: {stats['cleanup_saved_mm']:.4f} mm")
+                final_delta = stats.get('after_mm', 0.0) - stats.get('before_mm', 0.0)
+                if final_delta:
+                    print(f"Final length delta: {final_delta:+.4f} mm")
+                if removed or added:
+                    print(f"Tracks replaced: {removed} -> {added}")
                 if stats.get("atomic_rollback"):
                     print("G5 valid: not run (input preserved)")
                 else:

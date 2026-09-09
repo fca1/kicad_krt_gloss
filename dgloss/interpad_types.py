@@ -39,3 +39,4 @@ class InterpadCandidate:
     translation: tuple
     before_length: float
     after_length: float
+    passage_segments: tuple = ()  # Complete final chain, including unchanged copper.

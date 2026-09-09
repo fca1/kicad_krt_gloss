@@ -62,8 +62,8 @@ def main():
     dialog.Layout()
     dialog._on_general_size()
     assert dialog.GetSize().width==minimum.width
-    assert dialog._general_columns.GetOrientation()==wx.VERTICAL
-    assert dialog._selection_actions.GetOrientation()==wx.VERTICAL
+    assert dialog._general_columns.GetOrientation()==wx.HORIZONTAL
+    assert dialog._selection_actions.GetOrientation()==wx.HORIZONTAL
     for control in (dialog.grid_step,dialog.budget_seconds,
                     dialog.controls['selection_uses_elementary_branches'],
                     dialog._scope_illustration):
@@ -186,7 +186,7 @@ def main():
     before_ids={t.m_Uuid.AsString() for t in board.GetTracks()}
     if args.action=='centering':
         result=plugin._run_centering(board,dialog,dialog.values(),['/A'],prepared=ready,append_log=dialog.append_log)
-        assert result and result['doors_centered']==3
+        assert result and result['doors_centered']+result.get('doors_already_centered',0)==3
     else:
         result=plugin._run_gloss(board,dialog,dialog.values(),chosen,prepared=ready,append_log=dialog.append_log,show_progress=False)
         assert result

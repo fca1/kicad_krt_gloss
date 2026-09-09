@@ -1,5 +1,9 @@
 # Reprendre Smooth Gloss KRT
 
+Dernière correction ULPI2_DATA6 : validation des passages sur la chaîne finale
+complète, y compris le cuivre inchangé, distincte du sous-ensemble à remplacer.
+Portes déplacées et déjà centrées comptées séparément ; deltas nuls omis du log.
+
 État documenté le 8 septembre 2026, refonte `c06a965` puis revue corridor à partir
 de `cc758f9` sur `main`,
 version du package 0.1.3. Ce guide permet de comprendre les décisions avant
@@ -61,10 +65,11 @@ Après Add/Replace, une couverture exacte de toutes les pistes non graphiques
 du net, avec références et topologie vérifiées, devient un net entier : mémoire
 EB retirée et colonne vide. Références manquantes/périmées : aucune promotion.
 Les deux champs Calculation Settings partagent désormais le même bord droit.
-Le dialogue ne fige plus sa taille d'ouverture comme minimum. General devient
-défilable verticalement et passe en une colonne quand les deux ne tiennent pas.
+Le dialogue ne fige plus sa taille d'ouverture comme minimum. General conserve
+deux colonnes : netlist à gauche, illustration/EB/calcul à droite, imports sous
+la liste. Le basculement vertical de 648e4e6 est retiré après retour utilisateur.
 Le résumé EB ne participe plus à une largeur minimale liée aux noms de nets.
-Test natif Windows : largeur 960 → 536 → 1037 → 536 pixels, commandes vérifiées,
+Test natif Windows : largeur 1033 → 953 → 1037 → 953 pixels, commandes vérifiées,
 polices inchangées. Pas de qualification graphique Linux/macOS.
 
 1. [AGENTS.md](../AGENTS.md) : règles de collaboration et autorisations.

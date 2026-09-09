@@ -86,7 +86,8 @@ def build_candidate(context, doors, deadline=None, *, audit):
     source = tuple(chain.segments[first:last])
     replacement = tuple(segments[first:last])
     candidate = InterpadCandidate(source, replacement, (0., 0.),
-                                 calculate_route_length(source), calculate_route_length(replacement))
+                                 calculate_route_length(source), calculate_route_length(replacement),
+                                 passage_segments=tuple(segments))
     record = {'before': list(chain.points), 'after': points, 'doors': len(doors),
               'length_delta': candidate.after_length-candidate.before_length,
               'replacement_range': [first, last]}

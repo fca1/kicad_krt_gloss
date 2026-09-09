@@ -31,3 +31,16 @@ sous rotations 0°, 45°, 90°, 180°. Vérifie détection unique, regroupement,
 construction, G5 et position finale sur l'axe. Les tests existants de transactions,
 portes multiples, supports collinéaires, sélection EB et frontières plugin passent.
 Cette validation ciblée n'est pas une campagne PACK0 ni un DRC KiCad complet.
+
+## ULPI2_DATA6 : cuivre inchangé omis du contrôle
+
+Même carte et empreinte : AB6–AB5 à déplacer de 0.074999 mm ; U18.17–19 déjà
+centrée. Le quatrième segment, inchangé et exclu du remplacement, manquait à la
+validation des deux portes. `passage_segments` conserve maintenant la chaîne
+finale complète pour ce contrôle sans élargir le remplacement ni désactiver KRT.
+Rejeu sans sauvegarde : ULPI1_DATA4, 1 déplacée, +0.0613 mm, G5 vrai ;
+ULPI2_DATA6, 1 déplacée et 1 déjà centrée, +0.0621 mm, G5 vrai, offsets [0,0].
+Régression pipeline sous quatre rotations avec passage sur segment inchangé.
+Même go : restauration de la disposition gauche/droite, réduction 1033 → 953
+pixels, omission des lignes nulles du résultat Centering et résumé des refus
+de construction renvoyant au diagnostic détaillé, plutôt que « geometry ».

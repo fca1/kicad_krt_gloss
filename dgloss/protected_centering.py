@@ -83,5 +83,8 @@ def build_protected_path(context, doors, deadline=None):
 
 def certify_passages(candidate, doors):
     """Check the centered crossing and regulatory approach clearances."""
+    from dataclasses import replace
+    if candidate.passage_segments:
+        candidate = replace(candidate, segments=candidate.passage_segments)
     constraints = passage_constraints(candidate, doors)
     return constraints is not None and respects_passages(candidate.segments, constraints)

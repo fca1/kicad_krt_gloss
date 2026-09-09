@@ -260,16 +260,16 @@ class GlossSettingsDialog(wx.Dialog):
         self.Bind(wx.EVT_SHOW, self._on_initial_show)
 
     def _configure_dialog_size(self):
-        """Separate opening size from the minimum usable single-column layout."""
+        """Separate opening size from the minimum usable two-column layout."""
         self._selection_actions.SetOrientation(wx.HORIZONTAL)
         self._wide_general_min = (self._general_left_column.CalcMin().width +
                                   self._general_right_column.CalcMin().width + self.FromDIP(32))
-        minimum_width = max(self.FromDIP(520), self._general_right_column.CalcMin().width + self.FromDIP(48))
+        minimum_width = self._wide_general_min
         self.notebook.SetMinSize((minimum_width, self.FromDIP(460)))
         minimum = self.GetSizer().CalcMin()
         minimum = self.ClientToWindowSize(minimum)
         self.SetMinSize(minimum)
-        opening = wx.Size(max(minimum.width, self.FromDIP(960)),
+        opening = wx.Size(max(minimum.width + self.FromDIP(80), self.FromDIP(960)),
                           max(minimum.height, self.FromDIP(700)))
         self.SetSize(opening)
         self.Layout()
@@ -283,13 +283,9 @@ class GlossSettingsDialog(wx.Dialog):
         self._laying_out_general = True
         try:
             panel = self._general_panel
-            width = panel.GetClientSize().width
-            # Two columns only when both fit. Below that, keep every control
-            # reachable by vertical scrolling, without reducing its font.
-            threshold = self._wide_general_min
-            narrow = width < threshold
-            self._general_columns.SetOrientation(wx.VERTICAL if narrow else wx.HORIZONTAL)
-            self._selection_actions.SetOrientation(wx.VERTICAL if narrow else wx.HORIZONTAL)
+            # Preserve the original left netlist / right settings arrangement.
+            self._general_columns.SetOrientation(wx.HORIZONTAL)
+            self._selection_actions.SetOrientation(wx.HORIZONTAL)
             panel.Layout()
             panel.FitInside()
         finally:

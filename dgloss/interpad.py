@@ -336,7 +336,8 @@ def center_interpad_routes(context, results, deadline=None, *, net_ids,
                 {"old": segment, "stage": "G3.6"} for segment in removed)
             changes.segments.extend(
                 {"new": segment, "stage": "G3.6"} for segment in built)
-            changes.doors.extend(selected_doors)
+            changes.doors.extend(d for d in selected_doors if abs(d.offset) > 1e-7)
+            doors_already_centered += sum(abs(d.offset) <= 1e-7 for d in selected_doors)
             added_segments.extend(built)
             length_delta += candidate.after_length - candidate.before_length
             branches_centered += 1
