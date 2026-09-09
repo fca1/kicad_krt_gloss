@@ -87,7 +87,7 @@ def test_plugin_run_accepts_two_item_preparation_for_multiple_selected_nets():
                 self.on_gloss = kwargs["on_gloss"]
                 self.on_centering = kwargs["on_centering"]
                 assert set(kwargs['preselected_centering_nets']) == (
-                    {f'N{i}' for i in net_ids} if net_ids else {'N1', 'N2', 'N3'})
+                    {f'N{i}' for i in net_ids})
 
             def Bind(self, *_args): pass
             def Show(self):

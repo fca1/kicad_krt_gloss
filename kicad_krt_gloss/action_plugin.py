@@ -63,8 +63,6 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
             preselected_names = {
                 prepared[0].nets[net_id].name for net_id in net_ids
                 if net_id in prepared[0].nets}
-            if not net_ids:
-                preselected_names = {name for name, _ in centering_nets}
 
             def run_from_dialog(new_values, selected_names, append_log):
                 self.__class__._settings = dict(new_values)

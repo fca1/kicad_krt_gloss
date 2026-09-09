@@ -162,15 +162,21 @@ l'intégration du constructeur par supports validé le 9 septembre.
 autre objet, le plugin mesure leur entraxe centre-à-centre. Si cet entraxe est
 dans la plage Proxi admise (0 à 5 mm), le dialogue s'ouvre sur Centering et
 préremplit Proxi avec cette valeur. Les deux pads ne désignent pas les nets à
-traiter : la netlist suit la règle commune ci-dessous (tous les nets admissibles
-cochés en l'absence de pistes présélectionnées).
+traiter : la netlist suit la règle commune ci-dessous (aucun net coché
+en l'absence de pistes présélectionnées).
 
 **Sélection commune dans KiCad.** Un seul net désigné par les pistes natives
 sélectionnées lance toujours le Gloss direct, sans dialogue. Si le dialogue
-s'ouvre, ses coches pilotent Gloss et Centering. Sans net présélectionné, tous
-les nets admissibles sont cochés ; avec plusieurs nets présélectionnés, seuls
+s'ouvre, ses coches pilotent Gloss et Centering. Sans net présélectionné, aucun
+net n'est coché ; avec plusieurs nets présélectionnés, seuls
 ceux-ci sont cochés. Le compteur reflète les coches et une liste vide interdit
 les deux actions, sans repli implicite sur tous les nets.
+
+Tag de référence avant ce changement : `before_none` sur `caaad2b`.
+Après Add/Replace, la liste révèle la première ligne visible modifiée dans son
+ordre courant, changement de coche ou de branches mémorisées. Les filtres et
+la sélection des lignes restent inchangés ; un ajout en doublon ne défile pas.
+Si toutes les lignes modifiées sont filtrées, aucun défilement n'est imposé.
 
 Le dialogue de réglages est non modal et
 se ferme avec son éditeur PCB : l'éditeur reste utilisable pour sélectionner

@@ -90,6 +90,14 @@ class BranchScopeList(dv.DataViewListCtrl):
     def SetFirstItem(self, row):
         self.EnsureVisible(self.RowToItem(row))
 
+    def reveal_first_changed(self, names):
+        """Reveal the topmost changed visible row, without selecting/checking it."""
+        for row in range(self.GetCount()):
+            if self.GetString(row) in names:
+                self.EnsureVisible(self.RowToItem(row))
+                return row
+        return wx.NOT_FOUND
+
     def refresh_scope(self):
         widest = self.GetTextExtent('EB').width
         for row in range(self.GetCount()):

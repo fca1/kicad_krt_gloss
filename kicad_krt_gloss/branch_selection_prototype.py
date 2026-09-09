@@ -302,6 +302,11 @@ def activate(action_module, *, board_provider=None):
 
         def _capture_branches(self, *, add, update_checks=True):
             try:
+                def state():
+                    checked = set(self.centering_net_panel.get_selected_nets())
+                    return {name: (name in checked, frozenset(self._branch_memory.by_net.get(name, ())))
+                            for name in checked | self._branch_memory.by_net.keys()}
+                before = state()
                 data = bridge.build_pcb_data(self._branch_board)
                 allowed = {name for name, _ in plugin._modifiable_net_rows(self._branch_board, data)}
                 if self._eb_enabled():
@@ -320,6 +325,12 @@ def activate(action_module, *, board_provider=None):
                     self.centering_net_panel.set_selected_nets(names)
                     self._clear_centering_highlight()
                 self._sync_net_selection()
+                if update_checks:
+                    after = state()
+                    empty = (False, frozenset())
+                    changed = {name for name in before.keys() | after.keys()
+                               if before.get(name, empty) != after.get(name, empty)}
+                    self.centering_net_panel.net_list.reveal_first_changed(changed)
             except StaleBranches as exc:
                 self.centering_status.SetLabel(str(exc))
 

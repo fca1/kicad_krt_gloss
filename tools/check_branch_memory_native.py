@@ -40,7 +40,17 @@ def main():
     net=next(n for name,n in rows if name=='/A')
     for track in board.GetTracks():track.ClearSelected()
     dialog=action.GlossSettingsDialog(None,dict(action.DEFAULTS,centering_proximity_mm=2.54),0,
-        pcb_data=data,centering_nets=rows,preselected_centering_nets=['/A'])
+        pcb_data=data,centering_nets=rows,preselected_centering_nets=[])
+    assert dialog.centering_net_panel.get_selected_nets()==[]
+    assert not dialog.gloss_button.IsEnabled() and not dialog.centering_button.IsEnabled()
+    reveal_calls=[]
+    scope_list=dialog.centering_net_panel.net_list
+    reveal=scope_list.reveal_first_changed
+    def record_reveal(names):
+        row=reveal(names)
+        reveal_calls.append((set(names),row))
+        return row
+    scope_list.reveal_first_changed=record_reveal
     assert dialog.grid_step.GetFont().GetPointSize()==dialog.centering_proximity_mm.GetFont().GetPointSize()
     assert dialog.budget_seconds.GetFont().GetPointSize()==dialog.centering_proximity_mm.GetFont().GetPointSize()
     dialog.notebook.GetPage(0).Layout()
@@ -100,9 +110,12 @@ def main():
     select([groups[branches[0]]])
     dialog._on_import_centering(False)
     assert len(dialog._branch_memory.by_net['/A'])==1
+    assert reveal_calls[-1]==({'/A'},scope_list.FindString('/A'))
     select([groups[branches[1]]])
     dialog._on_import_centering(True)
+    assert reveal_calls[-1]==({'/A'},scope_list.FindString('/A'))
     dialog._on_import_centering(True)
+    assert reveal_calls[-1]==(set(),wx.NOT_FOUND)  # Duplicate Add must not scroll.
     assert len(dialog._branch_memory.by_net['/A'])==2
     listing=dialog.centering_net_panel.net_list
     assert listing.GetTextValue(listing.FindString('/A'),2)=='2 EB'
