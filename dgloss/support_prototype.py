@@ -3,41 +3,57 @@ import math
 from time import perf_counter
 
 def solve_supports(points, constraints):
-    """Intersect original oriented supports, replacing constrained line positions.
-
-    constraints contains (segment index, point on required support). There are
-    no passage lengths, search bands or preferred horizontal/vertical axes.
-    """
     from dgloss.interpad_geometry import _native_direction, _line_intersection
     directions = [_native_direction(a, b) for a, b in zip(points, points[1:])]
-    if not all(directions):
+    if not directions or not all(directions):
         return None
-    origins = list(points[:-1])
+    groups = []
+    membership = []
+    for i, direction in enumerate(directions):
+        if not i or direction != directions[i-1]:
+            groups.append([i])
+        else:
+            # Only consecutive, equally oriented supports can be shared.
+            groups[-1].append(i)
+        membership.append(len(groups)-1)
+    origins = [points[group[0]] for group in groups]
     assigned = {}
+    def cross(a, b):
+        return a[0]*b[1]-a[1]*b[0]
+    def delta(a, b):
+        return a[0]-b[0], a[1]-b[1]
     for index, axis in constraints:
+        group = membership[index]
         direction = directions[index]
-        if index in assigned:
-            delta = tuple(axis[k] - assigned[index][k] for k in (0, 1))
-            if abs(delta[0]*direction[1] - delta[1]*direction[0]) > 1e-7:
+        if group in assigned and abs(cross(delta(axis, assigned[group]), direction)) > 1e-7:
+            return None
+        assigned[group] = axis
+        origins[group] = axis
+    for i, anchor in ((0, points[0]), (len(directions)-1, points[-1])):
+        if abs(cross(delta(anchor, origins[membership[i]]), directions[i])) > 1e-7:
+            return None
+    result = [points[0]]
+    for i in range(1, len(directions)):
+        left, right = membership[i-1], membership[i]
+        if left == right:
+            # Orthogonal projection preserves the original longitudinal joint;
+            # no arbitrary split ratio, fusion or new connection is introduced.
+            u = directions[i]
+            normal = (-u[1], u[0])
+            distance = sum(x*y for x, y in zip(delta(origins[right], points[i]), normal))
+            scale = distance / sum(x*x for x in normal)
+            joint = tuple(points[i][k]+scale*normal[k] for k in (0, 1))
+        else:
+            joint = _line_intersection(origins[left], directions[i-1], origins[right], directions[i])
+            if joint is None:
                 return None
-        assigned[index] = axis
-        origins[index] = axis
-    for index, anchor in ((0, points[0]), (len(directions)-1, points[-1])):
-        delta = tuple(anchor[k]-origins[index][k] for k in (0, 1))
-        if abs(delta[0]*directions[index][1]-delta[1]*directions[index][0]) > 1e-7:
+        result.append(joint)
+    result.append(points[-1])
+    for a, b, direction in zip(result, result[1:], directions):
+        if sum(x*y for x, y in zip(delta(b, a), direction)) <= 1e-7:
             return None
-    built = [points[0]]
-    for index in range(1, len(directions)):
-        joint = _line_intersection(origins[index-1], directions[index-1],
-                                   origins[index], directions[index])
-        if joint is None:
-            return None  # Parallel supports need a separate, explicit policy.
-        built.append(joint)
-    built.append(points[-1])
-    for a, b, direction in zip(built, built[1:], directions):
-        if sum((b[k]-a[k])*direction[k] for k in (0, 1)) <= 1e-7:
-            return None
-    return built
+    return result
+
 
 
 def build_candidate(context, doors, deadline=None, *, audit):
@@ -99,4 +115,3 @@ def build_candidate(context, doors, deadline=None, *, audit):
         current[index] = points[index]
     record['foreign_obstacle_sweep'] = True
     return candidate
-

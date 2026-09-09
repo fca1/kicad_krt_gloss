@@ -33,7 +33,13 @@ ce correctif (37 tests ciblés réussis), `/A` reste identique. La campagne PACK
 est partielle : budgets Centering expirés sur trois cartes, blocage d'import
 natif azukar et comparaison CLI sur les deux grosses cartes. Voir le
 [rapport collinéaire](reports/COLLINEAR_SUPPORT_PROTOTYPE_2026_09_09.md).
-Ce correctif n'est pas activé dans la production ni dans le ZIP validé.
+À la demande utilisateur suivante, le constructeur du ZIP collinéaire
+`dist/test-colli-7628191/KiCadKrtGloss-0.1.3-prototype-colli.zip`
+(SHA256 `41af5552f7e25c0c884b168cde71ca2895148f32e776592d97ad561ddc5a3764`)
+est intégré à l'identique dans `dgloss/support_prototype.py`.
+Les supports collinéaires compatibles sont maintenant acceptés ; les trois
+échecs historiques ci-dessus sont corrigés. Les limites PACK0 et auto-contact
+restent applicables. Cette intégration précède le prototype de sélection EB.
 
 1. [AGENTS.md](../AGENTS.md) : règles de collaboration et autorisations.
 2. Ce guide : état actuel et pièges à connaître.
