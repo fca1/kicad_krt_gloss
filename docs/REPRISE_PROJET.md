@@ -1,11 +1,14 @@
 # Reprendre Smooth Gloss KRT
 
-Dernier ajustement netlist : Net fixé à 120 DIP (environ moitié de la largeur
-précédente), EB demandé à 50 DIP, séparateurs natifs `DV_VERT_RULES`.
-La liste reste alignée à gauche sans redistribuer l'espace libre à EB.
+Dernier ajustement netlist : panneau gauche compacté dans son ensemble (texte
+d'aide sur deux lignes, boutons Add/Replace/Clear ajustés à leurs libellés).
+La liste remplit toute la largeur de son conteneur : ne pas lui imposer
+`ALIGN_LEFT`, qui créait un trou à droite. Net reçoit l'espace disponible
+(minimum 120 DIP) ; EB reste demandé à 50 DIP. Séparateurs `DV_VERT_RULES`.
 Infobulle : nom complet sur Net, signification de EB sur la colonne EB.
-Essai natif affiché : Net 120 px, EB 50 px ; ouverture 659 px, minimum 635 px.
-Capture réelle également vérifiée avec la carte antmicro (liste avec ascenseur).
+Essai natif affiché : Net 133 px, EB 54 px ; ouverture 570 px, minimum 546 px.
+Capture réelle vérifiée avec la carte antmicro : liste alignée avec les filtres,
+sans trou à droite. Le test natif vérifie aussi la largeur liste/conteneur.
 
 Compacité UI : boutons d'import « Add », « Replace », « Clear », infobulles
 conservées. Largeur initiale = minimum des deux colonnes + 24 DIP, sans plancher

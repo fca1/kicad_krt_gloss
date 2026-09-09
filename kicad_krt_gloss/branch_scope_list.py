@@ -5,7 +5,7 @@ import wx.dataview as dv
 
 class BranchScopeList(dv.DataViewListCtrl):
     def __init__(self, panel, scope_label, on_preview, on_check):
-        super().__init__(panel, size=panel.FromDIP((206, 180)),
+        super().__init__(panel, size=panel.FromDIP((223, 180)),
                          style=dv.DV_MULTIPLE | dv.DV_ROW_LINES | dv.DV_VERT_RULES)
         self._scope_label = scope_label
         self._silent = False
@@ -63,8 +63,9 @@ class BranchScopeList(dv.DataViewListCtrl):
         self._apply_column_widths()
 
     def _apply_column_widths(self):
+        remaining = self.GetClientSize().width - self.FromDIP(32) - self._scope_width
         self.GetColumn(0).SetWidth(self.FromDIP(32))
-        self.GetColumn(1).SetWidth(self._net_width)
+        self.GetColumn(1).SetWidth(max(self._net_width, remaining - self.FromDIP(4)))
         self.GetColumn(2).SetWidth(self._scope_width)
 
     def Clear(self):
@@ -153,8 +154,7 @@ def install(dialog):
                           dialog._on_centering_net_checked)
     new.SetToolTip(old.GetToolTipText())
     panel._list_container_sizer.Replace(old, new)
-    # Don't give surplus panel width to the last native column (EB).
-    panel._list_container_sizer.GetItem(new).SetFlag(wx.ALIGN_LEFT)
+    panel._list_container_sizer.GetItem(new).SetFlag(wx.EXPAND)
     panel.net_list = new
     old.Destroy()
     panel.set_selected_nets(selected)

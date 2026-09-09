@@ -373,8 +373,8 @@ class GlossSettingsDialog(wx.Dialog):
             pcb_data = SimpleNamespace(nets={}, pads_by_net={}, footprints={})
         self.centering_net_panel = NetSelectionPanel(
             panel, pcb_data,
-            instructions=("Click a net to highlight it in KiCad; check nets "
-                          "for Gloss and Centering..."),
+            instructions=("Click a net to highlight it in KiCad.\n"
+                          "Check nets for Gloss and Centering."),
             show_hide_checkbox=False,
             show_hide_differential=False,
             show_component_filter=True,
@@ -388,19 +388,19 @@ class GlossSettingsDialog(wx.Dialog):
 
         selection_actions = wx.BoxSizer(wx.HORIZONTAL)
         self._selection_actions = selection_actions
-        add_selection = wx.Button(panel, label="Add")
+        add_selection = wx.Button(panel, label="Add", style=wx.BU_EXACTFIT)
         add_selection.SetToolTip(
             "Check the nets of currently selected KiCad tracks, keeping "
             "the nets already checked here.")
         add_selection.Bind(wx.EVT_BUTTON,
                            lambda _event: self._on_import_centering(True))
-        replace_selection = wx.Button(panel, label="Replace")
+        replace_selection = wx.Button(panel, label="Replace", style=wx.BU_EXACTFIT)
         replace_selection.SetToolTip(
             "Check only the nets of currently selected KiCad tracks.")
         replace_selection.Bind(
             wx.EVT_BUTTON,
             lambda _event: self._on_import_centering(False))
-        clear_selection = wx.Button(panel, label="Clear")
+        clear_selection = wx.Button(panel, label="Clear", style=wx.BU_EXACTFIT)
         clear_selection.SetToolTip("Uncheck every net for Gloss and Centering.")
         clear_selection.Bind(wx.EVT_BUTTON, self._on_clear_centering_selection)
         selection_actions.Add(add_selection, 1, wx.RIGHT, 5)

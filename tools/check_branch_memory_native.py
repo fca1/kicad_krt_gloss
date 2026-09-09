@@ -81,7 +81,9 @@ def main():
         print('VISIBLE COLUMNS:',net_rect,eb_rect)
         assert eb_rect.width <= scope_list.FromDIP(60)
         assert net_rect.width > eb_rect.width
-        assert net_rect.width == scope_list.FromDIP(120)
+        assert scope_list.FromDIP(120) <= net_rect.width <= scope_list.FromDIP(180)
+        # The list must fill its container, not leave a blank region on its right.
+        assert scope_list.GetSize().width == dialog.centering_net_panel._list_container_sizer.GetSize().width
     assert dialog.GetSize().width==minimum.width
     assert dialog._general_columns.GetOrientation()==wx.HORIZONTAL
     assert dialog._selection_actions.GetOrientation()==wx.HORIZONTAL
