@@ -280,17 +280,6 @@ def center_interpad_routes(context, results, deadline=None, *, net_ids,
                     from .protected_centering import build_protected_path
                     for group in _branch_door_groups(context.pcb_data, doors):
                         yield group, build_protected_path(context, group, deadline)
-                yield from _centering_proposals(
-                    context.pcb_data, doors,
-                    build_new_segments=build_new_segments,
-                    build_multi_door_path=(build_multi_door_path and
-                                           not build_new_segments))
-                if build_new_segments:
-                    from .interpad_paths import center_with_propagated_neighbors
-                    for door in doors:
-                        for candidate in center_with_propagated_neighbors(
-                                context.pcb_data, door, deadline):
-                            yield (door,), candidate
             for selected_doors, candidate in proposals():
                 if deadline is not None and perf_counter() >= deadline:
                     break

@@ -8,12 +8,24 @@ vérification ciblée. Vérifier le HEAD et les modifications locales à la repr
 
 ## Ordre de lecture et autorité des documents
 
-Expérience du 9 septembre 2026 : le [prototype Centering par supports](reports/CENTERING_SUPPORT_PROTOTYPE_2026_09_09.md)
-centre les trois portes de `/A` sur le fichier identifié dans le rapport, sans
-changer la suite des directions ni le contournement observé. Il est isolé dans
-`tools/prototype_centering_supports.py`, **non intégré à la production**.
-Lire ses limites avant réutilisation ; le défaut multi-porte du plugin livré
-n'est pas corrigé par la seule présence de ce prototype.
+Intégration du 9 septembre 2026 après validation utilisateur du ZIP
+`dist/test-supports-e3f5745/KiCadKrtGloss-0.1.3-prototype-supports.zip`
+(SHA256 `e6fcc32f7c4614bf17582fb564f8c4f2a2b6146b3b51adb21cedec516bc042fe`) :
+les trois modules moteur du ZIP sont repris à l'identique dans les sources.
+Le Centering utilise maintenant `support_prototype.py` via `protected_centering`,
+sans les anciens replis. Les deux options multiporte et nouveaux segments doivent
+être activées. Les supports parallèles sont refusés ; la généralisation des
+auto-contacts pendant le mouvement reste à réaliser. La validation sur `/A`
+ne vaut pas qualification générale. Le [rapport du prototype](reports/CENTERING_SUPPORT_PROTOTYPE_2026_09_09.md)
+conserve les mesures et limites historiques ; son statut non intégré est supersédé
+par cette validation utilisateur et cette intégration.
+
+Vérification d'intégration : égalité textuelle des trois modules avec le ZIP.
+Tests ciblés : 28 réussites, 3 échecs dans
+`test_finite_passages_keep_a_straight_route_under_rotation` (0°, 45°, 90°).
+Ces régressions concernent les supports collinéaires refusés par le constructeur
+validé sur `/A`. Elles sont conservées visibles, sans adaptation des attentes.
+Ne pas annoncer une validation générale du Centering.
 
 1. [AGENTS.md](../AGENTS.md) : règles de collaboration et autorisations.
 2. Ce guide : état actuel et pièges à connaître.
@@ -103,8 +115,8 @@ donne une porte U1.1–U1.2 centrée à Y=90,615 mm, +0,6810 mm, G5 valide,
 5 pistes remplacées par 5. Test natif détaché :
 `tools/reproduce_centering_native.py CHEMIN_PCB`, sans sauvegarde source.
 Suite : 408 réussites, toujours le test Centering historique sans porte en échec.
-Le constructeur multiporte conserve sa recherche finie historique de longueurs
-de passage ; cette passe ne prouve pas un optimum général du Centering.
+La recherche finie historique de demi-longueurs a été retirée lors de
+l'intégration du constructeur par supports validé le 9 septembre.
 
 **Raccourci DHM Centering.** Avec exactement deux pads sélectionnés et aucun
 autre objet, le plugin mesure leur entraxe centre-à-centre. Si cet entraxe est
