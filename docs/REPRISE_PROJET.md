@@ -8,6 +8,13 @@ vérification ciblée. Vérifier le HEAD et les modifications locales à la repr
 
 ## Ordre de lecture et autorité des documents
 
+Expérience du 9 septembre 2026 : le [prototype Centering par supports](reports/CENTERING_SUPPORT_PROTOTYPE_2026_09_09.md)
+centre les trois portes de `/A` sur le fichier identifié dans le rapport, sans
+changer la suite des directions ni le contournement observé. Il est isolé dans
+`tools/prototype_centering_supports.py`, **non intégré à la production**.
+Lire ses limites avant réutilisation ; le défaut multi-porte du plugin livré
+n'est pas corrigé par la seule présence de ce prototype.
+
 1. [AGENTS.md](../AGENTS.md) : règles de collaboration et autorisations.
 2. Ce guide : état actuel et pièges à connaître.
 3. [gloss_rules.md](../dgloss/doc_fr/gloss_rules.md) : spécification fonctionnelle
