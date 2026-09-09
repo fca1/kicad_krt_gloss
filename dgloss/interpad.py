@@ -63,8 +63,9 @@ def _branch_door_groups(pcb_data, doors):
         for door in layer_doors:
             grouped.setdefault(component_by_id.get(id(door.segment)), []).append(
                 door)
-        groups.extend(tuple(group) for group in grouped.values()
-                      if len(group) >= 2)
+        # The support constructor handles isolated gates too. This grouping
+        # is now the common entry point, not just the historical multi-gate path.
+        groups.extend(tuple(group) for group in grouped.values())
     groups.sort(key=lambda group: (
         len(group), sum(abs(door.offset) for door in group)), reverse=True)
     return groups

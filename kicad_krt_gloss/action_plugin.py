@@ -418,8 +418,8 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                     if not stats.get("centering_doors_detected", 0):
                         print("Centering diagnosis: no eligible gate at this Proxi setting.")
                     elif not considered:
-                        print("Centering diagnosis: no path could be built through "
-                              "the detected gate(s).")
+                        print("Centering diagnosis: no candidate generated for "
+                              "the detected gate(s); geometry was not tested.")
                     else:
                         labels = {
                             "construction": "geometry", "passage": "passage",

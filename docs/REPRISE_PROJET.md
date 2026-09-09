@@ -40,6 +40,11 @@ est intégré à l'identique dans `dgloss/support_prototype.py`.
 Les supports collinéaires compatibles sont maintenant acceptés ; les trois
 échecs historiques ci-dessus sont corrigés. Les limites PACK0 et auto-contact
 restent applicables. Cette intégration précède le prototype de sélection EB.
+Correction des portes isolées : le regroupement de Centering accepte aussi une
+porte seule. L'ancien filtre multiporte `len(group) >= 2` supprimait ces cas
+avant construction. Régression pipeline complète sous quatre rotations et essai
+natif ULPI1_DATA4 sur antmicro__artix_dc_scm : AB20–AB21 centrée, G5 valide.
+Voir le [rapport porte isolée](reports/SINGLE_GATE_CENTERING_2026_09_09.md).
 
 Intégration EB du 9 septembre, validée par l'utilisateur :
 `kicad_krt_gloss/branch_selection_prototype.py` est maintenant activé au démarrage
