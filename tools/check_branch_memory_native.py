@@ -24,7 +24,7 @@ def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('board',type=Path)
     parser.add_argument('--action',choices=['gloss','centering'],default='centering')
-    parser.add_argument('--scope',choices=['single','multiple','whole','eb-off'],default='single')
+    parser.add_argument('--scope',choices=['single','multiple','whole','eb-off','complete'],default='single')
     args=parser.parse_args()
     fingerprint=hashlib.sha256(args.board.read_bytes()).hexdigest()
     board=pcbnew.LoadBoard(str(args.board.resolve()))
@@ -43,6 +43,8 @@ def main():
         pcb_data=data,centering_nets=rows,preselected_centering_nets=['/A'])
     assert dialog.grid_step.GetFont().GetPointSize()==dialog.centering_proximity_mm.GetFont().GetPointSize()
     assert dialog.budget_seconds.GetFont().GetPointSize()==dialog.centering_proximity_mm.GetFont().GetPointSize()
+    dialog.notebook.GetPage(0).Layout()
+    assert dialog.grid_step.GetRect().GetRight()==dialog.budget_seconds.GetRect().GetRight()
     def toggle_eb(enabled):
         control=dialog.controls['selection_uses_elementary_branches']
         control.SetValue(enabled)
@@ -69,6 +71,11 @@ def main():
         for track in board.GetTracks():
             if track.m_Uuid.AsString() in uids:track.SetSelected()
             else:track.ClearSelected()
+    select(list(groups.values()))
+    dialog._on_import_centering(False)
+    assert '/A' not in dialog._branch_memory.by_net
+    assert dialog.centering_net_panel.net_list.GetTextValue(
+        dialog.centering_net_panel.net_list.FindString('/A'),2)==''
     select([groups[branches[0]]])
     dialog._on_import_centering(False)
     assert len(dialog._branch_memory.by_net['/A'])==1
@@ -123,6 +130,13 @@ def main():
         select([groups[branches[1]]])
         dialog._on_import_centering(True)
         scope_uids.update(branches[1])
+    elif args.scope=='complete':
+        for branch in branches[1:]:
+            select([groups[branch]])
+            dialog._on_import_centering(True)
+        assert '/A' not in dialog._branch_memory.by_net
+        assert listing.GetTextValue(listing.FindString('/A'),2)==''
+        scope_uids={uid for uid,s in index.items() if s.net_id==net}
     elif args.scope in ('whole','eb-off'):
         if args.scope=='whole':
             dialog._on_clear_centering_selection(None)

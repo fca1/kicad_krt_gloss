@@ -43,6 +43,30 @@ def test_deleted_branch_never_becomes_whole_net():
     with pytest.raises(StaleBranches):m.resolve(pcb,['A'],index)
 
 
+def test_complete_coverage_promotes_only_complete_net():
+    pcb,index=fixture();m=BranchMemory()
+    m.import_branches({'A':[Branch(frozenset(x)) for x in 'ac']},add=True)
+    assert m.promote_complete_nets(pcb,index,['A'])==set()
+    m.import_branches({'A':[Branch(frozenset('b'))]},add=True)
+    assert m.promote_complete_nets(pcb,index,['A'])=={'A'}
+    assert 'A' not in m.by_net
+    assert len(m.resolve(pcb,['A'],index))==3
+
+
+def test_missing_or_stale_mapping_never_promotes():
+    pcb,index=fixture();m=BranchMemory()
+    m.import_branches({'A':[Branch(frozenset(x)) for x in 'abc']},add=True)
+    del index['c']
+    assert not m.promote_complete_nets(pcb,index,['A'])
+    assert 'A' in m.by_net
+
+
+def test_same_count_wrong_track_ids_does_not_promote():
+    pcb,index=fixture();m=BranchMemory()
+    m.import_branches({'A':[Branch(frozenset(x)) for x in 'abd']},add=True)
+    assert not m.promote_complete_nets(pcb,index,['A'])
+
+
 def test_changed_topology_requires_reimport():
     pcb,index=fixture();m=BranchMemory()
     m.import_branches({'A':[Branch(frozenset('a'))]},add=True)

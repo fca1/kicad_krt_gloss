@@ -51,6 +51,10 @@ La liste du prototype utilise désormais l'adaptateur multicolonne KRG
 `branch_scope_list.py` (DataView) : colonne droite compacte « n EB », vide pour
 un net entier. Essais natifs Windows : Centering une EB, deux EB, net entier
 sans mémoire et EB désactivé ; validation Linux/macOS non effectuée.
+Après Add/Replace, une couverture exacte de toutes les pistes non graphiques
+du net, avec références et topologie vérifiées, devient un net entier : mémoire
+EB retirée et colonne vide. Références manquantes/périmées : aucune promotion.
+Les deux champs Calculation Settings partagent désormais le même bord droit.
 
 1. [AGENTS.md](../AGENTS.md) : règles de collaboration et autorisations.
 2. Ce guide : état actuel et pièges à connaître.

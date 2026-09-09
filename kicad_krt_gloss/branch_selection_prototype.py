@@ -39,6 +39,28 @@ class BranchMemory:
                          if enabled and self.by_net.get(name) else f'{name}: whole net'
                          for name in sorted(names))
 
+    def promote_complete_nets(self, data, index, names):
+        """Normalize complete, current branch coverage to whole-net scope."""
+        promoted = set()
+        for name in names:
+            records = self.by_net.get(name)
+            if not records:
+                continue
+            segments = {id(s) for s in data.segments
+                        if data.nets[s.net_id].name == name and not getattr(s, 'graphic', False)}
+            indexed = {uid: s for uid, s in index.items() if id(s) in segments}
+            saved = set().union(*(r.tracks for r in records))
+            # Missing/ambiguous mappings and stale IDs must never widen the scope.
+            if not segments or {id(s) for s in indexed.values()} != segments or saved != set(indexed):
+                continue
+            try:
+                self.resolve(data, [name], index)
+            except StaleBranches:
+                continue
+            del self.by_net[name]
+            promoted.add(name)
+        return promoted
+
     def resolve(self, data, names, uuid_to_segment, *, enabled=True):
         """Fresh objects, verified branch membership, no fallback on stale IDs."""
         from dgloss.branches import elementary_branch_segment_ids
@@ -205,6 +227,25 @@ def activate(action_module, *, board_provider=None):
                 if isinstance(sizer, wx.StaticBoxSizer) and sizer.GetStaticBox().GetLabel() == 'Calculation Settings / Execution Limit':
                     sizer.GetStaticBox().SetFont(self.centering_proximity_mm.GetFont().Bold())
                     enlarge(sizer)
+                    rows = [item.GetSizer() for item in sizer.GetChildren()]
+                    grid = wx.FlexGridSizer(cols=3, hgap=8, vgap=8)
+                    grid.AddGrowableCol(0)
+                    width = max(self.grid_step.GetBestSize().width, self.budget_seconds.GetBestSize().width)
+                    for row in rows:
+                        windows = [item.GetWindow() for item in row.GetChildren()]
+                        for window in windows:
+                            row.Detach(window)
+                        label, control = windows[:2]
+                        control.SetMinSize((width, control.GetBestSize().height))
+                        grid.Add(label, 0, wx.ALIGN_CENTER_VERTICAL)
+                        grid.Add(control, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL)
+                        if len(windows) == 3:
+                            grid.Add(windows[2], 0, wx.ALIGN_CENTER_VERTICAL)
+                        else:
+                            grid.AddSpacer(0)
+                    sizer.Clear()
+                    sizer.Add(grid, 1, wx.EXPAND | wx.ALL, 8)
+                    return
                 for child in sizer.GetChildren():
                     if child.GetSizer():
                         find_calculation(child.GetSizer())
@@ -267,6 +308,7 @@ def activate(action_module, *, board_provider=None):
                     index = track_index(self._branch_board, data, bridge._pcbnew())
                     incoming = capture(self._branch_board, data, index, bridge._pcbnew(), allowed)
                     self._branch_memory.import_branches(incoming, add=add)
+                    self._branch_memory.promote_complete_nets(data, index, incoming)
                 else:
                     incoming = {name: [] for name in bridge.selected_net_names(self._branch_board) if name in allowed}
                     if not add:

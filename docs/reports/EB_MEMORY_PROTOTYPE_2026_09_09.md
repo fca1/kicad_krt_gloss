@@ -113,3 +113,23 @@ préparation EB actifs. Test natif Centering deux branches exécuté depuis le Z
 extrait via `KRG_TEST_PLUGIN_ROOT` : réussi, 3 portes, G5 vrai, hors périmètre
 préservé et source inchangée. Ce test ne constitue pas une installation PCM
 interactive ni une qualification Linux/macOS.
+
+## Évolution après ce ZIP : net complet et alignement
+
+Après Add/Replace (et capture initiale), comparer l'union des UUID mémorisés
+aux pistes non graphiques du net importé courant. Exiger une couverture complète
+des segments par l'index et vérifier les branches avec la résolution habituelle.
+Si tout correspond, supprimer la mémoire de ce net : il devient explicitement
+un net entier, y compris pour les actions suivantes ; la colonne EB est vide.
+Une mémoire périmée ou un index incomplet ne provoque jamais cette promotion.
+Ce contrôle n'utilise pas seulement le nombre de segments ou de branches.
+
+Calculation Settings utilise une grille commune : libellés à gauche, champs
+de même largeur et même bord droit, colonne d'unité réservée pour « s ».
+Il s'agit de l'alignement des champs, sans modification des valeurs de calcul.
+
+74 tests ciblés réussis. Runner natif étendu avec `--scope complete` : Replace
+de toutes les EB puis Add successifs jusqu'à couverture complète, cellule vide,
+Centering effectif /A à Proxi 2.54, 3 portes, G5 vrai, source inchangée.
+Gloss net complet et Centering deux EB passent aussi. Le test natif compare
+les bords droits des deux champs. Le ZIP précédent n'inclut pas cette évolution.
