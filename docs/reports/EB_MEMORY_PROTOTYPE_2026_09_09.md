@@ -3,7 +3,7 @@
 Le correctif collinéaire testé par ZIP a été intégré préalablement dans ed31e59.
 Ce nouveau prototype est isolé : appeler `branch_selection_prototype.activate(action_plugin)`.
 La fonction renvoie une restauration des branchements temporaires.
-Il n'est pas activé par le démarrage normal ; aucun ZIP EB produit à ce stade.
+Il n'est pas activé par le démarrage normal des sources ; le ZIP de test ci-dessous l'active.
 Un futur ZIP doit inclure le module, la nouvelle image et l'activation explicite.
 Il doit aussi inclure `branch_scope_list.py`, adaptateur de liste multicolonne.
 
@@ -99,3 +99,17 @@ les événements de coches du nouveau composant, boutons d'action, largeur compa
 comptes après filtrage et basculement EB. Gloss une branche passe également.
 Les 71 tests ciblés précédents restent verts. Ce contrôle ne valide pas le rendu
 visible de l'éditeur ni toutes les combinaisons multi-net et toutes les cartes.
+
+## ZIP de test demandé
+
+`dist/test-eb-4b3b9b4/KiCadKrtGloss-0.1.3-prototype-EB.zip`
+
+SHA256 : `1169d30c0de1e3c26fa79370da2dd86c4f5bec2a9098f70aff8b3e657b994574`.
+Construction reproductible par `tools/package_branch_memory.py` : sources normales
+plus modules EB, seconde image et activation avant l'enregistrement du plugin.
+Intégrité ZIP et égalité des ressources contrôlées. Démarrage réel du package
+importé testé (seul l'enregistrement dans KiCad est neutralisé) : BranchDialog et
+préparation EB actifs. Test natif Centering deux branches exécuté depuis le ZIP
+extrait via `KRG_TEST_PLUGIN_ROOT` : réussi, 3 portes, G5 vrai, hors périmètre
+préservé et source inchangée. Ce test ne constitue pas une installation PCM
+interactive ni une qualification Linux/macOS.

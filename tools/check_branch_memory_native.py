@@ -1,6 +1,7 @@
 """Exercise the opt-in EB dialog on a detached board; never SaveBoard."""
 import argparse
 import hashlib
+import os
 from pathlib import Path
 import sys
 import types
@@ -8,7 +9,7 @@ import types
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 package=types.ModuleType('_eb_probe')
-package.__path__=[str(ROOT/'kicad_krt_gloss')]
+package.__path__=[os.environ.get('KRG_TEST_PLUGIN_ROOT',str(ROOT/'kicad_krt_gloss'))]
 sys.modules[package.__name__]=package
 from _eb_probe.runtime import configure_krt_runtime
 configure_krt_runtime()
