@@ -98,7 +98,7 @@ def _pad_on_layer(pad, layer):
 
 def _walk_branch_chain(pcb_data, net_id, node, branch):
     """Walk from a T along its simple branch to the next KRT anchor."""
-    net_segments = [segment for segment in pcb_data.segments
+    net_segments = [segment for segment in board_views(pcb_data).segments(net_id)
                     if segment.net_id == net_id and
                     not getattr(segment, "graphic", False)]
     group = [segment for segment in net_segments

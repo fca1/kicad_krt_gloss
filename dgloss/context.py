@@ -68,7 +68,13 @@ class GlossContext:
         vias = list(old_vias) + list(new_vias)
         if self.pcb_data is not None:
             self.pcb_data._foreign_seg_arr_cache = None
-            self.pcb_data._gloss_reference_grades = {}
+            invalid = {item.net_id for item in touched + vias}
+            # Foreign copper may affect ANY zone-owning net, even when its
+            # model has been evicted. Retain only unchanged zone-free nets.
+            invalid.update(z.net_id for z in (getattr(self.pcb_data, 'zones', ()) or ()))
+            previous = getattr(self.pcb_data, '_gloss_reference_grades', {}) or {}
+            self.pcb_data._gloss_reference_grades = {
+                net: grade for net, grade in previous.items() if net not in invalid}
         if self.search_cache is not None:
             self.search_cache.changed(touched, vias)
         self.zone_invalidations += len(invalidate_copper_models(self.pcb_data, touched, vias))

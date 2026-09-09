@@ -52,20 +52,21 @@ def test_same_exact_clearance_decisions(modes):
 
 def test_prepared_pad_distances_are_exact_not_rounded():
     ref = make_adapter()
+    from dgloss.krt_sweep import foreign_pad_clearance_distance
     with activate(('pads',)):
         actual = make_adapter()
         for angle in range(0, 360, 7):
             x, y = 7*math.cos(math.radians(angle)), 7*math.sin(math.radians(angle))
             args = (1, x, y, x+.137, y+.391, 'F.Cu', .2, .075)
-            assert actual._pad_distance(*args) == ref._pad_distance(*args)
+            assert actual._pad_distance(*args) == foreign_pad_clearance_distance(
+                ref.pcb, *args[:7], ref.net_clearances, args[7])
 
 
 def test_reference_retention_excludes_changed_and_all_zone_nets():
     ctx = object.__new__(GlossContext)
     ctx.pcb_data = NS(_gloss_reference_grades={1:'changed',2:'zone',3:'unchanged'}, zones=[NS(net_id=2)])
     ctx.search_cache, ctx.zone_invalidations, ctx.editable_segment_ids = None, 0, None
-    with activate(('references',)):
-        ctx.replace_editable_segments([NS(net_id=1)], [])
+    ctx.replace_editable_segments([NS(net_id=1)], [])
     assert ctx.pcb_data._gloss_reference_grades == {3:'unchanged'}
 
 
@@ -114,3 +115,12 @@ def test_prototype_restores_hooks_even_after_exception():
             assert KrtClearanceAdapter._segment_clears is not original
             raise RuntimeError('abort experiment')
     assert KrtClearanceAdapter._segment_clears is original
+
+
+def test_integrated_via_filter_matches_unfiltered_exact_predicates():
+    a = make_adapter()
+    for x in range(-10, 11):
+        old = Via(x, -3, .6, .3, ['F.Cu','B.Cu'], 1)
+        new = Via(x+.731, 5, .6, .3, ['F.Cu','B.Cu'], 1)
+        assert a.via_clears(old) == a._via_clears_exact(old)
+        assert a.via_sweep_clears(old,new) == a._via_sweep_clears_exact(old,new)

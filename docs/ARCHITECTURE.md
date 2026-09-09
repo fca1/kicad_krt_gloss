@@ -52,6 +52,16 @@ contrôle les imports et les accès natifs identifiés sur les modules de produc
 
 ## Durée de vie des données
 
+Les préparations de clearance sont dans `clearance_preparation.py`, derrière
+`KrtClearanceAdapter`. Pads/règles fixes : arêtes et règles préparées par couche.
+Cuivre mobile : rectangles englobants reconstruits à chaque nouvelle liste de
+segments. Les prédicats KRT des vias restent dans les méthodes `_exact`, après
+présélection conservatrice cuivre/perçages ; les pads sont tous conservés.
+Les premières distances bloquantes interrompent les contrôles inutiles.
+Les références électriques restent en cache uniquement pour les nets inchangés
+sans zone ; chaque modification invalide tous les nets possédant une zone.
+Les contrôles finaux G5 restent présents, sans réutilisation des grades finaux.
+
 Chaque contexte ouvre une nouvelle durée de vie pour les vues et les certificats.
 Pendant une action, pads et règles sont fixes ; les pistes et vias sont remplacés
 par de nouveaux objets, sans modification en place. Les vues par net suivent les

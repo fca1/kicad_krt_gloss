@@ -16,7 +16,7 @@ from dgloss.krt_api import (board_edge_geometry, check_pad_drill_via_overlap,
 from dgloss.krt_api import point_in_polygon, point_to_polygon_edge_distance
 from dgloss.krt_api import (Segment, FP_EPS_MM, check_segment_overlap,
                            pad_drill_capsule)
-from .krt_sweep import foreign_pad_clearance_distance, pad_axis_distance
+from .krt_sweep import pad_axis_distance
 from dgloss.krt_api import HOLE_TO_HOLE_CLEARANCE, NPTH_TO_TRACK_CLEARANCE
 from dgloss.krt_api import (_foreign_seg_arrays, _foreign_hole_capsules,
                            _seg_capsule_axis_dist)
@@ -144,9 +144,8 @@ class KrtClearanceAdapter:
         return batch[layer]
 
     def _uncached_pad_distance(self, net_id, x1, y1, x2, y2, layer, effective, half_width):
-        return foreign_pad_clearance_distance(
-            self.pcb, net_id, x1, y1, x2, y2, layer, effective,
-            self.net_clearances, half_width)
+        from .clearance_preparation import prepared_pad_distance
+        return prepared_pad_distance(self, net_id, x1, y1, x2, y2, layer, effective, half_width)
 
     def _collect_keepouts(self, for_vias=False):
         keepouts = []
@@ -290,28 +289,20 @@ class KrtClearanceAdapter:
         return clear
 
     def _segment_clears(self, seg):
-        effective = self._effective_clearance(seg.net_id, seg.layer)
-        distance = min(
-            self._pad_distance(
-                seg.net_id, seg.start_x, seg.start_y,
-                seg.end_x, seg.end_y, seg.layer, effective, seg.width/2),
-            _exact_foreign_segment_distance(
-                self.pcb, seg.net_id, seg.start_x, seg.start_y,
-                seg.end_x, seg.end_y, seg.layer,
-                net_clearances=self.net_clearances, base_clearance=effective,
-                track_clearances=self.track_clearances,
-                prepared_copper=self._prepared_copper(seg.layer), half_width=seg.width/2))
-        hole_distance = _exact_foreign_hole_distance(
-            self.pcb, seg.net_id, seg.start_x, seg.start_y,
-            seg.end_x, seg.end_y, self.npth_clearance)
-        return (distance >= effective + seg.width / 2.0 - FP_EPS_MM and
-                hole_distance >= self.npth_clearance + seg.width / 2.0 - FP_EPS_MM and
-                self._edge_clears(seg) and self._keepouts_clear(seg))
+        from .clearance_preparation import early_segment
+        return early_segment(self, seg)
 
     def connector_clears(self, segments):
         return bool(segments) and all(self.segment_clears(seg) for seg in segments)
 
     def via_sweep_clears(self, old, new):
+        from copy import copy
+        from .clearance_preparation import via_subset
+        view = copy(self)
+        view.pcb = via_subset(self, old, new)
+        return view._via_sweep_clears_exact(old, new)
+
+    def _via_sweep_clears_exact(self, old, new):
         """Translate the physical copper cylinder and drill, using KRT capsules.
 
         A disk translated along a line sweeps exactly a capsule. The two
@@ -366,6 +357,13 @@ class KrtClearanceAdapter:
                 self._regions_clear(copper, self.via_keepouts, own, all_layers=True))
 
     def via_clears(self, via, ignored_via=None):
+        from copy import copy
+        from .clearance_preparation import via_subset
+        view = copy(self)
+        view.pcb = via_subset(self, via, via)
+        return view._via_clears_exact(via, ignored_via)
+
+    def _via_clears_exact(self, via, ignored_via=None):
         """Validate a moved via by composing KRT's exact DRC primitives."""
         own = max(self.clearance,
                   (self.net_clearances or {}).get(via.net_id, self.clearance))

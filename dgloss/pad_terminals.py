@@ -5,6 +5,7 @@ import math
 from .execution import perf_counter
 
 from .topology import ReplacementGuard
+from .board_views import board_views
 from .krt_clearance import stable_copper_search
 from dgloss.krt_api import point_to_pad_distance
 from dgloss.krt_api import calculate_route_length
@@ -34,7 +35,7 @@ def _endpoint_in_pad(segment, pad):
 
 def _walk_terminal_chain(pcb_data, net_id, pad):
     """Return one conservative same-layer/width chain leaving ``pad``."""
-    net_segments = [segment for segment in pcb_data.segments
+    net_segments = [segment for segment in board_views(pcb_data).segments(net_id)
                     if segment.net_id == net_id and
                     not getattr(segment, "graphic", False)]
     contacts = []

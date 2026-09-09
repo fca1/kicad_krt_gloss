@@ -1,5 +1,36 @@
 # Prototype de performances Gloss — 9 septembre 2026
 
+**Mise à jour d'intégration :** les cinq variantes sont maintenant intégrées
+en production à la demande utilisateur, après le commit prototype 448b991.
+Les sections suivantes décrivent les mesures historiques du prototype.
+L'activation par hooks reste uniquement un outil d'expérience ; la production
+appelle directement `dgloss/clearance_preparation.py`. Le défaut préexistant
+de balayage reste explicitement non corrigé par cette intégration.
+Le benchmark refuse désormais une comparaison historique trompeuse sur le
+moteur déjà optimisé ; `--verify-integrated` compare sa sortie sans hooks aux
+empreintes enregistrées du prototype.
+
+### Vérification après intégration
+
+- 122 tests ciblés réussis, un xfail strict pour le défaut préexistant décrit
+  plus bas. Les distances préparées sont comparées au calcul indépendant
+  d'origine ; les filtres de vias aux prédicats exacts sans filtrage.
+- PACK0 : 10 configurations de production, sans hooks, avec/sans corridor,
+  G4 désactivé. Toutes retrouvent exactement les empreintes du prototype,
+  avec G5 valide, sans expiration ni anomalie dans les audits enregistrés.
+  [Résultats bruts](data/gloss_perf_integrated_2026_09_09.json).
+- Essais natifs détachés Gloss et Centering sur plusieurs EB de `/A` dans
+  `test_centering2` : réussis, source et cuivre hors portée conservés.
+  Les avertissements wx de parentage/destruction restent présents ; ces essais
+  ne constituent pas une validation visuelle de l'éditeur.
+- KRT inchangé. Aucun ZIP produit lors de cette intégration.
+
+Commande de vérification reproductible :
+
+```powershell
+python tools/benchmark_gloss_perf.py --verify-integrated docs/reports/data/gloss_perf_pack0_2026_09_09.json --output .build/gloss_perf_integrated.json
+```
+
 ## Statut et périmètre
 
 Prototype isolé dans `tools/prototype_gloss_perf.py`, basé sur `f704f48`.

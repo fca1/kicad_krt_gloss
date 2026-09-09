@@ -95,9 +95,11 @@ def test_chain_cache_respects_new_via_anchors_and_editable_scope():
     assert _simple_chains(pcb, 1, allowed) == []
 
 
-def test_foreign_edit_invalidates_reference_and_final_grade_stays_uncached(monkeypatch):
+@pytest.mark.parametrize('has_zone', [False, True])
+def test_foreign_edit_invalidates_zone_references_and_final_grade_stays_uncached(monkeypatch, has_zone):
     pcb, cfg = example()
     context = build_gloss_context(pcb, cfg, [1])
+    pcb.zones = [SimpleNamespace(net_id=1, polygon=[])] if has_zone else []
     calls = []
     def check(*args, **kwargs):
         calls.append(args[0])
@@ -110,9 +112,9 @@ def test_foreign_edit_invalidates_reference_and_final_grade_stays_uncached(monke
     foreign = Segment(15., 15., 16., 15., .2, 'F.Cu', 2)
     context.apply_replacement([], [foreign])
     reference_connectivity(pcb, 1, own, pcb.vias)
-    assert calls == [1, 1]
+    assert calls == [1] * (2 if has_zone else 1)
     from dgloss import certification
     monkeypatch.setattr(certification, 'check_net_connectivity', check)
     certification._g5_grade(pcb, 1)
     certification._g5_grade(pcb, 1)
-    assert calls == [1, 1, 1, 1]
+    assert calls == [1] * (4 if has_zone else 3)

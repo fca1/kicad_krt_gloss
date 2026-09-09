@@ -65,7 +65,12 @@ def main():
     p.add_argument('--budget',type=float,default=120.)
     p.add_argument('--combined-modes',nargs='+',choices=MODES,default=list(MODES))
     p.add_argument('--output',type=Path,required=True)
+    p.add_argument('--verify-integrated',type=Path,
+                   help='Compare production (no hooks) to a recorded prototype PACK0 result')
     args=p.parse_args()
+    expected = json.loads(args.verify_integrated.read_text()) if args.verify_integrated else None
+    if expected is None and hasattr(KrtClearanceAdapter, '_via_clears_exact'):
+        p.error('Prototype already integrated: use --verify-integrated or run comparisons from the baseline checkout')
     pack=json.loads((ROOT/'docs/PACK0.json').read_text())
     rows=[]; failed=False
     for entry in pack['boards']:
@@ -73,12 +78,12 @@ def main():
         board=Path(pack['corpus_root'])/entry['path']
         assert hashlib.sha256(board.read_bytes()).hexdigest()==entry['sha256']
         for corridor in args.corridors:
-            variants=['baseline']+args.variants
+            variants=['integrated'] if expected is not None else ['baseline']+args.variants
             # Alternate order on the second configuration, without warming up.
             if corridor:variants.reverse()
             group=[]
             for variant in variants:
-                modes=() if variant=='baseline' else args.combined_modes if variant=='combined' else [variant]
+                modes=() if variant in ('baseline','integrated') else args.combined_modes if variant=='combined' else [variant]
                 row=run(board,modes,bool(corridor),args.budget)
                 row.update(board=entry['name'],variant=variant,sha256=entry['sha256'])
                 group.append(row); rows.append(row)
@@ -87,10 +92,13 @@ def main():
                 args.output.parent.mkdir(parents=True,exist_ok=True)
                 args.output.write_text(json.dumps(rows,indent=2),encoding='utf-8')
                 print(json.dumps({k:v for k,v in row.items() if k not in ('stages','log')}),flush=True)
-            base=next(r for r in group if r['variant']=='baseline')
+            base=(next(r for r in expected if r['board']==entry['name'] and
+                       r['corridor']==bool(corridor) and r['variant']=='combined')
+                  if expected is not None else next(r for r in group if r['variant']=='baseline'))
             for row in group:
                 row['identical_geometry']=row['geometry']==base['geometry']
-                row['gain_percent']=100*(base['seconds']-row['seconds'])/base['seconds']
+                if expected is None:
+                    row['gain_percent']=100*(base['seconds']-row['seconds'])/base['seconds']
                 failed |= not row['identical_geometry']
             args.output.write_text(json.dumps(rows,indent=2),encoding='utf-8')
     return int(failed)
