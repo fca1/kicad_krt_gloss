@@ -270,7 +270,8 @@ def activate(action_module, *, board_provider=None):
                     True: branch_bitmap,
                     False: wx.Bitmap(net_image.Scale(branch_bitmap.GetWidth(), branch_bitmap.GetHeight(), wx.IMAGE_QUALITY_HIGH)),
                 }
-            self._branch_summary = wx.StaticText(panel, label='')
+            self._branch_summary = wx.StaticText(panel, label='', style=wx.ST_NO_AUTORESIZE)
+            self._branch_summary.SetMinSize((1, self._branch_summary.GetCharHeight()))
             panel.GetSizer().Add(self._branch_summary, 0, wx.EXPAND | wx.ALL, 8)
             self.controls['selection_uses_elementary_branches'].Bind(
                 wx.EVT_CHECKBOX, lambda event: self._sync_net_selection())
@@ -279,9 +280,7 @@ def activate(action_module, *, board_provider=None):
             if self._eb_enabled():
                 self._capture_branches(add=True, update_checks=False)
             self._sync_net_selection()
-            self.Fit()
-            self.SetMinSize(self.GetSize())
-            self.Layout()
+            self._configure_dialog_size()
 
         def _eb_enabled(self):
             return self.controls['selection_uses_elementary_branches'].GetValue()
@@ -296,8 +295,9 @@ def activate(action_module, *, board_provider=None):
                 self._scope_illustration.Refresh()
             self._branch_highlighter(names, enabled)
             if hasattr(self, '_branch_summary'):
-                self._branch_summary.SetLabel(self._branch_memory.describe(names, enabled))
-                self._branch_summary.Wrap(650)
+                description = self._branch_memory.describe(names, enabled)
+                self._branch_summary.SetLabel(description)
+                self._branch_summary.SetToolTip(description)
                 self.notebook.GetPage(0).Layout()
 
         def _capture_branches(self, *, add, update_checks=True):

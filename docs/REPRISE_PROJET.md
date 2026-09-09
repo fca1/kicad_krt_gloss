@@ -56,6 +56,11 @@ Après Add/Replace, une couverture exacte de toutes les pistes non graphiques
 du net, avec références et topologie vérifiées, devient un net entier : mémoire
 EB retirée et colonne vide. Références manquantes/périmées : aucune promotion.
 Les deux champs Calculation Settings partagent désormais le même bord droit.
+Le dialogue ne fige plus sa taille d'ouverture comme minimum. General devient
+défilable verticalement et passe en une colonne quand les deux ne tiennent pas.
+Le résumé EB ne participe plus à une largeur minimale liée aux noms de nets.
+Test natif Windows : largeur 960 → 536 → 1037 → 536 pixels, commandes vérifiées,
+polices inchangées. Pas de qualification graphique Linux/macOS.
 
 1. [AGENTS.md](../AGENTS.md) : règles de collaboration et autorisations.
 2. Ce guide : état actuel et pièges à connaître.

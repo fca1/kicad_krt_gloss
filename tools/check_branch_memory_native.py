@@ -45,6 +45,27 @@ def main():
     assert dialog.budget_seconds.GetFont().GetPointSize()==dialog.centering_proximity_mm.GetFont().GetPointSize()
     dialog.notebook.GetPage(0).Layout()
     assert dialog.grid_step.GetRect().GetRight()==dialog.budget_seconds.GetRect().GetRight()
+    opening=dialog.GetSize()
+    minimum=dialog.GetMinSize()
+    assert minimum.width < opening.width
+    dialog.SetSize(minimum)
+    dialog.Layout()
+    dialog._on_general_size()
+    assert dialog.GetSize().width==minimum.width
+    assert dialog._general_columns.GetOrientation()==wx.VERTICAL
+    assert dialog._selection_actions.GetOrientation()==wx.VERTICAL
+    for control in (dialog.grid_step,dialog.budget_seconds,
+                    dialog.controls['selection_uses_elementary_branches'],
+                    dialog._scope_illustration):
+        assert control.GetRect().GetRight() <= dialog._general_panel.GetClientSize().width
+    for button in (dialog.gloss_button,dialog.centering_button):
+        assert button.GetRect().GetBottom() <= dialog.GetClientSize().height
+    wide=wx.Size(max(opening.width,dialog._wide_general_min+100),opening.height)
+    dialog.SetSize(wide);dialog.Layout();dialog._on_general_size()
+    assert dialog._general_columns.GetOrientation()==wx.HORIZONTAL
+    dialog.SetSize(minimum);dialog.Layout();dialog._on_general_size()
+    assert dialog.GetSize().width==minimum.width
+    print('RESIZE PASS:',opening.width,'->',minimum.width,'->',wide.width,'->',minimum.width)
     def toggle_eb(enabled):
         control=dialog.controls['selection_uses_elementary_branches']
         control.SetValue(enabled)

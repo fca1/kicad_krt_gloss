@@ -465,7 +465,9 @@ def test_dialog_has_a_top_level_sizer_for_panel_and_buttons():
     assert 'self.notebook.AddPage(log_panel, "Log")' in source
     assert 'self.notebook.AddPage(about, "About")' in source
     assert "outer.Add(self.notebook, 1, wx.EXPAND)" in source
-    assert "self.SetSizerAndFit(outer)" in source
+    assert "self.SetSizer(outer)" in source
+    assert "self._configure_dialog_size()" in source
+    assert "self.SetMinSize(self.GetSize())" not in source
 
 
 def test_dialog_configuration_is_partitioned_by_action_scope():

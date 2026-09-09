@@ -143,6 +143,23 @@ Calculation Settings utilise une grille commune : libellés à gauche, champs
 de même largeur et même bord droit, colonne d'unité réservée pour « s ».
 Il s'agit de l'alignement des champs, sans modification des valeurs de calcul.
 
+### Correction du redimensionnement après intégration
+
+Les appels Fit puis SetMinSize(GetSize) transformaient la largeur calculée en
+minimum irréductible. Ils sont remplacés par une taille d'ouverture distincte
+du minimum de la disposition compacte. General est un ScrolledWindow vertical ;
+les colonnes et boutons d'import s'empilent lorsque le contenu ne tient plus.
+Le seuil est calculé depuis les sizers ; les polices agrandies restent inchangées.
+Le résumé des branches ne fait plus croître le minimum avec les noms des nets ;
+le texte complet reste disponible en infobulle et la colonne EB reste présente.
+
+Test natif Windows : réduction réelle 960 → 536, agrandissement 1037 puis retour
+536 pixels, vérification des orientations, champs dans la largeur disponible
+et boutons d'exécution dans la fenêtre. Centering net complet et Gloss deux EB
+passent après réduction, G5 vrai, source inchangée. Le test textuel historique
+exigeant SetSizerAndFit est mis à jour : il protégeait l'ancien dimensionnement.
+Ces tests ne constituent pas une validation visuelle utilisateur sur les trois OS.
+
 74 tests ciblés réussis. Runner natif étendu avec `--scope complete` : Replace
 de toutes les EB puis Add successifs jusqu'à couverture complète, cellule vide,
 Centering effectif /A à Proxi 2.54, 3 portes, G5 vrai, source inchangée.

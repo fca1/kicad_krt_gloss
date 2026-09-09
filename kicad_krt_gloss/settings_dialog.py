@@ -55,13 +55,18 @@ class GlossSettingsDialog(wx.Dialog):
         wx.ToolTip.SetAutoPop(15000)
         wx.ToolTip.SetReshow(50)
         self.notebook = wx.Notebook(self)
-        panel = wx.Panel(self.notebook)
+        panel = wx.ScrolledWindow(self.notebook)
+        panel.SetScrollRate(0, self.FromDIP(12))
+        self._general_panel = panel
         content = wx.BoxSizer(wx.VERTICAL)
         self.controls = {}
 
         general_columns = wx.BoxSizer(wx.HORIZONTAL)
+        self._general_columns = general_columns
         left_column = wx.BoxSizer(wx.VERTICAL)
+        self._general_left_column = left_column
         right_column = wx.BoxSizer(wx.VERTICAL)
+        self._general_right_column = right_column
         right_box = wx.StaticBox(panel, label="Select branch")
         selection = wx.StaticBoxSizer(right_box, wx.VERTICAL)
         selected_net = wx.StaticText(
@@ -238,8 +243,9 @@ class GlossSettingsDialog(wx.Dialog):
         buttons.Add(self.centering_button, 1, wx.RIGHT, 5)
         buttons.Add(close_button, 1)
         outer.Add(buttons, 0, wx.EXPAND | wx.ALL, 10)
-        self.SetSizerAndFit(outer)
-        self.SetMinSize(self.GetSize())
+        self.SetSizer(outer)
+        self._configure_dialog_size()
+        self._general_panel.Bind(wx.EVT_SIZE, self._on_general_size)
         self.centering_net_panel.set_selection_changed_callback(self._sync_net_selection)
         self.centering_net_panel.net_list.Bind(
             wx.EVT_LISTBOX, self._on_centering_net_row_selected)
@@ -252,6 +258,44 @@ class GlossSettingsDialog(wx.Dialog):
                     self.notebook.SetSelection(index)
                     break
         self.Bind(wx.EVT_SHOW, self._on_initial_show)
+
+    def _configure_dialog_size(self):
+        """Separate opening size from the minimum usable single-column layout."""
+        self._selection_actions.SetOrientation(wx.HORIZONTAL)
+        self._wide_general_min = (self._general_left_column.CalcMin().width +
+                                  self._general_right_column.CalcMin().width + self.FromDIP(32))
+        minimum_width = max(self.FromDIP(520), self._general_right_column.CalcMin().width + self.FromDIP(48))
+        self.notebook.SetMinSize((minimum_width, self.FromDIP(460)))
+        minimum = self.GetSizer().CalcMin()
+        minimum = self.ClientToWindowSize(minimum)
+        self.SetMinSize(minimum)
+        opening = wx.Size(max(minimum.width, self.FromDIP(960)),
+                          max(minimum.height, self.FromDIP(700)))
+        self.SetSize(opening)
+        self.Layout()
+        self._on_general_size()
+
+    def _on_general_size(self, event=None):
+        if getattr(self, '_laying_out_general', False):
+            if event is not None:
+                event.Skip()
+            return
+        self._laying_out_general = True
+        try:
+            panel = self._general_panel
+            width = panel.GetClientSize().width
+            # Two columns only when both fit. Below that, keep every control
+            # reachable by vertical scrolling, without reducing its font.
+            threshold = self._wide_general_min
+            narrow = width < threshold
+            self._general_columns.SetOrientation(wx.VERTICAL if narrow else wx.HORIZONTAL)
+            self._selection_actions.SetOrientation(wx.VERTICAL if narrow else wx.HORIZONTAL)
+            panel.Layout()
+            panel.FitInside()
+        finally:
+            self._laying_out_general = False
+        if event is not None:
+            event.Skip()
 
     def _create_gloss_tab(self, values):
         """Build the page containing options used only by the Gloss action."""
@@ -347,6 +391,7 @@ class GlossSettingsDialog(wx.Dialog):
         net_sizer.Add(self.centering_net_panel, 1, wx.EXPAND)
 
         selection_actions = wx.BoxSizer(wx.HORIZONTAL)
+        self._selection_actions = selection_actions
         add_selection = wx.Button(panel, label="Add KiCad selection")
         add_selection.SetToolTip(
             "Check the nets of currently selected KiCad tracks, keeping "
