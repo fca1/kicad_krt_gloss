@@ -15,6 +15,7 @@ from _eb_probe.runtime import configure_krt_runtime
 configure_krt_runtime()
 import pcbnew
 import wx
+import wx.dataview as dv
 from _eb_probe import action_plugin as action
 from _eb_probe.branch_selection_prototype import activate, track_index
 from dgloss.branches import elementary_branch_segment_ids
@@ -46,6 +47,7 @@ def main():
     assert not dialog.gloss_button.IsEnabled() and not dialog.centering_button.IsEnabled()
     reveal_calls=[]
     scope_list=dialog.centering_net_panel.net_list
+    assert scope_list.GetWindowStyleFlag() & dv.DV_VERT_RULES
     reveal=scope_list.reveal_first_changed
     def record_reveal(names):
         row=reveal(names)
@@ -79,6 +81,7 @@ def main():
         print('VISIBLE COLUMNS:',net_rect,eb_rect)
         assert eb_rect.width <= scope_list.FromDIP(60)
         assert net_rect.width > eb_rect.width
+        assert net_rect.width == scope_list.FromDIP(120)
     assert dialog.GetSize().width==minimum.width
     assert dialog._general_columns.GetOrientation()==wx.HORIZONTAL
     assert dialog._selection_actions.GetOrientation()==wx.HORIZONTAL
@@ -139,7 +142,6 @@ def main():
     assert listing.GetTextValue(listing.FindString('/A'),2)=='2 EB'
     # The native header adds a small border to the requested width on Windows.
     assert listing.GetTextExtent('2 EB').width <= listing.GetColumn(2).GetWidth() <= listing.FromDIP(60)
-    import wx.dataview as dv
     row=listing.FindString('/A')
     for checked in (False, True):
         listing.Check(row,checked)

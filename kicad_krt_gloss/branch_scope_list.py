@@ -5,16 +5,17 @@ import wx.dataview as dv
 
 class BranchScopeList(dv.DataViewListCtrl):
     def __init__(self, panel, scope_label, on_preview, on_check):
-        super().__init__(panel, size=panel.FromDIP((280, 180)),
-                         style=dv.DV_MULTIPLE | dv.DV_ROW_LINES)
+        super().__init__(panel, size=panel.FromDIP((206, 180)),
+                         style=dv.DV_MULTIPLE | dv.DV_ROW_LINES | dv.DV_VERT_RULES)
         self._scope_label = scope_label
         self._silent = False
         self._scope_width = self.FromDIP(50)
         self._resize_pending = False
+        self._net_width = self.FromDIP(120)
         check_column = self.AppendToggleColumn('', width=self.FromDIP(32))
         check_column.SetMinWidth(self.FromDIP(24))
         check_column.SetWidth(self.FromDIP(32))
-        self.AppendTextColumn('Net', width=self.FromDIP(170))
+        self.AppendTextColumn('Net', width=self._net_width)
         scope_column = self.AppendTextColumn('EB', width=self.FromDIP(50))
         scope_column.SetMinWidth(self.FromDIP(40))
         scope_column.SetWidth(self.FromDIP(50))
@@ -32,8 +33,20 @@ class BranchScopeList(dv.DataViewListCtrl):
         self.Bind(dv.EVT_DATAVIEW_ITEM_VALUE_CHANGED, checked)
         self.Bind(wx.EVT_SIZE, self._resize_columns)
         self.Bind(wx.EVT_SHOW, self._resize_columns)
+        self.Bind(wx.EVT_MOTION, self._show_net_tooltip)
+
+    def _show_net_tooltip(self, event):
+        item, column = self.HitTest(event.GetPosition())
+        text = 'EB = Elementary branches; blank = whole net.'
+        if item.IsOk() and column == self.GetColumn(1):
+            text = self.GetString(self.ItemToRow(item))
+        if self.GetToolTipText() != text:
+            self.SetToolTip(text)
+        event.Skip()
 
     def _resize_columns(self, event=None):
+        if not self:
+            return
         self._apply_column_widths()
         if event is not None:
             event.Skip()
@@ -50,9 +63,8 @@ class BranchScopeList(dv.DataViewListCtrl):
         self._apply_column_widths()
 
     def _apply_column_widths(self):
-        remaining = self.GetClientSize().width - self.FromDIP(32) - self._scope_width
         self.GetColumn(0).SetWidth(self.FromDIP(32))
-        self.GetColumn(1).SetWidth(max(self.FromDIP(100), remaining - self.FromDIP(4)))
+        self.GetColumn(1).SetWidth(self._net_width)
         self.GetColumn(2).SetWidth(self._scope_width)
 
     def Clear(self):
@@ -141,6 +153,8 @@ def install(dialog):
                           dialog._on_centering_net_checked)
     new.SetToolTip(old.GetToolTipText())
     panel._list_container_sizer.Replace(old, new)
+    # Don't give surplus panel width to the last native column (EB).
+    panel._list_container_sizer.GetItem(new).SetFlag(wx.ALIGN_LEFT)
     panel.net_list = new
     old.Destroy()
     panel.set_selected_nets(selected)

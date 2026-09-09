@@ -1,5 +1,12 @@
 # Reprendre Smooth Gloss KRT
 
+Dernier ajustement netlist : Net fixé à 120 DIP (environ moitié de la largeur
+précédente), EB demandé à 50 DIP, séparateurs natifs `DV_VERT_RULES`.
+La liste reste alignée à gauche sans redistribuer l'espace libre à EB.
+Infobulle : nom complet sur Net, signification de EB sur la colonne EB.
+Essai natif affiché : Net 120 px, EB 50 px ; ouverture 659 px, minimum 635 px.
+Capture réelle également vérifiée avec la carte antmicro (liste avec ascenseur).
+
 Compacité UI : boutons d'import « Add », « Replace », « Clear », infobulles
 conservées. Largeur initiale = minimum des deux colonnes + 24 DIP, sans plancher
 960 DIP. Essai Windows affiché : ouverture 659 px, minimum 635 px, Net 222 px
