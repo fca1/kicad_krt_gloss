@@ -72,6 +72,11 @@ def build(output_dir):
         )
         for source, archive_name in package_documents:
             shutil.copy2(source, plugins / archive_name)
+        # Preserve the relative links in the public README after installation.
+        readme_docs = plugins / "docs"
+        readme_docs.mkdir()
+        shutil.copy2(ROOT / "docs" / "AUTHORS.md", readme_docs / "AUTHORS.md")
+        _copytree(ROOT / "docs" / "assets", readme_docs / "assets")
         _copytree(ROOT / "dgloss", plugins / "dgloss")
 
         runtime = plugins / "KRT"

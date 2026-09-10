@@ -1,5 +1,10 @@
 # Reprendre Smooth Gloss KRT
 
+Publication : `tools/prepare_publication.py` prépare le ZIP PCM, les métadonnées
+externes, les empreintes, les notes et la procédure, sans publication distante.
+Le package inclut les images du README et respecte ses liens relatifs.
+Conserver le statut testing et les limites de validation dans les notes.
+
 Le mode d'emploi public racine est volontairement court, en anglais et limité
 au plugin KiCad : ne pas y réintroduire le mode d'emploi CLI. Les captures
 General, Gloss et Centering sont présentées à côté de leur texte. La procédure

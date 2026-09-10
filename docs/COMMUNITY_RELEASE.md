@@ -1,5 +1,18 @@
 # Community testing release
 
+Prepare the complete local publication kit (requires Python `jsonschema`):
+
+```powershell
+py -3.12 tools/prepare_publication.py --output-dir dist/publication-0.1.3
+```
+
+The output includes the installable ZIP, external PCM metadata with download
+URL and checksums, icon, release notes, illustrated guide, source revisions,
+and `PUBLIER.md`. It validates both metadata files against the official v2
+schema and checks the archive and README links. Use a new empty directory for
+each build. No remote publication or tag is performed. The proposed GitHub
+release URL becomes valid only after uploading the ZIP.
+
 KiCad KRT Gloss is packaged as a KiCad 10 SWIG ActionPlugin using the official
 Plugin and Content Manager archive layout:
 
