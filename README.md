@@ -6,6 +6,11 @@ by Dr DrAndyHaas, which provides obstacle, clearance and connectivity checks.
 
 ![KiCad PCB Editor: the TrackGloss Changes overlay on User.1 shows the former dotted detour and the final shortened track.](docs/assets/kicad-user1-reductions.png)
 
+This KiCad capture uses a medium board and runs Gloss only on the small
+`D10~` track set. In the **Appearance** panel, the active copper layers and
+**TrackGloss Changes** on `User.1` are visible together: the solid red routing
+is the result, while the dotted overlay preserves the former path for review.
+
 ## Install
 
 In KiCad, open **Plugin and Content Manager**, choose **Install from File…**,
