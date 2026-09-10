@@ -1,6 +1,6 @@
-# KiCad KRT Gloss
+# KiCad KRGloss
 
-KiCad KRT Gloss shortens, simplifies and centres tracks on an already routed
+KiCad KRGloss shortens, simplifies and centres tracks on an already routed
 PCB. KRT remains responsible for obstacle, clearance and connectivity checks.
 
 ![A routed detour replaced by a shorter connection.](docs/assets/gloss-before-after.png)
@@ -9,7 +9,7 @@ PCB. KRT remains responsible for obstacle, clearance and connectivity checks.
 
 In KiCad, open **Plugin and Content Manager**, choose **Install from File…**,
 select the plugin ZIP, then open **PCB Editor → Tools → External Plugins →
-KiCad KRT Gloss**.
+KiCad KRGloss**.
 
 ## Choose the scope
 
@@ -96,5 +96,5 @@ developed with assistance from **ChatGPT/Codex (OpenAI)**.
 
 **DrAndyHaas** is the author and primary code provenance of
 [KiCad Routing Tools (KRT)](https://github.com/drandyhaas/KiCadRoutingTools).
-KiCad KRT Gloss is distributed under the [MIT License](LICENSE); detailed
+KiCad KRGloss is distributed under the [MIT License](LICENSE); detailed
 provenance is recorded in [AUTHORS.md](docs/AUTHORS.md) and [NOTICE](NOTICE).
