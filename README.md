@@ -2,7 +2,7 @@
 
 KiCad KRGloss reduces and simplifies one or more already routed tracks, most
 often after autorouting or manual routing. It is built on KiCad Routing Tools
-by Dr DrAndyHaas, which provides obstacle, clearance and connectivity checks.
+by DrAndyHaas, which provides obstacle, clearance and connectivity checks.
 
 ![KiCad PCB Editor: the TrackGloss Changes overlay on User.1 shows the former dotted detour and the final shortened track.](docs/assets/kicad-user1-reductions.png)
 
@@ -19,45 +19,24 @@ KiCad KRGloss**.
 
 ## Choose the scope
 
-![General tab — full dialog with net list and elementary-branch scope.](docs/assets/dialog-general.png)
-
-1. Check the nets to process.
-2. Click a row to highlight its remembered scope in KiCad.
-3. Use **Add** or **Replace** to import the current KiCad selection; **Clear**
-   empties the list.
-
-With **Use elementary branches** enabled, a selected track imports its complete
-branch up to pads, free ends or junctions. A row showing `n EB` contains
-remembered branches; an empty EB cell means the whole net. Disable the option
-to always process complete nets.
+| General | Choose nets or branches |
+| --- | --- |
+| ![General: visible net names, 1 EB scope and action buttons.](docs/assets/dialog-general.png) | **Check** a net to include it; **click** a row to highlight its scope.<br><br>**Add / Replace** imports the KiCad selection. **Clear** empties the list.<br><br>With **Use elementary branches** enabled, importing a selected track remembers its full branch, bounded by pads, free ends or junctions. **n EB** means partial branch scope; a blank EB cell means the whole net. Without remembered branches, checking a net selects the whole net. |
 
 If nothing is selected in KiCad, the dialog opens with no checked net. The
 action buttons remain disabled until at least one net is checked.
 
 ## Gloss
 
-![Gloss tab — full dialog with corridor, movable-via and repeat-pass options.](docs/assets/dialog-gloss.png)
-
-- **Stay in corridor** prevents a movement from crossing or jumping over an
-  obstacle.
-- **Movable vias** allows eligible unlocked vias to move.
-- **Repeat Gloss until stable** requests additional passes, up to the displayed
-  G4 limit.
-
-Click **Gloss**. A valid route may remain unchanged when no safe improvement
-exists.
+| Gloss | Shorten and simplify |
+| --- | --- |
+| ![Gloss: corridor and via illustrations, settings and action buttons.](docs/assets/dialog-gloss.png) | **Stay in corridor** prevents crossing or jumping over an obstacle.<br><br>**Movable vias** allows eligible unlocked vias to move.<br><br>**Repeat Gloss until stable** adds passes up to the G4 limit.<br><br>Click **Gloss**. No change is normal when no safe improvement exists. |
 
 ## Centering and Proximity max
 
-![Centering tab — full dialog with the Proximity max control.](docs/assets/dialog-centering.png)
-
-To set **Proximity max** from the board:
-
-1. In KiCad, select **exactly two pads**.
-2. Open the **Centering** tab.
-3. Click **Refresh**.
-4. Check the centre-to-centre distance displayed in **Proximity max**.
-5. Check the target net and click **Centering**.
+| Centering | Set Proxi using two pads |
+| --- | --- |
+| ![Centering: Proximity max 2.54 mm, illustration and Refresh button.](docs/assets/dialog-centering.png) | **1.** In KiCad, select **exactly two pads**.<br><br>**2.** Open the **Centering** tab and click **Refresh**.<br><br>**3.** Check the **centre-to-centre distance** shown in **Proximity max** (0–5 mm).<br><br>**4.** In General, check the target net or import its branches, then click **Centering**. |
 
 The two-pad selection is used only to measure Proximity max. The checked net
 or remembered elementary branches define which track is processed.
@@ -69,18 +48,10 @@ after Centering.
 
 ## Review the result
 
-### Log tab
-
-![Log tab — full dialog with execution output and Copy Log / Clear Log controls.](docs/assets/dialog-log.png)
-
 The **Log** tab records the options, net names and result. The plugin also
 creates or reuses **TrackGloss Changes** on a free User layer: old copper is
 dashed and new copper is solid. This layer is a visual aid, not a replacement
 for KiCad's visual inspection and DRC.
-
-### About tab
-
-![About tab — full dialog with version and author information.](docs/assets/dialog-about.png)
 
 Gloss and Centering modify existing routing only. Locked or protected copper,
 arcs, differential pairs and constrained tracks remain protected.
