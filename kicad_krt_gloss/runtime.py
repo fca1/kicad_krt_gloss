@@ -91,4 +91,7 @@ def ensure_krt_dependencies(parent=None):
     spec = importlib.util.spec_from_file_location("krg_krt_deps_check", source)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
+    # PyPI distribution names need not match Python import names.
+    # KRT 0.22 declares Pillow but its generic fallback tries `import Pillow`.
+    module.IMPORT_TESTS.setdefault("Pillow", "from PIL import Image")
     return module.ensure_dependencies(parent)

@@ -4,6 +4,9 @@ Publication : `tools/prepare_publication.py` prépare le ZIP PCM, les métadonn�
 externes, les empreintes, les notes et la procédure, sans publication distante.
 Le package inclut les images du README et respecte ses liens relatifs.
 Conserver le statut testing et les limites de validation dans les notes.
+L'adaptateur runtime associe la dépendance Pillow à l'import PIL.Image :
+le contrôleur KRT 0.22 utilisait sinon import Pillow et demandait sans fin une
+installation, y compris avec Pillow installé. Aucune source KRT modifiée.
 
 Le mode d'emploi public racine est volontairement court, en anglais et limité
 au plugin KiCad : ne pas y réintroduire le mode d'emploi CLI. Les captures
