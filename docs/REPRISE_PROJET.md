@@ -1,5 +1,14 @@
 # Reprendre Smooth Gloss KRT
 
+Le mode d'emploi public racine est volontairement court, en anglais et limité
+au plugin KiCad : ne pas y réintroduire le mode d'emploi CLI. Les captures
+General, Gloss et Centering sont présentées à côté de leur texte. La procédure
+Proximity max doit rester explicite : sélectionner exactement deux pads dans
+KiCad, cliquer sur Refresh, vérifier la distance centre-à-centre, puis lancer
+Centering sur le scope coché. Attribution officielle : Frantz est l'auteur,
+propriétaire et mainteneur ; ChatGPT/Codex (OpenAI) apporte une assistance au
+développement et n'est pas présenté comme co-auteur.
+
 Les cinq optimisations du prototype performances 448b991 sont intégrées en
 production à la demande utilisateur : `dgloss/clearance_preparation.py` prépare
 les distances et filtres ; `krt_clearance.py` les appelle sans monkey-patch.

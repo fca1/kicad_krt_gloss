@@ -195,7 +195,7 @@ class GlossSettingsDialog(wx.Dialog):
             ("KRT version:", self._krt_version(), None),
             ("Author:", "Frantz",
              "https://github.com/fca1/kicad_krt_gloss"),
-            ("Co-author:", "ChatGPT/Codex (OpenAI)", None),
+            ("Assisted by:", "ChatGPT/Codex (OpenAI)", None),
             (None, None, None),
             ("KRT author:", "DrAndyHaas",
             "https://github.com/drandyhaas/KiCadRoutingTools"),

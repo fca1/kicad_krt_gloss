@@ -220,7 +220,7 @@ def test_apply_uses_zone_refill_boundary():
 def test_pcm_presentation_keeps_authorship_and_plain_krt_link():
     metadata = json.loads((ROOT / "kicad_krt_gloss" / "metadata.json").read_text(
         encoding="utf-8"))
-    assert metadata["author"]["name"] == "Frantz with ChatGPT/Codex (OpenAI)"
+    assert metadata["author"]["name"] == "Frantz"
     assert metadata["maintainer"]["name"] == "Frantz"
     assert metadata["author"]["contact"]["github"] == (
         "https://github.com/fca1/kicad_krt_gloss")
@@ -591,7 +591,7 @@ def test_about_tab_uses_project_versions_and_attribution():
     assert '("KRG version:", __version__, None)' in source
     assert '("KRT version:", self._krt_version(), None)' in source
     assert '("Author:", "Frantz",' in source
-    assert '("Co-author:", "ChatGPT/Codex (OpenAI)", None)' in source
+    assert '("Assisted by:", "ChatGPT/Codex (OpenAI)", None)' in source
     assert '("KRT author:", "DrAndyHaas",' in source
     assert 'label="GitHub Repository"' in source
     assert '"https://github.com/fca1/kicad_krt_gloss"' in source
@@ -599,6 +599,16 @@ def test_about_tab_uses_project_versions_and_attribution():
     assert "info.AddSpacer(10)" in source
     assert "info.AddSpacer((1, 10))" not in source
     assert 'self.selected_net_label.SetLabel(f"Selected Nets: {len(names)}")' in source
+
+
+def test_public_readme_is_plugin_only_and_explains_two_pad_proximity():
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    assert "select <strong>exactly two pads</strong>" in readme
+    assert "Click <strong>Refresh</strong>" in readme
+    assert "centre-to-centre distance" in readme
+    assert "## Command line" not in readme
+    assert "python gloss.py" not in readme
+    assert "**Frantz** is the author" in readme
 
 
 def test_pcm_package_includes_the_about_logo():

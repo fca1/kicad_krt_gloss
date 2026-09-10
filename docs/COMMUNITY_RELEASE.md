@@ -31,5 +31,5 @@ then submit the package metadata through the official KiCad addons metadata
 repository process.
 
 The package is MIT-licensed and preserves the copyright and primary code
-provenance of DrAndyHaas. The standalone adaptation was created with
-ChatGPT/Codex (OpenAI); Frantz is co-author and maintainer.
+provenance of DrAndyHaas. Frantz is the author and maintainer of the standalone
+adaptation, developed with assistance from ChatGPT/Codex (OpenAI).
