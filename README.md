@@ -1,7 +1,8 @@
 # KiCad KRGloss
 
-KiCad KRGloss shortens, simplifies and centres tracks on an already routed
-PCB. KRT remains responsible for obstacle, clearance and connectivity checks.
+KiCad KRGloss reduces and simplifies one or more already routed tracks, most
+often after autorouting or manual routing. It is built on KiCad Routing Tools
+by Dr DrAndyHaas, which provides obstacle, clearance and connectivity checks.
 
 ![KiCad PCB Editor: the TrackGloss Changes overlay on User.1 shows the former dotted detour and the final shortened track.](docs/assets/kicad-user1-reductions.png)
 
