@@ -163,6 +163,10 @@ KRT est un sous-module externe, non modifiable dans ce projet. Il reste
 l'autorité pour les obstacles, distances, clearances et validations électriques.
 La façade [krt_api.py](../dgloss/krt_api.py) isole ses imports et adaptations.
 Ne pas disperser de nouvelles dépendances directes dans les stratégies.
+Le sous-module est aligné sur GitHub `main` au commit `529f873d` (10 septembre
+2026). Cette mise à jour ne modifie pas KRT localement ; elle avance seulement
+le pointeur versionné par ce dépôt. La compatibilité Gloss ciblée a été vérifiée
+à cette révision.
 
 Les accès inverses de KRG vers les bindings natifs KiCad sont regroupés dans
 [`kicad_bridge.py`](../kicad_krt_gloss/kicad_bridge.py). Cette façade ne doit
