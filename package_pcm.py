@@ -16,7 +16,7 @@ import zipfile
 ROOT = Path(__file__).resolve().parent
 PLUGIN = ROOT / "kicad_krt_gloss"
 KRT = ROOT / "KRT"
-VERSION = "0.1.3"
+VERSION = "0.1.4"
 KRT_VERSION = (KRT / "VERSION").read_text(encoding="utf-8").strip()
 BINARIES = (
     "grid_router-linux-x86_64.so",
@@ -45,7 +45,7 @@ def _download_binaries(destination):
                 shutil.copyfileobj(response, output)
 
 
-def build(output_dir):
+def build(output_dir, *, stage_only=False):
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     archive_path = output_dir / f"KiCadKrtGloss-{VERSION}.zip"
@@ -97,6 +97,11 @@ def build(output_dir):
         resources = stage / "resources"
         resources.mkdir()
         shutil.copy2(PLUGIN / "icon_64.png", resources / "icon.png")
+        if stage_only:
+            # Exercise the exact install layout without creating a ZIP.
+            destination = output_dir / "unpacked"
+            shutil.copytree(stage, destination)
+            return destination
         if archive_path.exists():
             archive_path.unlink()
         with zipfile.ZipFile(archive_path, "w", zipfile.ZIP_DEFLATED,
@@ -124,5 +129,7 @@ def build(output_dir):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--output-dir", default=str(ROOT / "dist"))
+    parser.add_argument("--stage-only", action="store_true",
+                        help="Prepare an unpacked installation for testing, without a ZIP")
     args = parser.parse_args()
-    build(args.output_dir)
+    build(args.output_dir, stage_only=args.stage_only)

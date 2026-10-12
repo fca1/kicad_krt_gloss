@@ -1,5 +1,28 @@
 # Reprendre Smooth Gloss KRT
 
+## Mise à jour du 12 octobre 2026 — KRGloss 0.1.4
+
+KRT pointe désormais sur `95776286` (dernier `origin/main` récupéré), version
+annoncée 0.23.0, contre `529f873d` auparavant. Aucune source KRT modifiée.
+Les binaires officiels v0.23.0 sont utilisés pour l'installation ; les sources
+Rust sont identiques entre ce tag et la révision intégrée. Les adaptateurs
+existants restent compatibles : aucune modification géométrique ajoutée.
+Voir [le bilan de mise à jour](reports/KRT_UPDATE_2026_10_12.md).
+
+`python package_pcm.py --stage-only --output-dir CHEMIN_NEUF` prépare exactement
+le contenu installable sous `unpacked/`, sans créer de ZIP. Il télécharge les
+binaires de la version KRT embarquée ; ne pas confondre ces essais avec un test
+utilisant l'ancien `KRT/rust_router/grid_router.pyd` local non versionné. Celui-ci
+est conservé et n'a pas été remplacé dans le sous-module. Pour tester le runtime
+mis à jour, utiliser l'installation préparée et son `runtime.py`.
+
+Validation Windows : suite moteur/frontières, dépendances réelles dans le Python
+KiCad, Gloss et Centering sur plusieurs EB de `/A` dans `test_centering2`.
+Le test README attendait une ancienne syntaxe HTML alors que le README utilise
+Markdown : attentes corrigées, contenu fonctionnel inchangé. Le xfail corridor
+préexistant reste visible. Pas de nouvelle qualification PACK0, Linux/macOS ni
+DRC complet ; ne pas annoncer une absence générale d'artefacts.
+
 Publication : `tools/prepare_publication.py` prépare le ZIP PCM, les métadonnées
 externes, les empreintes, les notes et la procédure, sans publication distante.
 Le package inclut les images du README et respecte ses liens relatifs.
@@ -180,7 +203,7 @@ KRT est un sous-module externe, non modifiable dans ce projet. Il reste
 l'autorité pour les obstacles, distances, clearances et validations électriques.
 La façade [krt_api.py](../dgloss/krt_api.py) isole ses imports et adaptations.
 Ne pas disperser de nouvelles dépendances directes dans les stratégies.
-Le sous-module est aligné sur GitHub `main` au commit `529f873d` (10 septembre
+Le sous-module est aligné sur GitHub `main` au commit `95776286` (12 octobre
 2026). Cette mise à jour ne modifie pas KRT localement ; elle avance seulement
 le pointeur versionné par ce dépôt. La compatibilité Gloss ciblée a été vérifiée
 à cette révision.

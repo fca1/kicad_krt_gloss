@@ -603,8 +603,8 @@ def test_about_tab_uses_project_versions_and_attribution():
 
 def test_public_readme_is_plugin_only_and_explains_two_pad_proximity():
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    assert "select <strong>exactly two pads</strong>" in readme
-    assert "Click <strong>Refresh</strong>" in readme
+    assert "select **exactly two pads**" in readme
+    assert "click **Refresh**" in readme
     assert "centre-to-centre distance" in readme
     assert "## Command line" not in readme
     assert "python gloss.py" not in readme
