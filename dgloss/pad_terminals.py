@@ -42,12 +42,19 @@ def _walk_terminal_chain(pcb_data, net_id, pad):
     for segment in net_segments:
         for point in _endpoint_in_pad(segment, pad):
             contacts.append((segment, point))
-    # Multiple copper entries make this a pad node, not a G3.2 simple terminal.
+    # Count independent entries, not endpoints: a short terminal segment can
+    # lie entirely inside the pad and share its next joint with the exit leg.
+    total_incidence = defaultdict(int)
+    for segment in net_segments:
+        total_incidence[pos_key(segment.start_x, segment.start_y)] += 1
+        total_incidence[pos_key(segment.end_x, segment.end_y)] += 1
     contact_keys = {(id(segment), pos_key(*point))
                     for segment, point in contacts}
-    if len(contact_keys) != 1:
+    terminals = [(segment, point) for segment, point in contacts
+                 if total_incidence[pos_key(*point)] == 1]
+    if len(terminals) != 1:
         return None
-    first, terminal = contacts[0]
+    first, terminal = terminals[0]
     if getattr(first, "locked", False):
         return None
 
@@ -58,10 +65,6 @@ def _walk_terminal_chain(pcb_data, net_id, pad):
              not getattr(segment, "locked", False)]
     adjacency = defaultdict(list)
     actual = {}
-    total_incidence = defaultdict(int)
-    for segment in net_segments:
-        total_incidence[pos_key(segment.start_x, segment.start_y)] += 1
-        total_incidence[pos_key(segment.end_x, segment.end_y)] += 1
     for segment in group:
         for point in ((segment.start_x, segment.start_y),
                       (segment.end_x, segment.end_y)):
@@ -71,6 +74,8 @@ def _walk_terminal_chain(pcb_data, net_id, pad):
 
     via_keys = {pos_key(via.x, via.y) for via in pcb_data.vias
                 if via.net_id == net_id}
+    if any(key in via_keys for _, key in contact_keys):
+        return None
     other_pads = [other for other in pcb_data.pads_by_net.get(net_id, [])
                   if other is not pad]
 
@@ -79,6 +84,8 @@ def _walk_terminal_chain(pcb_data, net_id, pad):
     current = pos_key(*terminal)
     segment = first
     used = set()
+    prefix_contacts = set()
+    in_pad_prefix = True
     while True:
         used.add(id(segment))
         chain.append(segment)
@@ -86,6 +93,10 @@ def _walk_terminal_chain(pcb_data, net_id, pad):
         b = pos_key(segment.end_x, segment.end_y)
         other_key = b if a == current else a
         other_point = actual[(id(segment), other_key)]
+        endpoints_in_pad = {pos_key(*p) for p in _endpoint_in_pad(segment, pad)}
+        if in_pad_prefix:
+            prefix_contacts.update((id(segment), key) for key in endpoints_in_pad)
+            in_pad_prefix = other_key in endpoints_in_pad
         points.append(other_point)
         current = other_key
         if (total_incidence[current] != 2 or current in via_keys or
@@ -100,6 +111,8 @@ def _walk_terminal_chain(pcb_data, net_id, pad):
         if math.dist(actual[(id(following[0]), current)], other_point) > FP_EPS_MM:
             break  # Keep the real endpoint; never bridge a rounded graph gap.
         segment = following[0]
+    if prefix_contacts != contact_keys:
+        return None  # Branch, separate entry, lock, or a later return to the pad.
     return chain, points
 
 
@@ -213,6 +226,24 @@ def optimize_pad_terminals(context, results, deadline=None, *, net_ids,
                 deadline=deadline, stay_in_corridor=stay_in_corridor,
                 accept_replacement=ReplacementGuard(
                     context.pcb_data, net_id, current, net_vias))
+            if candidate is None:
+                # A blocked connector to the far anchor does not rule out a
+                # shorter pad-side prefix. Progress from the pad in one direction,
+                # retaining the untouched suffix as both obstacle and anchor.
+                for count in range(2, len(chain)):
+                    if deadline is not None and perf_counter() >= deadline:
+                        break
+                    prefix = chain[:count]
+                    candidate = _best_pad_connector(
+                        context, pad, prefix, points[:count + 1],
+                        outside + chain[count:], net_vias, foreign,
+                        deadline=deadline, stay_in_corridor=stay_in_corridor,
+                        accept_replacement=ReplacementGuard(
+                            context.pcb_data, net_id, current, net_vias))
+                    if candidate is not None:
+                        chain = prefix
+                        removed_ids = {id(segment) for segment in chain}
+                        break
             if candidate is None:
                 if cache is not None and (deadline is None or perf_counter() < deadline):
                     cache.remember_failure(cache_key, chain)

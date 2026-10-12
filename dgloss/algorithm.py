@@ -1,7 +1,7 @@
 """G3: one-pass, fixed-via route-length reduction on KRT's grid."""
 
 from collections import defaultdict, Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import math
 from .execution import perf_counter
 from .topology import ReplacementGuard
@@ -129,7 +129,8 @@ def _reachable_segment_slides(context, source, outside, net_vias, anchors,
     Geometry is provided by :mod:`segment_sliding`; this function is only G3's
     shortening and reachability policy. The useful direction is walked outward
     from the incumbent and stops at its first sampled same-net or exact-KRT
-    obstruction. This sampled search is not a continuous corridor certificate.
+    obstruction, then refines only that final bracket. This sampled search is
+    not a continuous corridor certificate; corridor callers certify separately.
     """
     rate = slide_length_rate(*source)
     if rate is None or abs(rate) < 1e-9:
@@ -151,20 +152,61 @@ def _reachable_segment_slides(context, source, outside, net_vias, anchors,
         if max_steps is not None:
             count = min(max_steps, count)  # Explicit diagnostic caller only.
         best = None
+        low, high = 0.0, None
+
+        def probe(distance):
+            candidate = slide_segment(
+                *source, sign * distance, minimum_length=step)
+            if candidate is None:
+                return None
+            segments = list(candidate.segments)
+            if (_touches_other_same_net(segments, outside, net_vias, anchors) or
+                    not context.clearance_adapter.connector_clears(segments)):
+                return None
+            # A sub-grid contact must survive KiCad's nanometre serialization.
+            # Keep the exact anchors in memory; check the written coordinates
+            # as well, rather than accepting a clearance lost during rounding.
+            written = [replace(s, start_x=round(s.start_x, 6),
+                               start_y=round(s.start_y, 6),
+                               end_x=round(s.end_x, 6), end_y=round(s.end_y, 6))
+                       for s in segments]
+            if not context.clearance_adapter.connector_clears(written):
+                return None
+            return segments
+
         for index in range(1, count + 1):
             if deadline is not None and perf_counter() >= deadline:
                 break
-            candidate = slide_segment(
-                *source, sign * index * step, minimum_length=step)
-            if candidate is None:
+            distance = index * step
+            segments = probe(distance)
+            if segments is None:
+                high = distance
                 break
-            segments = list(candidate.segments)
-            if (_touches_other_same_net(
-                    segments, outside, net_vias, anchors) or
-                    not context.clearance_adapter.connector_clears(segments)):
-                break
-            if old_length - candidate.after_length > step + 1e-12:
+            low = distance
+            if old_length - calculate_route_length(segments) > step + 1e-12:
                 best = segments
+        # Do not exceed an explicit diagnostic work cap. The last non-grid
+        # geometric bound is otherwise also worth testing before refinement.
+        if high is None and max_steps is None and bound > low + 1e-7:
+            if deadline is None or perf_counter() < deadline:
+                segments = probe(bound)
+                if segments is None:
+                    high = bound
+                elif old_length - calculate_route_length(segments) > step + 1e-12:
+                    best = segments
+        if high is not None and max_steps is None:
+            for _ in range(24):
+                if (high-low <= 1e-7 or
+                        (deadline is not None and perf_counter() >= deadline)):
+                    break
+                middle = (low+high)/2
+                segments = probe(middle)
+                if segments is None:
+                    high = middle
+                else:
+                    low = middle
+                    if old_length - calculate_route_length(segments) > step + 1e-12:
+                        best = segments
         if best is not None:
             yield best
 
@@ -463,6 +505,18 @@ def shorten_routes(context, results, deadline=None, *, net_ids,
 
         removed_net = []
         added_net = []
+        if objective == "shorter":
+            from .width_transitions import transition_replacement
+            while deadline is None or perf_counter() < deadline:
+                current = board_views(context.pcb_data).segments(net_id)
+                replacement = transition_replacement(
+                    context, net_id, current, net_vias, deadline)
+                if replacement is None:
+                    break
+                removed, added = replacement
+                context.apply_replacement(removed, added)
+                removed_net.extend(removed)
+                added_net.extend(added)
         for chain in _scheduled_chains(
                 context.pcb_data, net_id, context.editable_segment_ids):
             if deadline is not None and perf_counter() >= deadline:

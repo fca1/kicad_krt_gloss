@@ -124,6 +124,15 @@ de repli valide.
 
 ![Le déplacement d'un via n'est retenu que lorsqu'il raccourcit les deux portions de piste qui y aboutissent.](../../docs/assets/mobile-via-reduces-length.png)
 
+### Transitions de largeur
+
+Une transition sans pad, via, verrou ni ramification n'est pas une ancre imposée.
+Une réduction locale peut déplacer cette transition avec les segments incidents,
+sans changer les deux largeurs ni déplacer les ancres extérieures. La suppression
+d'un segment ne doit pas supprimer une largeur distincte : le segment absorbé
+partage la largeur d'un voisin. Les contrôles utilisent la largeur physique de
+chaque portion et certifient leur mouvement conjoint ainsi que la connectivité.
+
 ### T et nœuds
 
 Dans un T constitué de deux segments colinéaires formant un rail et d'une

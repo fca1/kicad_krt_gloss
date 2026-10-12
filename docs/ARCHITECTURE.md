@@ -27,6 +27,7 @@ KRT.
 | `chain_topology` | Construction et parcours des chaînes, indépendants des stratégies |
 | `route_geometry` | Primitives partagées par pistes, pads, vias et jonctions |
 | `corner_reduction` | Réductions locales par supports octolinéaires, contact KRT et certificat de surfaces emboîtées |
+| `width_transitions` | Absorption locale d'un segment près d'une transition libre, avec largeurs distinctes et mouvement conjoint certifié |
 | `topology` | Politique électrique et réutilisation des certificats de référence |
 | `algorithm`, `local_gloss`, `via_mobile`, `pad_terminals`, `sliding_nodes` | Recherche et sélection des transformations |
 | `kicad_bridge` | Façade KRG vers la carte KiCad native ; délégation de l'import et des règles à KRT |

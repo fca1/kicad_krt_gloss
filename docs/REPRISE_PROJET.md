@@ -2,6 +2,21 @@
 
 ## État du 12 octobre 2026
 
+La comparaison `cube_pcb1_complete1.brd` / Fusion a conduit à trois corrections
+ciblées : transitions de largeur libres sur trois segments (`width_transitions`),
+reconnaissance d'un départ simple dont plusieurs extrémités touchent le même pad
+et recherche de préfixes depuis ce pad, puis affinement du dernier intervalle
+de glissement. Les glissements affinés vérifient aussi les coordonnées arrondies
+au nanomètre afin de conserver la clearance après écriture KiCad.
+Voir [diagnostic et validation](reports/GLOSS_FUSION_2026_10_12.md).
+
+Sur `complete1` réimporté, à vias fixes et sans G4 : 8,4176 mm gagnés contre
+2,6267 mm avant correction ; 655 segments contre 662. G5 valide, puis relecture
+du fichier produit : 93 nouveaux segments contrôlés, aucune régression de
+clearance ni de partition électrique. Le mode corridor gagne 4,0446 mm contre
+0,8870 mm. 272 tests ciblés passent. Ces essais ne remplacent pas un DRC complet
+et n'impliquent ni installation du plugin ni nouvelle campagne PACK0.
+
 Cette branche conserve uniquement l’action Gloss. Les points d’entrée publics
 sont `run_final_gloss` et `run_post_smooth_gloss`. Le moteur de placement dans
 les passages, ses prototypes, réglages, commandes et visualisations ont été
@@ -51,6 +66,12 @@ Un refus de certificat ne prouve pas l’impossibilité de tous les contournemen
 Un via mobile et ses segments incidents sont traités ensemble. L’arrêt sur un
 pad exige l’absorption effective jusqu’au pad terminal sur la couche concernée,
 avec la demi-largeur du segment. Aucun verrou permanent n’est écrit sur la carte.
+
+Une transition de largeur sans pad, via ni ramification peut absorber le segment
+voisin s'il partage l'une des deux largeurs. Les deux supports extérieurs et
+leurs largeurs sont conservés ; la proposition exige une réduction utile,
+une certification de mouvement continu aux deux largeurs et la garde électrique.
+Cette famille conservatrice reste certifiée même avec le corridor désactivé.
 
 G4 reste distinct du budget initial de 20 secondes : le dialogue autorise de
 1 à 10 passes supplémentaires (1 par défaut). Arrêt si le gain incrémental est

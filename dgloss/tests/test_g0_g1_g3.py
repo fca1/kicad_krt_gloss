@@ -410,7 +410,7 @@ def test_g3_krt_adapter_allows_own_terminal_pad():
     assert context.clearance_adapter.connector_clears([connector])
 
 
-def test_g3_uses_legacy_chamfer_when_canonical_bends_are_blocked():
+def test_g3_uses_certified_chamfer_when_canonical_bends_are_blocked():
     pcb, config, original = _blocked_canonical_board()
     before = calculate_route_length(original)
     results = []
@@ -425,8 +425,10 @@ def test_g3_uses_legacy_chamfer_when_canonical_bends_are_blocked():
     assert len(result) == 3 and diagonals
     assert abs(diagonals[0].end_x - diagonals[0].start_x) > 1.0
     chamfer_step = result[0].end_x - result[0].start_x
-    assert math.isclose(chamfer_step / config.grid_step,
-                        round(chamfer_step / config.grid_step), abs_tol=1e-9)
+    # The contact refinement may improve the old 0.8 mm grid solution.
+    assert config.grid_step <= chamfer_step <= .8 + 1e-9
+    assert build_gloss_context(pcb, config).clearance_adapter.connector_clears(result)
+    assert outcome.stats['g5_valid']
     assert outcome.stats["nets_changed"] == 1
     assert outcome.stats["nets_processed"] == 1
     assert outcome.stats["segment_changes"] > 0
