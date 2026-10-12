@@ -1,7 +1,7 @@
 # Track Gloss — reference specification
 
 This document defines the functional rules and invariants. For an accessible
-explanation of the two actions, see [`gloss_explain.md`](gloss_explain.md).
+explanation of Gloss, see [`gloss_explain.md`](gloss_explain.md).
 
 ## Purpose
 
@@ -76,25 +76,6 @@ modifiable scope:
 These exclusions remain obstacles for other nets. Explicit selection does not
 override their protection.
 
-## Sequencing
-
-Gloss and Centering are distinct actions with different objectives. Gloss
-reduces and simplifies; Centering places a track as well as possible in a
-passage. Centering may preserve or slightly increase length, so it is not
-subject to the minimum-gain condition used by length-reduction phases.
-
-When Centering is requested, the sequence is mandatory and atomic:
-
-1. run Gloss with `stay_in_corridor=True`;
-2. run Centering on that result;
-3. apply no further geometry transformation after Centering.
-
-Centering is therefore the final geometry transformation of the action. On
-failure, budget expiration, or non-compliance, the input is restored according
-to the transaction policy.
-
-![Gloss first removes safe detours; Centering then places the track in its passage.](../../docs/assets/centering-before-after.png)
-
 ## Scope
 
 - The gloss processes one or more explicitly designated elementary branches.
@@ -108,24 +89,6 @@ to the transaction policy.
 - A track receives no implicit protection from its apparent purpose.
 
 ## Fixed points and topology
-
-### Centering gates
-
-A gate is crossed by the track between two copper pads whose centre-to-centre
-distance is less than or equal to Proxi (0 to 5 mm; zero disables detection).
-There is no `2 * Proxi` copper-gap threshold or track-to-pad proximity condition.
-The track width and regulatory clearances must fit in the passage. Centering
-targets the clearance-weighted middle of the gate. The additional margin there
-is not imposed on approach connectors: they keep regulatory clearance at their
-actual width, without reserving room for future widening.
-
-For a single gate, movable neighbours are not anchors. When the local slide
-fails, the translation of existing supports propagates to successive neighbours
-and their joints slide on fixed boundary rails. Intersections determine the
-new lengths, without inventing new bends; KRT validates each proposal. An
-already centered and certified passage is satisfied, not a reason to rebuild
-its chain or roll back the preparatory Gloss. Logs distinguish newly centered
-and already centered passages.
 
 ### Pads
 

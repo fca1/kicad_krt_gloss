@@ -19,7 +19,7 @@ def main():
     parser.add_argument('boards',nargs='+',type=Path)
     parser.add_argument('--output',type=Path,required=True)
     args=parser.parse_args()
-    data=dict(protocol='one run per board/variant/corridor, no warm-up; budget20s; no Centering',runs=[],inputs={})
+    data=dict(protocol='one run per board/variant/corridor, no warm-up; budget20s',runs=[],inputs={})
     modes=[('current',False),('unified',False),('current',True),('unified',True)]
     args.output.parent.mkdir(parents=True,exist_ok=True)
     for i,board in enumerate(args.boards):

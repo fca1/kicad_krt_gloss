@@ -41,7 +41,7 @@ def main():
         source_unchanged=True, seconds=elapsed,
         gain_mm=before-calculate_route_length(pcb.segments),
         budget_seconds=args.budget,
-        protocol='single prototype run per budget, no repetition/warmup; production geometry; failed-certificate spatial worklist; full audit before convergence; 1 percent marginal gain threshold from total pass3; corridor=False; no Centering',
+        protocol='single prototype run per budget, no repetition/warmup; production geometry; failed-certificate spatial worklist; full audit before convergence; 1 percent marginal gain threshold from total pass3; corridor=False',
         dependencies=controller.dependencies.stats if controller.dependencies else {},
         stats=outcome.stats, log=log.getvalue().splitlines())
     path=args.output

@@ -26,4 +26,18 @@ def test_staging_preserves_runtime_and_version_contract(tmp_path, monkeypatch):
     assert (plugin / "KRT/requirements.txt").is_file()
     assert (plugin / "KRT/kicad_routing_plugin/deps_check.py").is_file()
     assert (plugin / "dgloss/krt_api.py").is_file()
+    for pattern in ("*centering*", "interpad*", "support_prototype*"):
+        assert not list((plugin / "dgloss").rglob(pattern))
+    assert not (plugin / "img_dlg/centering_illustration.png").exists()
 
+
+
+def test_gloss_only_public_contract():
+    import dgloss
+    from dgloss.changes import GlossChanges
+    assert dgloss.__all__ == ["GlossConfig", "run_final_gloss", "run_post_smooth_gloss"]
+    assert not hasattr(dgloss, "run_centering")
+    config = dgloss.GlossConfig().as_dict()
+    assert "enable_g3_6" not in config
+    assert "centering_proximity_mm" not in config
+    assert set(GlossChanges().as_dict()) == {"segments", "vias"}

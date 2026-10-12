@@ -52,14 +52,10 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
         parent = wx.GetTopLevelWindows()[0] if wx.GetTopLevelWindows() else None
         values = dict(self.__class__._settings)
         if len(net_ids) != 1:
-            pad_spacing = KICAD.selected_pad_pair_distance_mm(board)
-            open_centering = pad_spacing is not None and 0.0 <= pad_spacing <= 5.0
-            if open_centering:
-                values["centering_proximity_mm"] = pad_spacing
             prepared = self._prepare_selection(board, parent)
             if prepared is None:
                 return
-            centering_nets = self._modifiable_net_rows(board, prepared[0])
+            scope_nets = self._modifiable_net_rows(board, prepared[0])
             preselected_names = {
                 prepared[0].nets[net_id].name for net_id in net_ids
                 if net_id in prepared[0].nets}
@@ -73,17 +69,8 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
                 return self._run_gloss(board, dialog, new_values, checked_ids,
                                 append_log=append_log, prepared=ready)
 
-            def center_from_dialog(new_values, selected_names, append_log):
-                self.__class__._settings = dict(new_values)
-                ready, checked_ids = self._prepare_checked_nets(
-                    board, dialog, selected_names)
-                if ready is None:
-                    return False
-                return self._run_centering(
-                    board, dialog, new_values, selected_names,
-                    append_log=append_log, prepared=ready)
 
-            def import_centering_selection():
+            def import_scope_selection():
                 return KICAD.selected_net_names(board)
 
             highlight_names = KICAD.net_highlighter(board)
@@ -93,14 +80,12 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
             # unconditional dirty marking after RunActionPlugin returns.
             dialog = GlossSettingsDialog(
                 None, values, len(net_ids), on_gloss=run_from_dialog,
-                on_centering=center_from_dialog, pcb_data=prepared[0],
-                centering_nets=centering_nets,
-                preselected_centering_nets=preselected_names,
-                initial_tab="Centering" if open_centering else None,
+                pcb_data=prepared[0],
+                scope_nets=scope_nets,
+                preselected_scope_nets=preselected_names,
                 initial_log=self.__class__._last_log,
-                on_import_centering=import_centering_selection,
-                on_net_selection_changed=highlight_names,
-                on_refresh_proximity=lambda: KICAD.selected_pad_pair_distance_mm(board))
+                on_import_scope=import_scope_selection,
+                on_net_selection_changed=highlight_names)
 
             def close_dialog_with_parent(event):
                 """Do not leave a modeless plugin window after the PCB editor."""
@@ -324,148 +309,4 @@ class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
             if append_log is None:
                 self.__class__._last_log = captured.getvalue()
             if busy_cursor_started and wx.IsBusy():
-                wx.EndBusyCursor()
-
-    def _run_centering(self, board, parent, values, selected_names, *,
-                       append_log=None, prepared=None):
-        """Run only G3.6 and keep the settings dialog open."""
-        captured = io.StringIO()
-
-        class LogTee:
-            encoding = "utf-8"
-
-            def write(self, text):
-                captured.write(text)
-                try:
-                    sys.__stdout__.write(text)
-                except Exception:
-                    pass
-                if append_log is not None:
-                    append_log(text)
-                return len(text)
-
-            def flush(self):
-                try:
-                    sys.__stdout__.flush()
-                except Exception:
-                    pass
-
-            @staticmethod
-            def isatty():
-                return False
-
-        try:
-            wx.BeginBusyCursor()
-            with redirect_stdout(LogTee()):
-                print("\n=== Track Gloss Centering run ===")
-                print("Options: " + json.dumps(
-                    dict(DEFAULTS, **values) | {"stay_in_corridor": True},
-                    sort_keys=True, ensure_ascii=False))
-                configure_krt_runtime()
-                if not ensure_krt_dependencies(parent):
-                    print("Centering cancelled: dependencies are unavailable.")
-                    return False
-                from dgloss import run_centering
-
-                if prepared is None:
-                    pcb_data = KICAD.build_pcb_data(board)
-                    _seed_segments = KICAD.selected_seed_segments(board, pcb_data)
-                else:
-                    pcb_data, _seed_segments = prepared
-                names_to_ids = {net.name: net_id
-                                for net_id, net in pcb_data.nets.items()}
-                net_ids = sorted(names_to_ids[name] for name in selected_names
-                                 if name in names_to_ids)
-                if not net_ids:
-                    print("Centering cancelled: no selected modifiable net remains.")
-                    return False
-                centering_scope = (
-                    f"Proxi: {float(values['centering_proximity_mm']):g} mm\n"
-                    "Net labels: " + ", ".join(
-                        repr(pcb_data.nets[net_id].name) for net_id in net_ids))
-                print(centering_scope)
-                config = KICAD.build_krt_config(
-                    board, pcb_data, values["grid_step"], net_ids=net_ids)
-                results = []
-                outcome = run_centering(
-                    results, pcb_data, config, net_ids=net_ids,
-                    proximity_mm=values["centering_proximity_mm"],
-                    budget_seconds=values["budget_seconds"],
-                    excluded_net_ids=KICAD.native_arc_net_ids(board),
-                    seed_segments=(
-                        _seed_segments if values[
-                            "selection_uses_elementary_branches"] else None))
-                removed, added, moved, debug_layer = KICAD.apply_outcome(
-                    board, results, outcome)
-                KICAD.refresh()
-                stats = outcome.stats
-                print("\n=== Track Gloss Centering result ===")
-                print(f"Scope: {len(net_ids)} selected net(s)")
-                print(centering_scope)
-                print(f"Doors detected: {stats.get('centering_doors_detected', 0)}")
-                print(f"Doors centered: {stats.get('doors_centered', 0)}")
-                if stats.get("doors_already_centered", 0):
-                    print(f"Doors already centered (certified): {stats['doors_already_centered']}")
-                considered = stats.get("centering_candidates_considered", 0)
-                if considered:
-                    print("Candidates considered: "
-                          f"{considered} ({stats.get('centering_candidates_tested', 0)} "
-                          "passed passage checks)")
-                if stats.get("atomic_rollback") and \
-                        stats.get("rollback_reason") == "no_centering":
-                    if not stats.get("centering_doors_detected", 0):
-                        print("Centering diagnosis: no eligible gate at this Proxi setting.")
-                    elif not considered:
-                        print("Centering diagnosis: no candidate generated for "
-                              "the detected gate(s); geometry was not tested.")
-                    else:
-                        labels = {
-                            "construction": "construction (see detailed rejection)", "passage": "passage",
-                            "scope": "scope", "unchanged": "unchanged geometry",
-                            "grid": "grid", "clearance": "clearance",
-                            "same_net": "same-net contact",
-                            "connectivity": "connectivity",
-                        }
-                        rejected = stats.get("centering_candidate_rejections", {})
-                        details = [f"{labels[key]}: {count}"
-                                   for key, count in rejected.items() if count]
-                        if details:
-                            print("Centering diagnosis: no valid candidate (" +
-                                  ", ".join(details) + ").")
-                if stats.get('centering_length_delta_mm', 0.0):
-                    print(f"Length delta: {stats['centering_length_delta_mm']:+.4f} mm")
-                if stats.get('cleanup_saved_mm', 0.0):
-                    print(f"Corridor cleanup saved: {stats['cleanup_saved_mm']:.4f} mm")
-                final_delta = stats.get('after_mm', 0.0) - stats.get('before_mm', 0.0)
-                if final_delta:
-                    print(f"Final length delta: {final_delta:+.4f} mm")
-                if removed or added:
-                    print(f"Tracks replaced: {removed} -> {added}")
-                if stats.get("atomic_rollback"):
-                    print("G5 valid: not run (input preserved)")
-                else:
-                    print(f"G5 valid: {bool(stats.get('g5_valid', False))}")
-                if debug_layer:
-                    print(f"Differences: {debug_layer} (TrackGloss Changes)")
-            return {
-                "doors_centered": stats.get("doors_centered", 0),
-                "doors_already_centered": stats.get("doors_already_centered", 0),
-                "cleanup_saved_mm": stats.get("cleanup_saved_mm", 0.0),
-                "centering_proximity_mm": values[
-                    "centering_proximity_mm"],
-            }
-        except Exception:
-            detail = traceback.format_exc()
-            captured.write(detail)
-            if append_log is not None:
-                append_log(detail)
-            wx.MessageBox(
-                "Centering failed; the board was left unchanged whenever "
-                "native apply had not started.\n\n" + detail,
-                "KiCad KRT Gloss — Error", wx.OK | wx.ICON_ERROR)
-            return False
-        finally:
-            if append_log is None:
-                self.__class__._last_log = captured.getvalue()
-            if wx.IsBusy():
                 wx.EndBusyCursor()

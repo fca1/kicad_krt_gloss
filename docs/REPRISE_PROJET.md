@@ -1,525 +1,124 @@
-# Reprendre Smooth Gloss KRT
+# Reprendre Smooth Gloss KRT — branche gloss_only
 
-## Mise à jour du 12 octobre 2026 — KRGloss 0.1.4
+## État du 12 octobre 2026
 
-KRT pointe désormais sur `95776286` (dernier `origin/main` récupéré), version
-annoncée 0.23.0, contre `529f873d` auparavant. Aucune source KRT modifiée.
-Les binaires officiels v0.23.0 sont utilisés pour l'installation ; les sources
-Rust sont identiques entre ce tag et la révision intégrée. Les adaptateurs
-existants restent compatibles : aucune modification géométrique ajoutée.
-Voir [le bilan de mise à jour](reports/KRT_UPDATE_2026_10_12.md).
+Cette branche conserve uniquement l’action Gloss. Les points d’entrée publics
+sont `run_final_gloss` et `run_post_smooth_gloss`. Le moteur de placement dans
+les passages, ses prototypes, réglages, commandes et visualisations ont été
+retirés, ainsi que les tests et documents dédiés. Les anciennes implémentations
+restent accessibles dans l’historique Git et sur la branche d’origine.
 
-`python package_pcm.py --stage-only --output-dir CHEMIN_NEUF` prépare exactement
-le contenu installable sous `unpacked/`, sans créer de ZIP. Il télécharge les
-binaires de la version KRT embarquée ; ne pas confondre ces essais avec un test
-utilisant l'ancien `KRT/rust_router/grid_router.pyd` local non versionné. Celui-ci
-est conservé et n'a pas été remplacé dans le sous-module. Pour tester le runtime
-mis à jour, utiliser l'installation préparée et son `runtime.py`.
+Le dialogue propose General, Gloss, Log et About, avec Gloss et Close en bas.
+General conserve la liste des nets, Add/Replace/Clear, les filtres, le highlight
+et la mémoire des branches élémentaires. Ces contrôles utilisent désormais
+les noms `scope_*`. Le statut de sélection est affiché dans General.
+Les captures de l’ancien dialogue ne décrivent plus cette branche.
 
-Validation Windows : suite moteur/frontières, dépendances réelles dans le Python
-KiCad, Gloss et Centering sur plusieurs EB de `/A` dans `test_centering2`.
-Le test README attendait une ancienne syntaxe HTML alors que le README utilise
-Markdown : attentes corrigées, contenu fonctionnel inchangé. Le xfail corridor
-préexistant reste visible. Pas de nouvelle qualification PACK0, Linux/macOS ni
-DRC complet ; ne pas annoncer une absence générale d'artefacts.
+KRT reste au commit `95776286`, version 0.23.0 ; aucune source KRT modifiée.
+La version du package reste 0.1.4. Ne pas confondre le binaire local non suivi
+`KRT/rust_router/grid_router.pyd` avec les binaires officiels téléchargés lors
+de la préparation PCM. Voir [le bilan KRT](reports/KRT_UPDATE_2026_10_12.md).
 
-Publication : `tools/prepare_publication.py` prépare le ZIP PCM, les métadonnées
-externes, les empreintes, les notes et la procédure, sans publication distante.
-Le package inclut les images du README et respecte ses liens relatifs.
-Conserver le statut testing et les limites de validation dans les notes.
-L'adaptateur runtime associe la dépendance Pillow à l'import PIL.Image :
-le contrôleur KRT 0.22 utilisait sinon import Pillow et demandait sans fin une
-installation, y compris avec Pillow installé. Aucune source KRT modifiée.
+## Ordre de lecture
 
-Le mode d'emploi public racine est volontairement court, en anglais et limité
-au plugin KiCad : ne pas y réintroduire le mode d'emploi CLI. Les captures
-General, Gloss et Centering sont présentées à côté de leur texte. La procédure
-Proximity max doit rester explicite : sélectionner exactement deux pads dans
-KiCad, cliquer sur Refresh, vérifier la distance centre-à-centre, puis lancer
-Centering sur le scope coché. Attribution officielle : Frantz est l'auteur,
-propriétaire et mainteneur ; ChatGPT/Codex (OpenAI) apporte une assistance au
-développement et n'est pas présenté comme co-auteur.
+1. [AGENTS.md](../AGENTS.md) : autorisations et règles de collaboration.
+2. [Spécification Gloss](../dgloss/doc_fr/gloss_rules.md), puis son
+   [explication](../dgloss/doc_fr/gloss_explain.md).
+3. [Architecture](ARCHITECTURE.md), [API KRT](KRT_API.md) et [PACK0](PACK0.md)
+   selon la modification envisagée.
 
-Les cinq optimisations du prototype performances 448b991 sont intégrées en
-production à la demande utilisateur : `dgloss/clearance_preparation.py` prépare
-les distances et filtres ; `krt_clearance.py` les appelle sans monkey-patch.
-`context.py` conserve les références des nets inchangés sans zone ; les deux
-parcours de chaînes utilisent les vues par net. Pas de nouvel interrupteur.
-Le prototype historique `tools/prototype_gloss_perf.py`, base f704f48,
-contenait cinq variantes (rejets précoces, pads préparés, filtrage physique
-des obstacles de vias, références électriques conservées pour nets inchangés
-sans zone, vues par net). PACK0 sans G4 : géométries exactes identiques dans
-les 10 comparaisons, gains temporels cumulés mesurés 19,8 % sans corridor et
-8,7 % avec corridor ; mesures uniques, pas une garantie par variante.
-Voir le [rapport](reports/GLOSS_PERFORMANCE_PROTOTYPE_2026_09_09.md).
-Validation de l'intégration : 122 tests ciblés réussis, un xfail préexistant ;
-10 configurations PACK0 de production identiques aux empreintes du prototype,
-G5 valide, sans expiration. Gloss et Centering natifs sur plusieurs EB de /A
-réussis sur carte détachée, source et cuivre hors portée conservés.
-ALERTE préexistante : le balayage d'un via peut manquer un croisement
-perpendiculaire précis via le prédicat KRT utilisé ; test adversarial xfail
-explicite, non corrigé par le prototype. Ne pas conclure à l'absence globale
-d'artefacts. KRT reste inchangé ; l'intégration modifie uniquement KRG/Gloss.
+Les rapports datés conservés décrivent des expériences historiques, parfois
+sur les deux anciennes actions. Ils ne définissent pas l’API de cette branche.
+Leur présence ne prouve ni une intégration ni une validation actuelle.
 
-Frontière KiCad renforcée : l'extension EB n'accède plus aux pistes, UUID,
-sélections ou drapeaux de highlight directement, ni à `bridge._pcbnew()`.
-Elle utilise `branch_track_index`, `capture_branches` et `branch_highlighter`.
-L'implémentation native déplacée sans changement de comportement est dans
-`native_branch_selection.py`, derrière `kicad_bridge.py`, incluse au packaging.
-Le contrôle architectural couvre les modules de production KRG/Gloss, avec
-une liste explicite d'adaptateurs natifs autorisés. KRT reste inchangé.
-Validation : 61 tests ciblés ; six essais natifs sur carte détachée (Centering
-une EB, plusieurs EB, net entier, EB désactivé, couverture complète ; Gloss
-plusieurs EB), sélection/highlight par UUID et cuivre hors portée vérifiés.
-Ces essais ne constituent pas une nouvelle validation visuelle dans l'éditeur.
+## Contrats à préserver
 
-Contrat CLI : nets entiers exclusivement. Ne jamais exposer d'option EB,
-branches ou graines dans le CLI (décision utilisateur). Cette absence n'est
-pas une fonctionnalité manquante. Le CLI courant exécute Gloss seulement,
-sans Centering/Proxi ni réglage public du nombre de passes G4.
-`--stay-in-corridor`, déjà implémenté, figure maintenant dans l'aide publique.
-README et fiches d'emploi FR/EN corrigés : sélection vide du dialogue,
-liste commune, mémoire EB, corridor et limites du budget. Les rapports
-historiques ne décrivent pas nécessairement l'état actuel.
+KRT est l’autorité pour les obstacles, distances, clearances et validations
+électriques. `dgloss/krt_api.py` isole ses imports ; `kicad_bridge.py` isole les
+accès natifs KiCad. Les stratégies géométriques restent invariantes par rotation
+et réflexion, sans privilège horizontal, vertical ou diagonal.
 
-Dernier ajustement netlist : panneau gauche compacté dans son ensemble (texte
-d'aide sur deux lignes, boutons Add/Replace/Clear ajustés à leurs libellés).
-La liste remplit toute la largeur de son conteneur : ne pas lui imposer
-`ALIGN_LEFT`, qui créait un trou à droite. Net reçoit l'espace disponible
-(minimum 120 DIP) ; EB reste demandé à 50 DIP. Séparateurs `DV_VERT_RULES`.
-Infobulle : nom complet sur Net, signification de EB sur la colonne EB.
-Essai natif affiché : Net 133 px, EB 54 px ; ouverture 570 px, minimum 546 px.
-Capture réelle vérifiée avec la carte antmicro : liste alignée avec les filtres,
-sans trou à droite. Le test natif vérifie aussi la largeur liste/conteneur.
+Le Gloss réduit et simplifie le cuivre existant. Les protections, exclusions,
+largeurs, couches, connectivité et périmètre modifiable restent applicables.
+La réduction locale progresse depuis un pad dans un seul sens. Elle peut créer
+un coude si cela réduit la longueur ; l’autogloss réexamine les chaînes complètes.
 
-Compacité UI : boutons d'import « Add », « Replace », « Clear », infobulles
-conservées. Largeur initiale = minimum des deux colonnes + 24 DIP, sans plancher
-960 DIP. Essai Windows affiché : ouverture 659 px, minimum 635 px, Net 222 px
-et EB 54 px au minimum. « Stay in corridor » et son illustration restent inchangés.
+`Stay in corridor` est désactivé par défaut. S’il est activé, tout mouvement
+exige une déformation continue admissible, pas seulement une arrivée libre.
+Les balayages utilisent la largeur physique des pistes et les capsules des vias.
+Un refus de certificat ne prouve pas l’impossibilité de tous les contournements.
 
-UI, dernier correctif : seules les valeurs grid step/budget utilisent la police
-Proxi ; titre et libellés gardent la police normale. EB reçoit une largeur
-compacte indépendante de sa largeur native courante, appliquée après le layout
-via CallAfter (pas de timer). Fenêtre affichée sous Windows : Net 431 px,
-EB 54 px, minimum du dialogue 844 px, disposition gauche/droite conservée.
+Un via mobile et ses segments incidents sont traités ensemble. L’arrêt sur un
+pad exige l’absorption effective jusqu’au pad terminal sur la couche concernée,
+avec la demi-largeur du segment. Aucun verrou permanent n’est écrit sur la carte.
 
-Dernière correction ULPI2_DATA6 : validation des passages sur la chaîne finale
-complète, y compris le cuivre inchangé, distincte du sous-ensemble à remplacer.
-Portes déplacées et déjà centrées comptées séparément ; deltas nuls omis du log.
+G4 reste distinct du budget initial de 20 secondes : le dialogue autorise de
+1 à 10 passes supplémentaires (1 par défaut). Arrêt si le gain incrémental est
+inférieur ou égal à 10 % du gain incrémental précédent ; un gain précédent nul
+ne déclenche pas ce ratio. Aucune transformation arrête les passes.
+Le seuil reste interne. Le budget initial n’est pas un plafond total.
 
-État documenté le 8 septembre 2026, refonte `c06a965` puis revue corridor à partir
-de `cc758f9` sur `main`,
-version du package 0.1.3. Ce guide permet de comprendre les décisions avant
-de lire le code concerné par une intervention ; il ne remplace pas cette
-vérification ciblée. Vérifier le HEAD et les modifications locales à la reprise.
+Le CLI traite exclusivement des nets entiers : ne pas exposer de réglage EB,
+branches ou graines, ni le nombre de passes G4. `--stay-in-corridor` reste public.
+Le README public reste en anglais, court et consacré au plugin.
 
-## Ordre de lecture et autorité des documents
+## Sélection et application native
 
-Intégration du 9 septembre 2026 après validation utilisateur du ZIP
-`dist/test-supports-e3f5745/KiCadKrtGloss-0.1.3-prototype-supports.zip`
-(SHA256 `e6fcc32f7c4614bf17582fb564f8c4f2a2b6146b3b51adb21cedec516bc042fe`) :
-les trois modules moteur du ZIP sont repris à l'identique dans les sources.
-Le Centering utilise maintenant `support_prototype.py` via `protected_centering`,
-sans les anciens replis. Les deux options multiporte et nouveaux segments doivent
-être activées. Les supports parallèles sont refusés ; la généralisation des
-auto-contacts pendant le mouvement reste à réaliser. La validation sur `/A`
-ne vaut pas qualification générale. Le [rapport du prototype](reports/CENTERING_SUPPORT_PROTOTYPE_2026_09_09.md)
-conserve les mesures et limites historiques ; son statut non intégré est supersédé
-par cette validation utilisateur et cette intégration.
+Add/Replace mémorise les branches par net ; seuls les nets cochés sont traités.
+Sans mémoire, le net est entier. Une couverture exacte et vérifiée de tout le
+net devient une portée entière. Des références périmées imposent une nouvelle
+importation, sans élargissement silencieux. Chaque action repart de la carte
+courante. Le clic prévisualise la portée ; la coche définit la portée d’action.
 
-Vérification d'intégration : égalité textuelle des trois modules avec le ZIP.
-Tests ciblés : 28 réussites, 3 échecs dans
-`test_finite_passages_keep_a_straight_route_under_rotation` (0°, 45°, 90°).
-Ces régressions concernent les supports collinéaires refusés par le constructeur
-validé sur `/A`. Elles sont conservées visibles, sans adaptation des attentes.
-Ne pas annoncer une validation générale du Centering.
+Le highlight utilise les UUID et `SetBrightened`/`ClearBrightened` derrière
+`native_branch_selection.py`. Aucun timer ni clic simulé dans le dialogue.
+General garde ses deux colonnes, la liste remplit son conteneur et EB reste
+compacte (50 DIP). La fenêtre est détachée et fermée avec l’éditeur.
 
-Prototype suivant : tag `before_colli` sur `f56597f`, correctif isolé dans
-`tools/prototype_collinear_supports.py`. Les 3 tests collinéaires passent avec
-ce correctif (37 tests ciblés réussis), `/A` reste identique. La campagne PACK0
-est partielle : budgets Centering expirés sur trois cartes, blocage d'import
-natif azukar et comparaison CLI sur les deux grosses cartes. Voir le
-[rapport collinéaire](reports/COLLINEAR_SUPPORT_PROTOTYPE_2026_09_09.md).
-À la demande utilisateur suivante, le constructeur du ZIP collinéaire
-`dist/test-colli-7628191/KiCadKrtGloss-0.1.3-prototype-colli.zip`
-(SHA256 `41af5552f7e25c0c884b168cde71ca2895148f32e776592d97ad561ddc5a3764`)
-est intégré à l'identique dans `dgloss/support_prototype.py`.
-Les supports collinéaires compatibles sont maintenant acceptés ; les trois
-échecs historiques ci-dessus sont corrigés. Les limites PACK0 et auto-contact
-restent applicables. Cette intégration précède le prototype de sélection EB.
-Correction des portes isolées : le regroupement de Centering accepte aussi une
-porte seule. L'ancien filtre multiporte `len(group) >= 2` supprimait ces cas
-avant construction. Régression pipeline complète sous quatre rotations et essai
-natif ULPI1_DATA4 sur antmicro__artix_dc_scm : AB20–AB21 centrée, G5 valide.
-Voir le [rapport porte isolée](reports/SINGLE_GATE_CENTERING_2026_09_09.md).
+Les remplacements passent par `GlossContext.apply_replacement`. Les caches
+suivent le cuivre précis ; les références électriques sont réutilisables seulement
+pour les nets inchangés sans zone. Toute mutation invalide les références des
+nets avec zones. Restaurer le cuivre exige aussi d’invalider les données dérivées.
+G5 reste recalculé et obligatoire. Les fusions KRT exigent la preuve du support
+cuivre et de la connectivité avant application.
 
-Intégration EB du 9 septembre, validée par l'utilisateur :
-`kicad_krt_gloss/branch_selection_prototype.py` est maintenant activé au démarrage
-normal et inclus avec sa liste et ses images dans le packaging standard. Il mémorise
-les branches par net et refuse les références devenues obsolètes ; réimporter
-la sélection après remplacement des pistes. Il inclut les copies User pleines
-à 0.1 mm, les polices Calculation Settings alignées sur Proxi et deux images
-distinctes selon la case EB. Voir le [rapport EB](reports/EB_MEMORY_PROTOTYPE_2026_09_09.md).
-La liste du prototype utilise désormais l'adaptateur multicolonne KRG
-`branch_scope_list.py` (DataView) : colonne droite compacte « n EB », vide pour
-un net entier. Essais natifs Windows : Centering une EB, deux EB, net entier
-sans mémoire et EB désactivé ; validation Linux/macOS non effectuée.
-Après Add/Replace, une couverture exacte de toutes les pistes non graphiques
-du net, avec références et topologie vérifiées, devient un net entier : mémoire
-EB retirée et colonne vide. Références manquantes/périmées : aucune promotion.
-Les deux champs Calculation Settings partagent désormais le même bord droit.
-Le dialogue ne fige plus sa taille d'ouverture comme minimum. General conserve
-deux colonnes : netlist à gauche, illustration/EB/calcul à droite, imports sous
-la liste. Le basculement vertical de 648e4e6 est retiré après retour utilisateur.
-Le résumé EB ne participe plus à une largeur minimale liée aux noms de nets.
-Test natif Windows : largeur 1033 → 953 → 1037 → 953 pixels, commandes vérifiées,
-polices inchangées. Pas de qualification graphique Linux/macOS.
+## Limites connues
 
-1. [AGENTS.md](../AGENTS.md) : règles de collaboration et autorisations.
-2. Ce guide : état actuel et pièges à connaître.
-3. [gloss_rules.md](../dgloss/doc_fr/gloss_rules.md) : spécification fonctionnelle
-   de référence ; [gloss_explain.md](../dgloss/doc_fr/gloss_explain.md) en donne
-   une présentation accessible.
-4. [ARCHITECTURE.md](ARCHITECTURE.md) : responsabilités et durée de vie des données.
-5. [KRT_API.md](KRT_API.md) et [PACK0.md](PACK0.md), selon l'intervention.
+- Le test adversarial de balayage d’un via à un croisement perpendiculaire reste
+  xfail : le prédicat KRT peut manquer ce cas précis. Ne pas annoncer une absence
+  générale d’artefacts.
+- G5 n’est pas un DRC KiCad complet. Aucun nouvel essai Linux/macOS ni campagne
+  complète PACK0 n’est impliqué par ce nettoyage.
+- KiCad 10 peut marquer la carte modifiée après une simple ouverture d’ActionPlugin,
+  même sans changement effectif ; ne pas masquer cet état par Undo ou sauvegarde.
+- Une extension Rust Windows chargée est verrouillée : réutiliser le binaire si
+  son SHA-256 correspond, sans copie basée sur le seul horodatage.
+- Les fichiers de cartes locaux évoluent : enregistrer leur empreinte pour les
+  essais et ne jamais sauvegarder les PCB sources pendant une validation.
 
-Les rapports datés dans `docs/reports` décrivent une expérience sur une version
-donnée. Leur présence ne prouve pas une intégration. Certains gardent une
-conclusion initiale de prototype puis un encart d'intégration ultérieure.
-En cas de contradiction, confronter la règle actuelle, le commit et ses tests ;
-ne pas transformer une ancienne proposition en comportement attendu.
-Les conversations du projet Smooth Gloss KRT expliquent des décisions, mais
-une reprise ne doit pas dépendre de leur disponibilité.
+## Validation et livraison
 
-## But et contraintes non négociables
+Après un « go », limiter les modifications au périmètre autorisé, lancer des tests
+rapides et ciblés, actualiser ce guide puis faire un commit dédié. Préserver les
+modifications et fichiers non suivis préexistants. Aucun ZIP sans demande explicite.
 
-Le plugin améliore un routage existant, sans devenir un autorouteur. Il réduit
-la longueur et simplifie le cuivre, sous contraintes électriques et géométriques.
-Le temps réel est une priorité de conception : éviter la force brute, mesurer
-le coût complet, utiliser les index et méthodes KRT. Une accélération qui perd
-de la réduction ou de la validité doit être présentée comme un compromis.
+Bootstrap de tests :
 
-KRT est un sous-module externe, non modifiable dans ce projet. Il reste
-l'autorité pour les obstacles, distances, clearances et validations électriques.
-La façade [krt_api.py](../dgloss/krt_api.py) isole ses imports et adaptations.
-Ne pas disperser de nouvelles dépendances directes dans les stratégies.
-Le sous-module est aligné sur GitHub `main` au commit `95776286` (12 octobre
-2026). Cette mise à jour ne modifie pas KRT localement ; elle avance seulement
-le pointeur versionné par ce dépôt. La compatibilité Gloss ciblée a été vérifiée
-à cette révision.
+```powershell
+python -c "from kicad_krt_gloss.runtime import configure_krt_runtime; configure_krt_runtime(); import dgloss, pytest; raise SystemExit(pytest.main(['tests/test_architecture.py']))"
+```
 
-Les accès inverses de KRG vers les bindings natifs KiCad sont regroupés dans
-[`kicad_bridge.py`](../kicad_krt_gloss/kicad_bridge.py). Cette façade ne doit
-pas dupliquer l'importeur, les règles ni les validations KRT ; elle délègue ces
-opérations à `dgloss.krt_api` et à l'adaptateur d'application validé.
+Le Python natif constaté est `D:/kicad/bin/python.exe`. Le contrôle
+`tools/check_branch_memory_native.py CARTE --scope multiple` exerce le dialogue,
+les imports, le highlight, la portée EB et le Gloss sur une carte détachée.
+`python package_pcm.py --stage-only --output-dir CHEMIN_NEUF` prépare les fichiers
+installables sans ZIP et télécharge les binaires officiels de la version KRT.
+Le test de staging utilise des binaires factices et ne prouve pas leur exécution.
 
-Les relations géométriques doivent rester valables par rotation et réflexion,
-sans règles particulières fondées sur l'affichage horizontal ou vertical.
-La sortie reste octolinéaire. Les exclusions et éléments protégés définis dans
-la spécification ne deviennent pas modifiables par une sélection explicite.
-
-## Subtilités fonctionnelles
-
-**Corridor.** L'onglet Gloss expose la case « Stay in corridor », désactivée par défaut,
-avec l'illustration `corridor_illustration.png`. Son état est transmis au Gloss.
-Le Centering impose toujours le corridor à son Gloss préparatoire.
-Il représente les positions accessibles par une déformation
-continue respectant les contraintes à chaque instant. Une destination libre
-ne suffit pas : aucun segment, via ou nœud mobile ne peut sauter un obstacle.
-Ce n'est ni une bande de largeur constante, ni une région définie par la grille.
-L'échec du certificat d'un déplacement particulier ne prouve pas l'impossibilité
-de tous les contournements. Voir la définition complète dans `gloss_rules.md`.
-Le certificat des pistes utilise désormais des balayages triangulaires à largeur
-réelle, sans gonflement ni discrétisation temporelle liée à la grille. Les vias/T
-utilisent également ces balayages et les capsules physiques cuivre/percement.
-Les refus de grille identifiés ne remplacent plus la validation géométrique.
-Les coordonnées construites et les largeurs ne sont plus arrondies pour ces
-opérations ; une clé de graphe ne prouve pas une jonction physique. Les fusions
-KRT sont proposées sur copie et certifiées avant application (support cuivre et
-connectivité), y compris avant l'exemption `geometry_preserving`.
-[Correctif, reproduction `/A` et revue des limites](reports/CORRIDOR_ARTIFACT_REVIEW_2026_09_08.md).
-
-**Gloss et Centering.** Ce sont deux actions distinctes. L'action Centering
-exécute atomiquement Gloss avec `stay_in_corridor=True`, puis Centering, sans
-transformation géométrique ultérieure. Si aucune porte n'est recentrée ou déjà
-centrée et certifiée, le Gloss préparatoire est également annulé. Les échecs et
-expirations suivent la politique transactionnelle.
-Le Centering peut augmenter la longueur. Actuellement ses portes sont pad–pad :
-les vias restent des obstacles, mais ne définissent pas de portes via–via ou
-pad–via. Cette limitation a été explicitement conservée.
-
-Définition corrigée par l'utilisateur après `a891026` : une porte exige un
-entraxe **centre-à-centre ≤ Proxi**, pas une distance cuivre < 2 × Proxi ni une
-distance piste–pad < Proxi. Le recentrage maximise la marge dans le passage,
-sans imposer cette marge supplémentaire à toute l'approche : seules les
-clearances réglementaires s'y appliquent. La construction locale reconnaît la
-quantification native de 1 nm et reconstruit des directions exactes sans bouger
-les ancres. Le repli sur chaîne complète pour une porte seule, introduit dans
-`f41a1b6`, a depuis été retiré : il remplaçait les raccords existants et créait
-un coude à 90°. Le déplacement est désormais propagé aux supports voisins
-mobiles, dont les intersections avec les rails fixes déterminent les longueurs.
-Une proposition inchangée mais centrée et certifiée est un succès géométrique,
-pas un motif de reconstruction. Voir le [correctif et les deux reproductions
-natives](reports/CENTERING_PROPAGATION_2026_09_08.md).
-Le fichier modifié `test_centering2`, SHA-256
-`67204b5f58f60fb79f87abbb6e2071a6587fb3ef4c24306b33fe5efe70bbed1a`,
-donne une porte U1.1–U1.2 centrée à Y=90,615 mm, +0,6810 mm, G5 valide,
-5 pistes remplacées par 5. Test natif détaché :
-`tools/reproduce_centering_native.py CHEMIN_PCB`, sans sauvegarde source.
-Suite : 408 réussites, toujours le test Centering historique sans porte en échec.
-La recherche finie historique de demi-longueurs a été retirée lors de
-l'intégration du constructeur par supports validé le 9 septembre.
-
-**Raccourci DHM Centering.** Avec exactement deux pads sélectionnés et aucun
-autre objet, le plugin mesure leur entraxe centre-à-centre. Si cet entraxe est
-dans la plage Proxi admise (0 à 5 mm), le dialogue s'ouvre sur Centering et
-préremplit Proxi avec cette valeur. Les deux pads ne désignent pas les nets à
-traiter : la netlist suit la règle commune ci-dessous (aucun net coché
-en l'absence de pistes présélectionnées).
-
-**Sélection commune dans KiCad.** Un seul net désigné par les pistes natives
-sélectionnées lance toujours le Gloss direct, sans dialogue. Si le dialogue
-s'ouvre, ses coches pilotent Gloss et Centering. Sans net présélectionné, aucun
-net n'est coché ; avec plusieurs nets présélectionnés, seuls
-ceux-ci sont cochés. Le compteur reflète les coches et une liste vide interdit
-les deux actions, sans repli implicite sur tous les nets.
-
-Tag de référence avant ce changement : `before_none` sur `caaad2b`.
-Après Add/Replace, la liste révèle la première ligne visible modifiée dans son
-ordre courant, changement de coche ou de branches mémorisées. Les filtres et
-la sélection des lignes restent inchangés ; un ajout en doublon ne défile pas.
-Si toutes les lignes modifiées sont filtrées, aucun défilement n'est imposé.
-
-Le dialogue de réglages est non modal et
-se ferme avec son éditeur PCB : l'éditeur reste utilisable pour sélectionner
-des pistes. La liste commune est située dans General. Ses boutons d'import
-ajoutent ou remplacent les coches par les nets des pistes actuellement
-sélectionnées ; « Clear » vide les coches. Elles pilotent aussi la
-surbrillance native des nets sur le PCB, sans modifier la sélection des objets.
-La fermeture du dialogue retire cette surbrillance. La sélection visuelle des
-lignes de liste est annulée à son ouverture.
-Le highlight utilise désormais `SetBrightened` sur les pistes, vias, pads et
-zones, état lu par `PCB_RENDER_SETTINGS::GetColor`, puis `Refresh`. Chaque
-dialogue mémorise les UUID des objets qu'il a éclairés et ne retire que ces
-états ; la sélection native des objets reste intacte. Ce rendu éclaire le
-cuivre sans atténuer les autres nets comme le highlight natif de KiCad.
-`BOARD.IsHighLightNetON()` ne prouve pas la surbrillance graphique et n'est
-plus utilisé. Les essais sur carte détachée ne valident pas le rendu visible.
-La version `d896a65` est la référence validée visuellement par l'utilisateur
-le 8 septembre 2026 après installation du ZIP
-`dist/test-highlight-render-d896a65/KiCadKrtGloss-0.1.3.zip`
-(SHA-256 `6c0adafa12a2eb120d209ff188b58f7767d7eff61e378359fa7c9e090d008930`).
-Cette confirmation remplace les conclusions prématurées des tests de drapeau
-BOARD et de temporisation ; conserver cette implémentation comme base correcte.
-Toute simulation temporisée de clic doit rester dans
-un outil de test séparé ; aucun timer de highlight ni clic automatique ne
-doit être intégré au dialogue de production.
-Les deux actions reconstruisent leurs données depuis la carte courante. En mode
-branches élémentaires dans le dialogue, Add/Replace mémorise les branches par net.
-Les actions utilisent cette mémoire uniquement pour les nets cochés, sans dépendre
-de la sélection native ultérieure. Sans mémoire, le net est entier. Une référence
-périmée impose une nouvelle importation, sans élargissement silencieux.
-La sélection directe sans dialogue conserve son fonctionnement antérieur.
-Dans Centering, « Refresh » actualise
-Proxi seulement depuis une sélection exacte de deux pads, dans [0, 5] mm.
-
-Dans General, la liste occupe la colonne de gauche ; « Select branch », son
-illustration et « Use elementary branches » occupent la colonne de droite,
-suivis d'un cadre commun pour les réglages de calcul et la limite d'exécution.
-À l'ouverture, le défilement de la liste est au milieu de sa plage.
-La barre inférieure contient Gloss, Centering (bleu pâle) et Close ; l'onglet
-Centering conserve ses réglages et son statut, sans bouton d'exécution.
-Un clic sur Gloss ou Centering affiche immédiatement l'onglet correspondant ;
-le Gloss ne bascule plus automatiquement vers Log en fin de traitement.
-La boîte de réglages est détachée de l'éditeur
-et maintenue au premier plan, mais l'événement de fermeture de l'éditeur la
-ferme aussi.
-
-**Longueur et segments.** Leur découpage logiciel ne doit pas devenir une
-frontière algorithmique : une réduction peut créer un coude, sa simplification
-peut permettre une nouvelle réduction. L'autogloss intégré réexamine les chaînes
-complètes localement. Il reste actif quand G4 est désactivé ; il ne garantit pas
-l'optimum global. La réduction locale part d'un pad et progresse dans un seul sens.
-
-Après `a49a833`, une famille de réductions de coudes par raccords successifs à
-45° complète les raccourcis directs. Ses supports progressent jusqu'au contact
-physique KRT ou à une extrémité, avec certificat de surfaces emboîtées, sans
-largeur de contrôle ni taille de chanfrein imposée. Elle peut ajouter des segments
-pour diminuer la longueur. Avec corridor, les nets modifiés par les étapes
-vias/pads/T/fusions sont désormais réexaminés localement avant G5, même sans G4.
-Les directions octolinéaires seules ne prouvent pas l'absence de pointe : auditer
-aussi les raccordements. Voir [correction et temps PACK0 G3](reports/CORNER_REDUCTION_2026_09_08.md).
-
-**Via mobile.** Le via et les segments incidents des différentes couches doivent
-être considérés ensemble. Le corridor de leurs déplacements et le volume du via
-doivent être validés. L'absorption d'un segment permet de poursuivre avec le suivant,
-sauf arrivée au pad terminal. L'arrêt ne se déclenche pas au simple contact du
-rayon du via avec un pad : il exige l'absorption effective jusqu'au pad du même
-net sur la couche de la branche, avec la demi-largeur du segment terminal.
-L'arrêt est conservé entre étapes et passes du même Gloss, sans verrou permanent
-écrit sur la carte. [Correctif et tests](reports/VIA_TERMINAL_ABSORPTION_2026_09_08.md).
-
-**G4.** Le budget initial vaut 20 s et ne borne plus G4. Par défaut,
-l'interface autorise une passe supplémentaire (réglable de 1 à 10) ; l'API
-conserve sa valeur propre si elle est appelée sans l'interface. Dès la
-première, arrêt si le gain incrémental est
-inférieur ou égal à 10 % du gain incrémental précédent, comparé d'abord à celui
-de la passe initiale. Ce n'est pas 10 % de la longueur restante. Un gain précédent
-nul ne déclenche pas le test de ratio ; aucune transformation arrête les passes.
-G4 peut continuer après expiration du budget initial : 20 s n'est donc pas un
-plafond total. `g4_min_gain_percent` reste interne. Le dialogue expose la case
-d'activation G4 et un nombre maximal de passes supplémentaires de 1 à 10 ; ce
-réglage ne modifie ni le seuil de gain ni les garanties transactionnelles.
-[Définition et validation](reports/G4_LIMITS_2026_09_08.md).
-
-## État des intégrations
-
-| Sujet | État et référence |
-| --- | --- |
-| Nettoyage des microsegments | Intégré ; [rapport](reports/MICROSEGMENTS_INTEGRATION_2026_09_07.md) |
-| Correctifs de réduction et couche KRT | Intégrés ; [rapport](reports/REDUCE_LENGTH_INTEGRATION_2026_09_07.md) |
-| Calcul analytique du sens utile du glissement | Intégré ; les recherches adaptatives expérimentales ne sont pas activées par cette intégration ; [rapport](reports/SLIDE_DIRECTION_BUDGET_CACHE_2026_09_07.md) |
-| Autogloss sur chaînes complètes | Intégré, sans petites fenêtres ; [rapport avec encart d'intégration](reports/AUTO_GLOSS_2026_09_07.md) |
-| Via mobile progressif et faux arrêts | Intégrés ; [prototype](reports/PROGRESSIVE_VIA_2026_09_07.md) et [correctif terminal](reports/VIA_TERMINAL_ABSORPTION_2026_09_08.md) |
-| Gloss puis Centering atomique et limites G4 | Intégrés, selon les règles ci-dessus |
-| Caches, index KRT et découpage des responsabilités | Intégrés dans `c06a965` ; [architecture](ARCHITECTURE.md) |
-| Illustrations du dialogue | PNG fournis dans `kicad_krt_gloss/img_dlg`, inclus dans le package ; aucune construction procédurale de ces illustrations par Python |
-
-Les pistes suivantes ne sont pas une liste de travaux autorisés : elles restent
-hors intégration et nécessitent une nouvelle décision pour être reprises.
-
-| Piste | Conclusion utile pour une reprise |
-| --- | --- |
-| Petites fenêtres autogloss, recherche commune longueur/segments | Non intégrées ; [petites fenêtres](reports/WINDOW_AUTO_GLOSS_2026_09_07.md), [recherche commune](reports/JOINT_GLOSS_2026_09_07.md) |
-| Budget de certificat par candidat | Prototype : accélération sur bitaxe avec perte de réduction, aucun gain universel ; [mesures](reports/SLIDE_DIRECTION_BUDGET_CACHE_2026_09_07.md) |
-| Cache des fenêtres infructueuses | Très peu de réutilisations, coût propre ; pas de bénéfice convaincant dans les essais du même rapport |
-| Grilles plus fines pour certifier le glissement | Expérience observatrice, économies hypothétiques seulement ; raffiner augmente aussi construction et consultations ; [mesures](reports/GRID_RESOLUTION_2026_09_07.md) |
-| Ordonnancement G4 par dépendances entre nets | Prototype historique ; ne pas confondre avec le G4 intégré ; [rapport](reports/G4_DEPENDENCIES_PROTOTYPE_2026_09_07.md) |
-
-## Pièges techniques à préserver
-
-- Un raccordement à une extrémité autorisée ne permet pas de recouvrir une
-  longueur positive de cuivre collinéaire du même net. Le garde-fou rejette
-  désormais ce cas, y compris par rotation/réflexion. Cela ne nettoie pas les
-  chevauchements déjà présents : sur `test_centering2`, `/A`, corridor actif,
-  le fichier SHA-256 `02444ca7e2856235f09683a66ef85a7206e1280926a436f780a5c1019d133cec`
-  restait à 63,4121 mm après le seul garde-fou anti-recouvrement. Le remplacement
-  ultérieur du certificat de corridor répare maintenant cet instantané :
-  60,5921 mm, 8 → 7 pistes, zéro paire en recouvrement, sortie octolinéaire et
-  G5 valide. Ce premier résultat conservait toutefois une pointe : le correctif
-  suivant atteint 54,594283 mm, 9 pistes, zéro recouvrement et zéro pointe sur `/A`.
-  Le test natif est reproductible par `tools/reproduce_corridor_fold.py` et vérifie
-  désormais les raccordements et les coordonnées après application native.
-  Le fichier source n'est pas sauvegardé ; ce n'est pas une validation visuelle.
-- Demande de sauvegarde après simple ouverture : KiCad 10
-  `PCB_EDIT_FRAME::RunActionPlugin` appelle `OnModify()` lorsque son instantané
-  d'annulation contient des objets, sans vérifier leur modification effective.
-  Voir [le code KiCad 10](https://github.com/KiCad/kicad-source-mirror/blob/10.0/pcbnew/python/scripting/pcbnew_action_plugins.cpp).
-  Détacher la fenêtre ne corrige pas ce comportement. Ne pas effacer aveuglément
-  l'état modifié, ni déclencher Undo ou une sauvegarde automatique pour le masquer.
-  Cette limite de l'intégration ActionPlugin reste non résolue.
-- Cache Rust Windows : réutiliser un binaire dont le SHA-256 correspond, même
-  si une réinstallation a changé sa date. Une extension chargée est verrouillée ;
-  ne jamais la recopier pour une simple différence d'horodatage. Les copies
-  nécessaires sont publiées par remplacement atomique depuis un fichier temporaire.
-- `segment_blocked` à marge zéro ne démontre pas le balayage du déplacement :
-  dans le chemin KRT étudié, seule l'arrivée était testée. Une marge positive
-  minuscule ou `pas/2` ne constitue pas à elle seule une preuve de corridor.
-  Distinguer clearance physique, réserve de discrétisation et enveloppe balayée.
-  Ne pas réintroduire une constante de 0,3 mm comme correction universelle.
-  [Expérience sur les enveloppes](reports/RUST_SLIDE_ENVELOPE_2026_09_07.md).
-- Une grille conservatrice peut refuser un déplacement pourtant valide ; cela
-  réduit les possibilités. Une réponse libre utilisée comme certificat exige
-  une justification couvrant les arrondis et toute la géométrie déplacée.
-- Les caches suivent un état de cuivre précis. Les segments et vias sont remplacés
-  par de nouveaux objets, sans mutation en place. Appliquer les remplacements
-  validés par `GlossContext.apply_replacement` et respecter les rafraîchissements
-  d'obstacles ; voir [la durée de vie des données](ARCHITECTURE.md).
-- Une mutation d'un autre net peut affecter les zones : elle invalide aussi les
-  certificats électriques de référence. Les candidats et G5 restent recalculés.
-- Une restauration doit remettre le cuivre et invalider ses données dérivées,
-  dont les modèles de zones ; restaurer les seules listes de segments ne suffit pas.
-- Les copies de moteurs dans `tools` peuvent être des références historiques.
-  Leur comportement ne décrit pas nécessairement la production.
-- Une lenteur observée dans KiCad peut venir de l'application native du résultat :
-  le problème de largeur de pad KiCad 10 a notamment nécessité `GetFrontWidth()`
-  avec repli compatible. Mesurer moteur et application séparément.
-
-## Validation disponible et limites connues
-
-La campagne hors PACK0 sur `4d14d3b` ne valide pas une absence globale
-d'artefacts : coude résiduel après glissement local sur `usbc_power_adapter`
-(`/USB PD/CC2`), exclusion des arcs non effective sur `usb_dali` (`/USB+`,
-application native refusée), six alertes complémentaires de clearance à
-qualifier sur `bitaxe_ultra`. Les budgets expirés restaurent les entrées.
-Ces points ne sont pas corrigés dans le ZIP issu de cette campagne.
-Voir le [bilan hors PACK0](reports/CENTERING_OUTSIDE_PACK0_2026_09_08.md).
-
-La campagne historique du 8 septembre après refonte a donné **299 tests réussis et quatre
-échecs préexistants**, reproduits avant modification : ancien inventaire refusant
-`AGENTS.md`, explication française sans traduction anglaise, contrôle textuel de
-dépendance refusant l'accès optionnel à `NetSelectionPanel`, et
-`test_a_later_gloss_completely_removes_a_longer_centering_path` sans porte centrée.
-La revue corridor donne désormais **369 réussites et un échec préexistant**,
-le test Centering sans porte centrée. Ne pas annoncer une suite entièrement verte.
-
-La correction des pointes donne ensuite **399 réussites et le même échec
-Centering**. PACK0 sans G4 passe les dix configurations avec/sans corridor,
-sans nouvelle pointe détectée hors ancres. Un raccord aigu préexistant subsiste
-sur tildagon net 150 ; aucune garantie d'absence globale d'artefacts n'est revendiquée.
-
-PACK0 contient cinq cartes fixes avec empreintes dans [PACK0.json](PACK0.json).
-La comparaison de refonte conserve exactement les géométries sur les quatre
-cartes réussies, avec environ 5 à 9 % de temps en moins sur des mesures uniques.
-Dans cette ancienne campagne, `azukar_fpga` échoue et restaure la carte : ce n'est pas une
-validation fonctionnelle réussie. Le rapport initial PACK0 signalait une
-régression de connectivité sur le net 11 ; ne pas attribuer sans diagnostic
-tout nouvel échec à cette même cause.
-
-La nouvelle campagne corridor traite les cinq cartes avec et sans corridor,
-avec contrôle indépendant des nouvelles directions, et réussit notamment sur
-`azukar_fpga` après rejet des propositions de fusion électriquement invalides.
-Les géométries et les gains changent ; ne pas confondre validité géométrique et
-non-régression de rendement. Voir les mesures, les pertes de gain explicites et
-les limites dans le [rapport corridor](reports/CORRIDOR_ARTIFACT_REVIEW_2026_09_08.md).
-
-Les tests natifs sur `test_centering2` ont aussi validé moteur et application
-sur une carte détachée. Cette carte locale évolue : enregistrer son empreinte,
-ne pas identifier une référence par son seul nom ou le label B.
-[Rapport de refonte et mesures](reports/ARCHITECTURE_REGRESSION_2026_09_08.md).
-
-Un G5 valide n'est pas un DRC KiCad complet, ni une validation d'installation
-sur toutes les plateformes. Une mesure sous profileur n'est pas un temps réel
-représentatif ; une économie de validation potentiellement évitable n'est pas
-une accélération réalisée.
-
-## Procédure pratique de reprise et d'évolution
-
-1. Lire les règles, vérifier branche, HEAD, état local et révision KRT. Préserver
-   les fichiers préexistants, y compris les expériences non suivies par Git.
-2. Définir une hypothèse et des critères distincts : résultat géométrique,
-   validité électrique, temps. Comparer des versions et configurations identifiées.
-3. Après le « go », modifier la zone concernée et lancer les tests ciblés.
-   Le bootstrap de test utilisé dans cet environnement est :
-
-   ```powershell
-   python -c "from kicad_krt_gloss.runtime import configure_krt_runtime; configure_krt_runtime(); import dgloss, pytest; raise SystemExit(pytest.main(['tests/test_architecture.py']))"
-   ```
-
-   Précharger `dgloss` évite les réimports du runtime provoqués par certains mocks.
-   Pour les essais natifs, utiliser le Python de KiCad ; son emplacement local
-   constaté est `D:/kicad/bin/python.exe`, à vérifier sur un autre poste.
-4. Pour une campagne demandée, utiliser les cartes connues et leurs empreintes.
-   « Plusieurs tests » signifie plusieurs cartes, sans répétitions ni préchauffage
-   sauf demande contraire. Ne pas sauvegarder les PCB sources. Rapporter budget,
-   corridor, G4, périmètre chronométré, gain, statut et `nets/s` ; séparer parsing,
-   moteur avec contexte/G5, et application native. Voir le protocole PACK0.
-5. Conclure explicitement : intégré, abandonné ou en attente. Mettre à jour ce
-   guide et les règles affectées, conserver le rapport de mesure, puis faire un
-   commit dédié sans les autres changements locaux.
-6. Créer un ZIP uniquement sur demande. Tester le package exact produit et ses
-   ressources ; ne pas déduire sa validité de la seule réussite des sources.
-   Ne pas annoncer un succès CI sans vérifier que les erreurs remontent au statut.
-
-Ce guide doit évoluer avec les intégrations. Les chiffres ci-dessus restent
-datés ; toute nouvelle campagne doit préciser ce qu'elle remplace ou confirme.
+Validation du nettoyage : 164 tests ciblés réussis (moteur, architecture,
+frontière native, sélection/EB, corridor, overlay, documentation et staging).
+Deux essais natifs détachés réussis sur `/A` : plusieurs EB et portée entière,
+G5 valide, cuivre hors portée et fichier source préservés. Les quatre onglets
+restants et les polices des champs de calcul sont contrôlés. Des avertissements
+wxWidgets de parentage et de fermeture restent émis ; pas de qualification
+visuelle dans l’éditeur ni de nouvelle campagne de performance. Aucun ZIP créé.

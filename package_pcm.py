@@ -61,7 +61,7 @@ def build(output_dir, *, stage_only=False):
             shutil.copy2(PLUGIN / name, plugins / name)
         dialog_images = plugins / "img_dlg"
         dialog_images.mkdir()
-        for name in ("centering_illustration.png", "selection_scope_illustration.png",
+        for name in ("selection_scope_illustration.png",
                      "corridor_illustration.png", "via_illustration.png", "selection_net_illustration.png"):
             shutil.copy2(PLUGIN / "img_dlg" / name, dialog_images / name)
         package_documents = (

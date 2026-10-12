@@ -17,14 +17,14 @@ def start(net_name=None, delay_ms=1500):
     if board is None:
         raise RuntimeError('Run this probe inside the PCB editor.')
     dialog = next((window for window in wx.GetTopLevelWindows()
-                   if hasattr(window, 'centering_net_panel') and window.IsShown()), None)
+                   if hasattr(window, 'scope_net_panel') and window.IsShown()), None)
     if dialog is None:
         raise RuntimeError('Open the KRG settings dialog first.')
 
     def click():
         if not dialog or not dialog.IsShown():
             return
-        control = dialog.centering_net_panel.net_list
+        control = dialog.scope_net_panel.net_list
         index = 0 if net_name is None else control.FindString(net_name)
         if index == wx.NOT_FOUND or not control.GetCount():
             print('Highlight probe: requested net is not visible in the list.')

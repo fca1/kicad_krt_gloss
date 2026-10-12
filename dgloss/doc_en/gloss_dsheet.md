@@ -23,7 +23,7 @@ The CLI follows KRT conventions for net names and patterns, `--nets`,
 Without a selection it processes all routed nets. CLI selections always mean
 complete nets.
 Never expose an EB option in the CLI: this choice belongs to the dialog.
-The current CLI runs Gloss, not Centering, and exposes neither Proxi nor the
+The CLI runs Gloss and does not expose the
 dialog's G4 pass limit. `--stay-in-corridor` is available in public help.
 
 ```text
@@ -49,21 +49,19 @@ options:
 | `KRT grid step (mm)` | Sets KRT resolution and the minimum useful gain |
 | `Time budget` | 10–240 second optimization budget, in 10-second increments |
 | `Movable vias` | Allows movement of eligible mobile vias |
-| `Stay in corridor` | Enforces the admissible corridor for Gloss; always enforced for the preparation before Centering |
+| `Stay in corridor` | Enforces the admissible corridor for Gloss |
 | `G4 — Repeat Gloss until stable` | Enables additional G4 passes |
 | `G4 passes` | Limits additional G4 passes from 1 to 10 |
 
 G3.2, G3.3 with its non-collinear variant, G3.4 and G5 are not public choices
 and remain enabled. Corridor is exposed in Gloss and public CLI help.
 
-General contains the shared Gloss/Centering net list and component filters;
-Proxi stays in Centering. With EB enabled, Add unions imported KiCad branches,
+General contains the net list and component filters. With EB enabled, Add unions imported KiCad branches,
 Replace replaces remembered scope, and Clear unchecks all nets. Partial scope
 shows `n EB`; whole-net scope is blank. Without remembered branches the net is
 whole. Complete coverage becomes whole-net scope; stale references require
 reimporting. Clicking previews remembered scope; checking defines action scope.
-Centering then runs its required corridor Gloss
-preparation and Centering atomically.
+The action runs Gloss with the selected options.
 
 A selected straight track is a seed. G0 finds its maximal elementary branch
 and every stage remains within it. Several tracks may identify several branches

@@ -1,7 +1,7 @@
 """Orientation-neutral sliding of one segment between two neighbours.
 
 This module deliberately contains geometry only.  It does not decide whether a
-slide is useful for shortening, centering, clearance, or a later transformation.
+slide is useful for shortening, clearance, or a later transformation.
 The caller supplies the scalar translation of the middle segment and owns the
 acceptance policy.
 """

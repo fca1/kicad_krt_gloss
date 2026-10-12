@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from kicad_krt_gloss.selection import (
-    native_arc_net_ids, selected_net_ids, selected_pad_pair_distance_mm,
+    native_arc_net_ids, selected_net_ids,
     selected_seed_segments)
 from kicad_krt_gloss.board_adapter import (
     _krt_via_key, _native_segment_key, _native_via_key, _segment_key,
@@ -85,14 +85,12 @@ def test_plugin_run_accepts_two_item_preparation_for_multiple_selected_nets():
             def __init__(self, parent, values, count, **kwargs):
                 calls.append(("dialog", count))
                 self.on_gloss = kwargs["on_gloss"]
-                self.on_centering = kwargs["on_centering"]
-                assert set(kwargs['preselected_centering_nets']) == (
+                assert set(kwargs['preselected_scope_nets']) == (
                     {f'N{i}' for i in net_ids})
 
             def Bind(self, *_args): pass
             def Show(self):
                 self.on_gloss(settings, ['N3'], lambda text: None)
-                self.on_centering(settings, ['N3'], lambda text: None)
             def values(self): return settings
             def log_value(self): return ""
             def Destroy(self): pass
@@ -114,10 +112,6 @@ def test_plugin_run_accepts_two_item_preparation_for_multiple_selected_nets():
                 calls.append(('fresh',))
                 return prepared, [3]
 
-            def _run_centering(self, board, parent, values, names, **kwargs):
-                assert names == ['N3']
-                assert kwargs['prepared'] is prepared
-                calls.append(('centering',))
 
             def _run_gloss(self, board, parent, values, nets, **kwargs):
                 calls.append(("run", nets, kwargs))
@@ -126,7 +120,7 @@ def test_plugin_run_accepts_two_item_preparation_for_multiple_selected_nets():
             active_board=lambda: object(),
             net_highlighter=lambda board: lambda names: None,
             selected_net_ids=lambda board: net_ids,
-            selected_pad_pair_distance_mm=lambda board: None)
+            )
         namespace = {
             "wx": types.SimpleNamespace(GetTopLevelWindows=lambda: [],
                                         EVT_CLOSE=object()),
@@ -145,8 +139,7 @@ def test_plugin_run_accepts_two_item_preparation_for_multiple_selected_nets():
         if len(net_ids) != 1:
             assert run_call[2].get("prepared") == prepared
             assert "show_progress" not in run_call[2]
-            assert calls.count(('fresh',)) == 2
-            assert ('centering',) in calls
+            assert calls.count(('fresh',)) == 1
         else:
             assert run_call[2] == {"show_progress": False}
 
@@ -174,7 +167,7 @@ def test_action_plugin_routes_native_board_operations_through_bridge():
     assert "KICAD.active_board()" in source
     assert "KICAD.build_pcb_data(board)" in source
     assert "KICAD.apply_outcome(" in source
-    assert source.count("KICAD.refresh()") == 2
+    assert source.count("KICAD.refresh()") == 1
     assert "pcbnew.GetBoard()" not in source
     assert "pcbnew.Refresh()" not in source
 
@@ -243,30 +236,6 @@ def test_pad_or_footprint_selection_does_not_designate_a_net():
     board.tracks = []
 
     assert selected_net_ids(board) == []
-
-
-def test_exclusive_two_pad_selection_returns_centre_spacing_in_mm():
-    class Pad:
-        def __init__(self, x, y, selected=True):
-            self.point = types.SimpleNamespace(x=x, y=y)
-            self.selected = selected
-
-        def GetClass(self): return "PCB_PAD"
-        def IsSelected(self): return self.selected
-        def GetPosition(self): return self.point
-
-    first, second = Pad(1_000_000, 2_000_000), Pad(4_000_000, 6_000_000)
-    board = types.SimpleNamespace(GetSelectedItems=lambda: [first, second])
-    with patch.dict(sys.modules, {"pcbnew": types.SimpleNamespace(
-            ToMM=lambda value: value / 1_000_000)}):
-        assert selected_pad_pair_distance_mm(board) == pytest.approx(5.0)
-
-
-def test_pad_pair_shortcut_rejects_any_non_pad_selection():
-    pad = types.SimpleNamespace(GetClass=lambda: "PCB_PAD")
-    track = types.SimpleNamespace(GetClass=lambda: "PCB_TRACK")
-    board = types.SimpleNamespace(GetSelectedItems=lambda: [pad, pad, track])
-    assert selected_pad_pair_distance_mm(board) is None
 
 
 def test_selected_straight_track_maps_to_its_krt_segment_seed():
@@ -477,20 +446,14 @@ def test_dialog_configuration_is_partitioned_by_action_scope():
     general = source[source.index("GENERAL_DEFAULTS = {"):
                      source.index("GLOSS_DEFAULTS = {")]
     gloss = source[source.index("GLOSS_DEFAULTS = {"):
-                   source.index("CENTERING_DEFAULTS = {")]
-    centering = source[source.index("CENTERING_DEFAULTS = {"):
-                       source.index("DEFAULTS = GENERAL_DEFAULTS")]
-
+                   source.index("DEFAULTS = GENERAL_DEFAULTS")]
     assert '"selection_uses_elementary_branches"' in general
     assert '"grid_step"' in general
     assert '"budget_seconds"' in general
     assert '"move_vias"' in gloss
     assert '"stay_in_corridor": False' in gloss
-    assert '"centering_proximity_mm"' in centering
-    assert '"centering_build_new_segments"' not in centering
     assert source.index('AddPage(panel, "General")') < source.index(
-        'AddPage(panel, "Gloss")') < source.index(
-            'AddPage(panel, "Centering")')
+        'AddPage(panel, "Gloss")')
 
 
 def test_dialog_keeps_a_post_run_log_with_krt_style_controls():
@@ -502,27 +465,17 @@ def test_dialog_keeps_a_post_run_log_with_krt_style_controls():
     assert 'label="Gloss"' in source
     assert 'label="Close"' in source
     assert "wx.TE_READONLY" in source
-    assert 'self.notebook.AddPage(panel, "Centering")' in source
-    assert 'label="Centering"' in source
     assert 'label="Add"' in source
     assert 'label="Replace"' in source
     assert 'label="Clear"' in source
-    assert "on_import_centering" in source
-    assert 'wx.EVT_LISTBOX, self._on_centering_net_row_selected' in source
-    assert 'wx.EVT_CHECKLISTBOX, self._on_centering_net_checked' in source
-    assert "def _on_centering_net_row_selected" in source
-    assert "def _on_centering_net_checked" in source
-    assert 'label="Refresh"' in source
-    assert "def _on_refresh_proximity" in source
-    assert "def _clear_centering_highlight" in source
-    assert source.index("def _create_centering_selection") < source.index(
-        "def _create_centering_tab")
-    assert source.count("self._clear_centering_highlight()") >= 2
-    assert "wx.CallAfter(self._clear_centering_highlight)" in source
-    assert "panel, min=0.0, max=5.0" in source
-    assert "centering_build_multi_door_path" not in source
-    assert "centering_build_new_segments" not in source
-    assert "No eligible door for the selected nets" in source
+    assert "on_import_scope" in source
+    assert 'wx.EVT_LISTBOX, self._on_scope_net_row_selected' in source
+    assert 'wx.EVT_CHECKLISTBOX, self._on_scope_net_checked' in source
+    assert "def _on_scope_net_row_selected" in source
+    assert "def _on_scope_net_checked" in source
+    assert "def _clear_scope_highlight" in source
+    assert source.count("self._clear_scope_highlight()") >= 2
+    assert "wx.CallAfter(self._clear_scope_highlight)" in source
 
     action = (ROOT / "kicad_krt_gloss" / "action_plugin.py").read_text(
         encoding="utf-8")
@@ -530,8 +483,7 @@ def test_dialog_keeps_a_post_run_log_with_krt_style_controls():
     assert "initial_log=self.__class__._last_log" in action
     assert "dialog.Show()" in action
     assert "dialog.ShowModal()" not in action
-    assert "on_import_centering=import_centering_selection" in action
-    assert "on_refresh_proximity=lambda: KICAD.selected_pad_pair_distance_mm(board)" in action
+    assert "on_import_scope=import_scope_selection" in action
     assert "parent.Bind(wx.EVT_CLOSE, close_dialog_with_parent)" in action
     assert "dialog = GlossSettingsDialog(\n                None" in action
     assert 'print("\\n=== Track Gloss result ===")' in action
@@ -553,15 +505,15 @@ def _dialog_method(name, namespace=None):
     return scope[name]
 
 
-def test_clicking_centering_row_forwards_clicked_net_to_highlighter():
-    handler = _dialog_method("_on_centering_net_row_selected")
+def test_clicking_scope_row_forwards_clicked_net_to_highlighter():
+    handler = _dialog_method("_on_scope_net_row_selected")
     event = types.SimpleNamespace(skipped=False)
     event.Skip = lambda: setattr(event, "skipped", True)
     net_list = types.SimpleNamespace(
         GetSelections=lambda: [1], GetString=lambda index: ("N1", "N2")[index])
     queued = []
     dialog = types.SimpleNamespace(
-        centering_net_panel=types.SimpleNamespace(net_list=net_list),
+        scope_net_panel=types.SimpleNamespace(net_list=net_list),
         _on_net_selection_changed=queued.append)
 
     handler(dialog, event)
@@ -570,10 +522,10 @@ def test_clicking_centering_row_forwards_clicked_net_to_highlighter():
     assert event.skipped
 
 
-def test_checking_centering_row_highlights_updated_checked_scope():
+def test_checking_scope_row_highlights_updated_checked_scope():
     queued = []
     handler = _dialog_method(
-        "_on_centering_net_checked",
+        "_on_scope_net_checked",
         {"wx": types.SimpleNamespace(CallAfter=queued.append)})
     event = types.SimpleNamespace(skipped=False)
     event.Skip = lambda: setattr(event, "skipped", True)
@@ -601,16 +553,6 @@ def test_about_tab_uses_project_versions_and_attribution():
     assert 'self.selected_net_label.SetLabel(f"Selected Nets: {len(names)}")' in source
 
 
-def test_public_readme_is_plugin_only_and_explains_two_pad_proximity():
-    readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    assert "select **exactly two pads**" in readme
-    assert "click **Refresh**" in readme
-    assert "centre-to-centre distance" in readme
-    assert "## Command line" not in readme
-    assert "python gloss.py" not in readme
-    assert "**Frantz** is the author" in readme
-
-
 def test_pcm_package_includes_the_about_logo():
     source = (ROOT / "package_pcm.py").read_text(encoding="utf-8")
     assert '"icon_24.png", "icon_64.png"' in source
@@ -629,7 +571,6 @@ def test_dialog_exposes_the_integrated_gloss_options_by_public_name():
     assert 'label="Use elementary branches"' in source
     assert '"move_vias", "Movable vias"' in source
     assert '"stay_in_corridor", "Stay in corridor (prototype)"' not in source
-    assert 'label="Proximity max"' in source
     assert 'label="G4 passes:"' in source
     assert "can take significant time" in source
     assert "self._selected_count = selected_count" in source
@@ -665,16 +606,6 @@ def test_settings_dialog_is_shown_unless_exactly_one_net_is_selected():
     assert "if len(net_ids) != 1:" in source
     assert source.index("if len(net_ids) != 1:") < source.index(
         "dialog = GlossSettingsDialog")
-
-
-def test_exclusive_pad_pair_opens_centering_with_its_spacing_as_proxi():
-    action = (ROOT / "kicad_krt_gloss" / "action_plugin.py").read_text(
-        encoding="utf-8")
-    dialog = (ROOT / "kicad_krt_gloss" / "settings_dialog.py").read_text(
-        encoding="utf-8")
-    assert 'values["centering_proximity_mm"] = pad_spacing' in action
-    assert 'initial_tab="Centering" if open_centering else None' in action
-    assert 'if self.notebook.GetPageText(index) == initial_tab:' in dialog
 
 
 def test_plugin_selection_mode_defaults_to_be_and_cli_stays_net_only():

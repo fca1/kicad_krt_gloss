@@ -1,10 +1,9 @@
-"""Standalone Gloss settings and independent Centering action."""
+"""Standalone Gloss settings."""
 
 import os
 from types import SimpleNamespace
 import wx
 import wx.adv
-from wx.lib.buttons import GenButton
 
 from .version import __version__
 
@@ -25,19 +24,15 @@ GLOSS_DEFAULTS = {
     "g4_max_passes": 1,
 }
 
-CENTERING_DEFAULTS = {
-    "centering_proximity_mm": 1.0,
-}
-
-DEFAULTS = GENERAL_DEFAULTS | GLOSS_DEFAULTS | CENTERING_DEFAULTS
+DEFAULTS = GENERAL_DEFAULTS | GLOSS_DEFAULTS
 
 
 class GlossSettingsDialog(wx.Dialog):
     def __init__(self, parent, values, selected_count, *, on_gloss=None,
-                 on_centering=None, pcb_data=None, centering_nets=(),
-                 preselected_centering_nets=(), initial_tab=None,
-                 initial_log="", on_import_centering=None,
-                 on_refresh_proximity=None, on_net_selection_changed=None):
+                 pcb_data=None, scope_nets=(),
+                 preselected_scope_nets=(), initial_tab=None,
+                 initial_log="", on_import_scope=None,
+                 on_net_selection_changed=None):
         super().__init__(
             parent, title="KiCad KRT Gloss",
             style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER | wx.STAY_ON_TOP)
@@ -46,9 +41,7 @@ class GlossSettingsDialog(wx.Dialog):
             values["move_vias"] = values["enable_g3_1"]
         values = dict(DEFAULTS, **values)
         self._on_gloss_callback = on_gloss
-        self._on_centering_callback = on_centering
-        self._on_import_centering_callback = on_import_centering
-        self._on_refresh_proximity_callback = on_refresh_proximity
+        self._on_import_scope_callback = on_import_scope
         self._selected_count = selected_count
         self._on_net_selection_changed = on_net_selection_changed
         wx.ToolTip.SetDelay(250)
@@ -137,9 +130,9 @@ class GlossSettingsDialog(wx.Dialog):
         budget_unit.SetToolTip(budget_help)
         budget_row.Add(budget_unit, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5)
         calculation.Add(budget_row, 0, wx.ALL, 8)
-        centering_selection = self._create_centering_selection(
-            panel, pcb_data, centering_nets, preselected_centering_nets)
-        left_column.Add(centering_selection, 1, wx.EXPAND | wx.BOTTOM, 8)
+        scope_selection = self._create_scope_selection(
+            panel, pcb_data, scope_nets, preselected_scope_nets)
+        left_column.Add(scope_selection, 1, wx.EXPAND | wx.BOTTOM, 8)
         right_column.Add(selection, 0, wx.EXPAND | wx.BOTTOM, 8)
         right_column.Add(calculation, 0, wx.EXPAND)
         general_columns.Add(left_column, 1, wx.EXPAND | wx.ALL, 8)
@@ -149,7 +142,6 @@ class GlossSettingsDialog(wx.Dialog):
         self.notebook.AddPage(panel, "General")
 
         self._create_gloss_tab(values)
-        self._create_centering_tab(values)
 
         log_panel = wx.Panel(self.notebook)
         log_content = wx.BoxSizer(wx.VERTICAL)
@@ -230,27 +222,20 @@ class GlossSettingsDialog(wx.Dialog):
         self.gloss_button = wx.Button(self, label="Gloss")
         self.gloss_button.SetToolTip("Run Track Gloss with these settings.")
         self.gloss_button.Bind(wx.EVT_BUTTON, self._on_gloss)
-        self.centering_button = GenButton(self, label="Centering")
-        self.centering_button.SetBackgroundColour(wx.Colour(205, 229, 250))
-        self.centering_button.SetForegroundColour(wx.Colour(20, 45, 65))
-        self.centering_button.SetToolTip(
-            "Run corridor Gloss followed by Centering on the checked nets.")
-        self.centering_button.Bind(wx.EVT_BUTTON, self._on_centering)
         close_button = wx.Button(self, label="Close")
         close_button.SetToolTip("Close this dialog.")
         close_button.Bind(wx.EVT_BUTTON, lambda _event: self.Close())
         buttons.Add(self.gloss_button, 1, wx.RIGHT, 5)
-        buttons.Add(self.centering_button, 1, wx.RIGHT, 5)
         buttons.Add(close_button, 1)
         outer.Add(buttons, 0, wx.EXPAND | wx.ALL, 10)
         self.SetSizer(outer)
         self._configure_dialog_size()
         self._general_panel.Bind(wx.EVT_SIZE, self._on_general_size)
-        self.centering_net_panel.set_selection_changed_callback(self._sync_net_selection)
-        self.centering_net_panel.net_list.Bind(
-            wx.EVT_LISTBOX, self._on_centering_net_row_selected)
-        self.centering_net_panel.net_list.Bind(
-            wx.EVT_CHECKLISTBOX, self._on_centering_net_checked)
+        self.scope_net_panel.set_selection_changed_callback(self._sync_net_selection)
+        self.scope_net_panel.net_list.Bind(
+            wx.EVT_LISTBOX, self._on_scope_net_row_selected)
+        self.scope_net_panel.net_list.Bind(
+            wx.EVT_CHECKLISTBOX, self._on_scope_net_checked)
         self._sync_net_selection()
         if initial_tab:
             for index in range(self.notebook.GetPageCount()):
@@ -302,9 +287,7 @@ class GlossSettingsDialog(wx.Dialog):
         visible_options = (
             ("stay_in_corridor", "Stay in corridor",
              "Keep Gloss movements within the admissible corridor of the "
-             "existing route, preserving clearance and connectivity. "
-             "Centering always enables this constraint for its preparatory "
-             "Gloss, regardless of this checkbox.", "corridor"),
+             "existing route, preserving clearance and connectivity.", "corridor"),
             ("move_vias", "Movable vias",
              "Move an eligible unlocked via connected to exactly two unlocked "
              "track segments on different copper layers. Both local and complete "
@@ -363,28 +346,28 @@ class GlossSettingsDialog(wx.Dialog):
         diagram.SetToolTip(tooltip)
         return diagram
 
-    def _create_centering_selection(self, panel, pcb_data, centering_nets,
+    def _create_scope_selection(self, panel, pcb_data, scope_nets,
                                     preselected_nets):
-        """Build the shared Centering net checklist on the General page."""
+        """Build the Gloss net checklist on the General page."""
         net_box = wx.StaticBox(panel, label="Net Selection")
         net_sizer = wx.StaticBoxSizer(net_box, wx.VERTICAL)
         from dgloss.krt_api import NetSelectionPanel
         if pcb_data is None:
             pcb_data = SimpleNamespace(nets={}, pads_by_net={}, footprints={})
-        self.centering_net_panel = NetSelectionPanel(
+        self.scope_net_panel = NetSelectionPanel(
             panel, pcb_data,
             instructions=("Click a net to highlight it in KiCad.\n"
-                          "Check nets for Gloss and Centering."),
+                          "Check nets for Gloss."),
             show_hide_checkbox=False,
             show_hide_differential=False,
             show_component_filter=True,
             show_component_dropdown=True,
             min_pads_for_dropdown=3,
         )
-        self.centering_net_panel.all_nets = list(centering_nets)
-        self.centering_net_panel.refresh(sync_from_visible=False)
-        self.centering_net_panel.set_selected_nets(preselected_nets)
-        net_sizer.Add(self.centering_net_panel, 1, wx.EXPAND)
+        self.scope_net_panel.all_nets = list(scope_nets)
+        self.scope_net_panel.refresh(sync_from_visible=False)
+        self.scope_net_panel.set_selected_nets(preselected_nets)
+        net_sizer.Add(self.scope_net_panel, 1, wx.EXPAND)
 
         selection_actions = wx.BoxSizer(wx.HORIZONTAL)
         self._selection_actions = selection_actions
@@ -393,137 +376,75 @@ class GlossSettingsDialog(wx.Dialog):
             "Check the nets of currently selected KiCad tracks, keeping "
             "the nets already checked here.")
         add_selection.Bind(wx.EVT_BUTTON,
-                           lambda _event: self._on_import_centering(True))
+                           lambda _event: self._on_import_scope(True))
         replace_selection = wx.Button(panel, label="Replace", style=wx.BU_EXACTFIT)
         replace_selection.SetToolTip(
             "Check only the nets of currently selected KiCad tracks.")
         replace_selection.Bind(
             wx.EVT_BUTTON,
-            lambda _event: self._on_import_centering(False))
+            lambda _event: self._on_import_scope(False))
         clear_selection = wx.Button(panel, label="Clear", style=wx.BU_EXACTFIT)
-        clear_selection.SetToolTip("Uncheck every net for Gloss and Centering.")
-        clear_selection.Bind(wx.EVT_BUTTON, self._on_clear_centering_selection)
+        clear_selection.SetToolTip("Uncheck every net for Gloss.")
+        clear_selection.Bind(wx.EVT_BUTTON, self._on_clear_scope_selection)
         selection_actions.Add(add_selection, 1, wx.RIGHT, 5)
         selection_actions.Add(replace_selection, 1, wx.RIGHT, 5)
         selection_actions.Add(clear_selection, 1)
         net_sizer.Add(selection_actions, 0, wx.EXPAND | wx.TOP, 5)
-        wx.CallAfter(self._clear_centering_highlight)
+        self.scope_status = wx.StaticText(panel, label="Ready.")
+        net_sizer.Add(self.scope_status, 0, wx.TOP, 5)
+        wx.CallAfter(self._clear_scope_highlight)
         return net_sizer
 
-    def _create_centering_tab(self, values):
-        """Build the special G3.6 controls without duplicating net selection."""
-        panel = wx.Panel(self.notebook)
-        content = wx.BoxSizer(wx.VERTICAL)
-
-        options = wx.BoxSizer(wx.VERTICAL)
-        icon_path = os.path.join(_DIALOG_IMAGES, "centering_illustration.png")
-        self.centering_proximity_mm = wx.SpinCtrlDouble(
-            panel, min=0.0, max=5.0,
-            initial=float(values["centering_proximity_mm"]), inc=0.1)
-        self.centering_proximity_mm.SetDigits(2)
-        proximity_font = self.centering_proximity_mm.GetFont()
-        proximity_font.SetPointSize(max(14, round(proximity_font.GetPointSize() * 1.5)))
-        self.centering_proximity_mm.SetFont(proximity_font)
-        self.centering_proximity_mm.SetMinSize(self.FromDIP((130, 38)))
-        self.centering_proximity_mm.SetToolTip(
-            "Maximum absolute proximity to obstacles, in millimetres.")
-        if os.path.exists(icon_path):
-            image = wx.Image(icon_path, wx.BITMAP_TYPE_PNG)
-            # Enlarge the existing asset and its embedded editor together.
-            # Keep the original composition; these are display sizes only.
-            diagram_size = self.FromDIP((450, 320))
-            image = image.Scale(diagram_size.width, diagram_size.height,
-                                wx.IMAGE_QUALITY_HIGH)
-            bitmap = wx.Bitmap(image)
-            diagram = wx.Panel(panel, size=bitmap.GetSize())
-            diagram.SetMinSize(bitmap.GetSize())
-            diagram.SetBackgroundStyle(wx.BG_STYLE_PAINT)
-
-            def paint_diagram(_event):
-                """Draw the diagram behind its overlaid input control."""
-                dc = wx.AutoBufferedPaintDC(diagram)
-                dc.DrawBitmap(bitmap, 0, 0, True)
-
-            diagram.Bind(wx.EVT_PAINT, paint_diagram)
-            # The diagram already names this value.  Place the editor directly
-            # beside that label so the value and its visual meaning stay together.
-            self.centering_proximity_mm.Reparent(diagram)
-            self.centering_proximity_mm.SetPosition(tuple(self.FromDIP((307, 77))))
-            self.centering_proximity_mm.SetSize(self.FromDIP((130, 38)))
-            proximity_title = wx.StaticText(panel, label="Proximity max")
-            proximity_title.SetFont(proximity_font.Bold())
-            options.Add(proximity_title, 0, wx.ALIGN_CENTER | wx.TOP, 10)
-            options.Add(diagram, 0, wx.ALIGN_CENTER | wx.ALL, 10)
-        else:
-            # Keep the setting reachable if the optional illustration is absent.
-            options.Add(self.centering_proximity_mm, 0,
-                        wx.ALIGN_CENTER | wx.ALL, 10)
-
-        refresh_proximity = wx.Button(panel, label="Refresh")
-        refresh_proximity.SetToolTip(
-            "Set Proximity max from exactly two selected KiCad pads when "
-            "their centre spacing is between 0 and 5 mm.")
-        refresh_proximity.Bind(wx.EVT_BUTTON, self._on_refresh_proximity)
-        options.Add(refresh_proximity, 0, wx.ALIGN_CENTER | wx.BOTTOM, 10)
-        options.AddStretchSpacer()
-        content.Add(options, 1, wx.ALIGN_CENTER | wx.ALL, 8)
-
-        self.centering_status = wx.StaticText(panel, label="Ready.")
-        content.Add(self.centering_status, 0,
-                    wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
-        panel.SetSizer(content)
-        self.notebook.AddPage(panel, "Centering")
 
     def _on_clear_log(self, _event):
         self.log_text.Clear()
 
     def _sync_net_selection(self):
-        names = self.centering_net_panel.get_selected_nets()
+        names = self.scope_net_panel.get_selected_nets()
         self.selected_net_label.SetLabel(f"Selected Nets: {len(names)}")
         self.gloss_button.Enable(bool(names))
-        self.centering_button.Enable(bool(names))
         self.controls["repeat_until_stable"].Enable(len(names) > 1)
         self.g4_max_passes.Enable(len(names) > 1)
         if self._on_net_selection_changed is not None:
             self._on_net_selection_changed(names)
 
-    def _on_centering_net_row_selected(self, event):
+    def _on_scope_net_row_selected(self, event):
         """Preview the clicked net without changing the checked action scope."""
-        net_list = self.centering_net_panel.net_list
+        net_list = self.scope_net_panel.net_list
         names = [net_list.GetString(index)
                  for index in net_list.GetSelections()]
         if names and self._on_net_selection_changed is not None:
             self._on_net_selection_changed(names)
         event.Skip()
 
-    def _on_centering_net_checked(self, event):
+    def _on_scope_net_checked(self, event):
         """Apply the checklist scope after wx has updated the check state."""
         wx.CallAfter(self._sync_net_selection)
         event.Skip()
 
-    def _on_import_centering(self, add):
-        """Merge or replace checked Centering nets from the KiCad selection."""
-        if self._on_import_centering_callback is None:
+    def _on_import_scope(self, add):
+        """Merge or replace checked nets from the KiCad selection."""
+        if self._on_import_scope_callback is None:
             return
-        imported = set(self._on_import_centering_callback() or ())
+        imported = set(self._on_import_scope_callback() or ())
         if add:
-            imported.update(self.centering_net_panel.get_selected_nets())
-        self.centering_net_panel.set_selected_nets(imported)
-        self._clear_centering_highlight()
-        selected = self.centering_net_panel.get_selected_nets()
+            imported.update(self.scope_net_panel.get_selected_nets())
+        self.scope_net_panel.set_selected_nets(imported)
+        self._clear_scope_highlight()
+        selected = self.scope_net_panel.get_selected_nets()
         verb = "Added" if add else "Replaced"
-        self.centering_status.SetLabel(
+        self.scope_status.SetLabel(
             f"{verb} from KiCad selection: {len(selected)} net(s) checked.")
 
-    def _on_clear_centering_selection(self, _event):
-        """Clear the Centering net checklist without affecting KiCad."""
-        self.centering_net_panel.set_selected_nets(())
-        self._clear_centering_highlight()
-        self.centering_status.SetLabel("Net selection cleared.")
+    def _on_clear_scope_selection(self, _event):
+        """Clear the net checklist without affecting KiCad."""
+        self.scope_net_panel.set_selected_nets(())
+        self._clear_scope_highlight()
+        self.scope_status.SetLabel("Net selection cleared.")
 
-    def _clear_centering_highlight(self):
+    def _clear_scope_highlight(self):
         """Do not show every initial checklist row as a blue selection."""
-        net_list = self.centering_net_panel.net_list
+        net_list = self.scope_net_panel.net_list
         for index in net_list.GetSelections():
             net_list.Deselect(index)
 
@@ -537,27 +458,12 @@ class GlossSettingsDialog(wx.Dialog):
         """Start halfway through the scrollable range without checking a net."""
         if not self:
             return
-        net_list = self.centering_net_panel.net_list
+        net_list = self.scope_net_panel.net_list
         count = net_list.GetCount()
         if count:
             visible = max(1, net_list.GetCountPerPage())
             net_list.SetFirstItem(max(0, (count - visible) // 2))
 
-    def _on_refresh_proximity(self, _event):
-        """Refresh Proxi only from one exclusive native two-pad selection."""
-        if self._on_refresh_proximity_callback is None:
-            return
-        distance = self._on_refresh_proximity_callback()
-        if distance is None:
-            self.centering_status.SetLabel(
-                "Select exactly two pads in KiCad to refresh Proxi.")
-        elif 0.0 <= distance <= 5.0:
-            self.centering_proximity_mm.SetValue(distance)
-            self.centering_status.SetLabel(
-                f"Proxi refreshed from pad spacing: {distance:.2f} mm.")
-        else:
-            self.centering_status.SetLabel(
-                "Selected pad spacing is outside the 0–5 mm Proxi range.")
 
     def _on_copy_log(self, _event):
         if not wx.TheClipboard.Open():
@@ -579,14 +485,13 @@ class GlossSettingsDialog(wx.Dialog):
 
     def _on_gloss(self, _event):
         self._show_action_tab("Gloss")
-        names = self.centering_net_panel.get_selected_nets()
+        names = self.scope_net_panel.get_selected_nets()
         if not names:
             return
         if self._on_gloss_callback is None:
             self.EndModal(wx.ID_OK)
             return
         self.gloss_button.Disable()
-        self.centering_button.Disable()
         try:
             completed = self._on_gloss_callback(
                 self.values(), names, self.append_log)
@@ -594,49 +499,7 @@ class GlossSettingsDialog(wx.Dialog):
                 self._show_action_tab("Log")
         finally:
             self.gloss_button.Enable()
-            self.centering_button.Enable()
 
-    def _on_centering(self, _event):
-        self._show_action_tab("Centering")
-        selected_nets = self.centering_net_panel.get_selected_nets()
-        if not selected_nets:
-            wx.MessageBox(
-                "Select at least one modifiable net.",
-                "Centering", wx.OK | wx.ICON_INFORMATION)
-            return
-        if self._on_centering_callback is None:
-            return
-        self.centering_button.Disable()
-        self.gloss_button.Disable()
-        try:
-            result = self._on_centering_callback(
-                self.values(), selected_nets, self.append_log)
-            if isinstance(result, dict):
-                doors = int(result.get("doors_centered", 0))
-                proximity = float(result.get(
-                    "centering_proximity_mm",
-                    self.centering_proximity_mm.GetValue()))
-                if doors:
-                    self.centering_status.SetLabel(
-                        f"{doors} door(s) centered at Proxi {proximity:.2f} mm.")
-                elif result.get("doors_already_centered", 0):
-                    self.centering_status.SetLabel(
-                        f"{result['doors_already_centered']} door(s) already centered and certified.")
-                else:
-                    self.centering_status.SetLabel(
-                        "No eligible door for the selected nets at "
-                        f"Proxi {proximity:.2f} mm.")
-                cleanup_saved = float(result.get("cleanup_saved_mm", 0.0))
-                if cleanup_saved > 0:
-                    self.centering_status.SetLabel(
-                        self.centering_status.GetLabel() +
-                        f" Cleanup: {cleanup_saved:.4f} mm saved.")
-            elif result is False:
-                self.centering_status.SetLabel(
-                    "Centering failed; see the Log tab.")
-        finally:
-            self.gloss_button.Enable()
-            self.centering_button.Enable()
 
     def append_log(self, text):
         self.log_text.AppendText(str(text))
@@ -666,6 +529,4 @@ class GlossSettingsDialog(wx.Dialog):
                     "grid_step": self.grid_step.GetValue(),
                     "budget_seconds": self.budget_seconds.GetValue(),
                     "g4_max_passes": self.g4_max_passes.GetValue(),
-                    "centering_proximity_mm": (
-                        self.centering_proximity_mm.GetValue()),
                 }

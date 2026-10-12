@@ -22,9 +22,3 @@ Validation ciblée sur `test_centering2.kicad_pcb`, net `/C`, grille 0,1 mm :
 
 - Corridor actif : 104,4542 → 98,6860 mm, environ 0,15 s.
 - Corridor inactif : 104,4542 → 56,0598 mm, environ 0,40 s.
-
-L'action Centering commence par une passe de gloss avec
-`stay_in_corridor=True`, sur le même périmètre éditable. Le centering s'exécute
-ensuite dans le budget restant et constitue la dernière transformation.
-Seules la certification et la préparation de l'affichage suivent le centering.
-Le nettoyage préalable est inclus dans la transaction et dans le delta final.

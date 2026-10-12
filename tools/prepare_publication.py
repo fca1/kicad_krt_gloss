@@ -69,8 +69,8 @@ def main():
     (destination / 'SHA256SUMS.txt').write_text(f"{info['sha256']}  {archive.name}\n", encoding='utf-8')
     notes = f'''# KRGloss {info['version']} — testing release
 
-Shorten and simplify existing routing with Gloss, or centre tracks through valid gates with Centering.
-Select whole nets or remembered elementary branches. Set Proximity max by selecting exactly two pads in KiCad and clicking Refresh.
+Shorten and simplify existing routing with Gloss.
+Select whole nets or remembered elementary branches.
 
 Requires KiCad 10.x, SWIG runtime. Bundled KRT: {info['krt_version']} ({krt}).
 Includes binaries for Windows x86-64, Linux x86-64 and macOS Intel/Apple Silicon.

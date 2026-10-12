@@ -1,7 +1,7 @@
 # Track Gloss — spécification de référence
 
 Ce document fixe les règles fonctionnelles et les invariants. Pour une
-présentation accessible du fonctionnement des deux actions, voir
+présentation accessible du fonctionnement du Gloss, voir
 [`gloss_explain.md`](gloss_explain.md).
 
 ## Finalité
@@ -79,81 +79,11 @@ portée modifiable :
 Ces exclusions restent des obstacles pour les autres nets. Une sélection
 explicite ne lève pas leur protection.
 
-## Séquencement
-
-Le Gloss et le Centering sont deux actions distinctes, aux objectifs différents.
-Le Gloss cherche à réduire et à simplifier ; le Centering cherche à placer une
-piste au mieux dans un passage. Le Centering peut donc conserver ou augmenter
-légèrement la longueur : il n'est pas soumis au gain minimal exigé par les
-phases de réduction.
-
-Lorsqu'un Centering est demandé, l'enchaînement est impératif et atomique :
-
-1. exécuter le Gloss avec `stay_in_corridor=True` ;
-2. exécuter le Centering sur ce résultat ;
-3. ne plus transformer la géométrie après le Centering.
-
-Le Centering est ainsi la dernière transformation géométrique de l'action. En
-cas d'échec, de budget expiré ou de non-conformité de cette action combinée, le
-résultat initial est restauré selon la politique transactionnelle.
-
-![Le Gloss réduit d'abord les détours, puis le Centering place la piste dans le passage.](../../docs/assets/centering-before-after.png)
-
 Les mesures publiées pour une action Gloss couvrent toute l'action, depuis le
 cuivre reçu en entrée jusqu'au cuivre final. La longueur initiale, le nombre de
 nets modifiés et le gain total incluent donc le lissage KRT préliminaire. Le
 rapport peut détailler séparément le gain du lissage KRT et celui des phases
 suivantes, mais ce détail ne remplace jamais le total complet.
-
-## Centering
-
-**M01 — Porte de centering.** Un obstacle isolé ne provoque aucune
-transformation. Deux obstacles forment une porte lorsqu'ils encadrent le
-segment, que la droite reliant leurs limites cuivre croise ce segment, et que
-leur distance **centre-à-centre est inférieure ou égale à `Proxi`**. `Proxi`
-est une distance absolue exprimée en millimètres. Elle vaut `1 mm` par défaut,
-peut être choisie par l'utilisateur entre `0 mm` et `5 mm`; la valeur `0 mm`
-ne sélectionne aucune porte lors de l'action de centering. La netlist présente
-les nets modifiables indépendamment de la valeur de `Proxi`.
-
-Le centering place la piste sur l'axe admissible de la porte, pondéré par les
-clearances effectives. Plusieurs portes peuvent conduire à décomposer la
-piste en plusieurs segments. La marge supplémentaire au centre de la porte
-n'est pas imposée aux approches : elles respectent les clearances réglementaires
-à la largeur réelle, sans réserve d'élargissement. Toute géométrie produite reste octolinéaire et
-est validée contre l'ensemble des obstacles par les contrôles KRT.
-
-Pour une porte seule, un voisin mobile n'est pas une ancre : si le glissement
-local échoue, la translation des supports existants est propagée aux voisins
-successifs jusqu'aux rails fixes, sans inventer de nouveaux raccords. Les
-intersections déterminent les rallongements et raccourcissements ; KRT valide
-chaque proposition. Une porte déjà centrée et certifiée est satisfaite : elle
-ne justifie ni une reconstruction de sa chaîne ni l'annulation du Gloss
-préparatoire. Le log distingue portes recentrées et portes déjà centrées.
-
-L'option `build_new_segments` autorise l'augmentation du nombre de segments.
-Elle est cochée par défaut dans l'interface Centering. Lorsqu'elle est
-désactivée, le centering choisit le meilleur recentrage réalisable sans créer
-de segment supplémentaire. L'impossibilité d'atteindre le centre exact ne
-constitue pas un motif de rejet.
-
-L'option `build_multi_door_path` autorise une même transformation à traiter
-plusieurs portes successives. Elle est cochée par défaut dans l'interface
-Centering et reste indépendante de `build_new_segments` : la première choisit
-le nombre de portes couvertes, la seconde autorise ou interdit l'augmentation
-du nombre de segments nécessaire pour les relier.
-
-Lorsque le centering est activé, les portes compatibles de toute la branche
-élémentaire sont traitées avant de considérer la longueur ou le nombre de
-segments. Ces deux mesures ne constituent ni un motif de rejet ni un critère
-de classement entre des solutions couvrant des ensembles de portes différents.
-
-Pour chaque porte, le franchissement utilise l'orientation octolinéaire qui
-maximise la plus faible marge aux deux obstacles. Lorsque la porte est normale
-au segment et que son orientation actuelle atteint cette marge, l'orientation
-du segment est conservée. Une orientation différente peut être construite si
-`build_new_segments` vaut `true`; elle est ensuite raccordée aux portes
-précédente et suivante par la construction multiporte.
 
 ## Portée
 

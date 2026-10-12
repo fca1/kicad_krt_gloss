@@ -142,7 +142,7 @@ class BranchScopeList(dv.DataViewListCtrl):
 
 
 def install(dialog):
-    panel = dialog.centering_net_panel
+    panel = dialog.scope_net_panel
     selected = panel.get_selected_nets()
     old = panel.net_list
 
@@ -150,13 +150,13 @@ def install(dialog):
         branches = dialog._branch_memory.by_net.get(name, ())
         return f'{len(branches)} EB' if dialog._eb_enabled() and branches else ''
 
-    new = BranchScopeList(panel, label, dialog._on_centering_net_row_selected,
-                          dialog._on_centering_net_checked)
+    new = BranchScopeList(panel, label, dialog._on_scope_net_row_selected,
+                          dialog._on_scope_net_checked)
     new.SetToolTip(old.GetToolTipText())
     panel._list_container_sizer.Replace(old, new)
     panel._list_container_sizer.GetItem(new).SetFlag(wx.EXPAND)
     panel.net_list = new
     old.Destroy()
     panel.set_selected_nets(selected)
-    dialog._clear_centering_highlight()
+    dialog._clear_scope_highlight()
     panel.Layout()

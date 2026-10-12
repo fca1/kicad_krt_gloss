@@ -1,20 +1,18 @@
-# Gloss et Centering
+# Gloss
 
-## 1. Deux actions pour deux objectifs
+## 1. Raccourcir et simplifier
 
 Une piste routée est une suite de segments reliant des points fixes, tels que
 des pads, des vias immobiles ou des jonctions. Elle doit rester connectée et
 respecter les distances minimales au cuivre voisin.
 
-Le **Gloss** et le **Centering** améliorent cette géométrie, mais leur but est
-différent :
+Le **Gloss** améliore cette géométrie :
 
 | Action | But | Effet possible sur la longueur |
 |---|---|---|
 | Gloss | Raccourcir et simplifier le chemin | La réduit, ou la conserve en supprimant un détour inutile |
-| Centering | Placer la piste au mieux dans un passage | Peut la conserver ou l'augmenter légèrement |
 
-Ils ne redessinent pas librement une connexion. Ils travaillent sur le cuivre
+Le Gloss ne redessine pas librement une connexion. Il travaille sur le cuivre
 déjà routé, seulement là où une modification est autorisée.
 
 ## 2. Règles communes
@@ -100,59 +98,9 @@ connexion.
 
 ![Un via déplacé sur une position plus directe réduit les deux portions de piste qui y aboutissent.](../../docs/assets/mobile-via-reduces-length.png)
 
-## 4. Le Centering
+## 4. Résultat attendu
 
-### 4.1 Son but
-
-Le Centering recherche les **portes** : des passages formés par deux obstacles
-qui encadrent une piste. Il place la piste aussi équitablement que possible dans
-ces passages, avec des marges cohérentes de chaque côté.
-
-Un obstacle isolé ne définit pas une porte et ne déclenche donc pas, à lui seul,
-un recentrage.
-
-![Une piste décentrée est replacée au milieu de son passage.](../../docs/assets/centering-before-after.png)
-
-### 4.2 Trouver l'axe d'un passage
-
-Pour chaque porte, le Centering mesure l'espace réellement disponible de part
-et d'autre de la piste. L'axe recherché n'est pas toujours le milieu visible :
-il tient compte des distances qui doivent rester libres.
-
-Si l'axe exact ne peut pas être atteint sans enfreindre une règle, le meilleur
-recentrage réalisable est choisi. S'il n'existe aucun mouvement sûr, la piste
-reste à sa place.
-
-### 4.3 Plusieurs portes successives
-
-Une même branche peut traverser plusieurs portes. Le Centering peut alors
-décomposer la piste en plusieurs segments afin de passer proprement par leurs
-axes, tout en raccordant les portions avant et après chaque passage.
-
-Cette construction est guidée par le passage entre obstacles, et non par la
-longueur minimale. Le résultat peut donc être un peu plus long que celui du
-Gloss seul.
-
-#### Illustration — Centrage à travers plusieurs portes
-
-![Une même piste est recentrée dans deux passages successifs.](../../docs/assets/multiple-gates-centering.png)
-
-## 5. Enchaînement des actions
-
-Le Centering ne constitue pas une étape de Gloss. Lorsque les deux actions sont
-demandées, l'ordre est toujours le suivant :
-
-1. le Gloss améliore la piste en restant dans son corridor admissible ;
-2. le Centering place ensuite la piste dans les portes détectées ;
-3. aucune autre transformation géométrique n'est appliquée après le Centering.
-
-Une réduction exécutée après un recentrage pourrait défaire la position choisie
-dans un passage. Le résultat livré est donc la géométrie centrée et validée.
-
-## 6. Résultat attendu
-
-Le résultat peut être une piste plus courte, une piste plus simple, une piste
-mieux centrée dans un passage, ou la piste initiale si aucune amélioration ne
+Le résultat peut être une piste plus courte, une piste plus simple, ou la piste initiale si aucune amélioration ne
 respecte toutes les règles. L'absence de modification est normale : elle
 signifie que la géométrie existante est déjà la meilleure solution sûre dans la
 portée examinée.

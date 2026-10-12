@@ -13,7 +13,7 @@ KRT.
 
 | Module | Responsabilité |
 | --- | --- |
-| `pipeline` | Actions publiques, transaction Gloss/Centering, assemblage des résultats |
+| `pipeline` | Entrées publiques, transaction Gloss, assemblage des résultats |
 | `optimization` | Une passe ordonnée et ses services explicites `PassOperations` |
 | `passes` | Arrêt G4 par gain marginal et nombre de passes |
 | `transaction` | Résultat, propriété des entrées et restauration complète |
@@ -29,14 +29,10 @@ KRT.
 | `corner_reduction` | Réductions locales par supports octolinéaires, contact KRT et certificat de surfaces emboîtées |
 | `topology` | Politique électrique et réutilisation des certificats de référence |
 | `algorithm`, `local_gloss`, `via_mobile`, `pad_terminals`, `sliding_nodes` | Recherche et sélection des transformations |
-| `interpad_detection` | Détection des portes pad–pad |
-| `interpad_geometry`, `interpad_types` | Géométrie d'une porte et descriptions immuables |
-| `interpad_paths` | Construction des chemins candidats de Centering |
-| `interpad` | Ordonnancement, validation et application du Centering |
 | `kicad_bridge` | Façade KRG vers la carte KiCad native ; délégation de l'import et des règles à KRT |
 
 Les anciens points d'import des helpers restent disponibles dans `algorithm`,
-`interpad` et `pipeline` pour les outils de diagnostic. Les stratégies utilisent
+et `pipeline` pour les outils de diagnostic. Les stratégies utilisent
 directement les modules partagés lorsque cela évite une dépendance réciproque.
 
 ## Frontière native KiCad
@@ -88,5 +84,4 @@ zones du PCB et leurs entrées secondaires KRT lorsqu'elles lui appartiennent.
 Les modèles d'un autre instantané ne sont pas supprimés.
 
 Les règles de mouvement, l'ordre des candidats, l'autogloss, les limites G4 et
-la transaction Gloss puis Centering sont conservés. Cette réorganisation
-n'étend pas le Centering aux portes comportant des vias.
+la transaction Gloss sont conservés.

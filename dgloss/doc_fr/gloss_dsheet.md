@@ -23,7 +23,7 @@ Le CLI reprend les conventions KRT : noms et motifs de nets, `--nets`,
 Sans sélection, tous les nets routés sont traités. Une sélection désigne
 toujours des nets complets.
 Ne jamais exposer d'option EB dans le CLI : ce choix est réservé au dialogue.
-Le CLI actuel exécute Gloss, pas Centering, et n'expose pas Proxi ni la limite
+Le CLI exécute Gloss et n'expose pas la limite
 de passes G4 du dialogue. `--stay-in-corridor` est disponible dans l'aide.
 
 ```text
@@ -50,7 +50,7 @@ suivants :
 | `KRT grid step (mm)` | Définit la résolution KRT et le gain minimal utile |
 | `Time budget` | Budget d'optimisation de 10 à 240 secondes, par pas de 10 |
 | `Movable vias` | Autorise le déplacement des vias mobiles éligibles |
-| `Stay in corridor` | Impose le corridor admissible au Gloss ; toujours imposé pour son étape préparatoire au Centering |
+| `Stay in corridor` | Impose le corridor admissible au Gloss |
 | `G4 — Repeat Gloss until stable` | Active les passes supplémentaires G4 |
 | `G4 passes` | Limite les passes supplémentaires G4 de 1 à 10 |
 
@@ -58,15 +58,13 @@ G3.2, G3.3 avec sa variante non colinéaire, G3.4 et G5 ne sont pas présentés
 comme des choix et restent actifs. Le corridor est exposé dans Gloss et dans
 l'aide CLI publique.
 
-General contient la liste commune à Gloss et Centering et les filtres par
-composant. Proxi reste dans Centering. Avec EB activé, Add cumule les branches
+General contient la liste des nets et les filtres par composant. Avec EB activé, Add cumule les branches
 importées depuis KiCad, Replace remplace la portée mémorisée, Clear vide les
 coches. Une portée partielle affiche `n EB` ; un net entier laisse la colonne
 vide. Sans branches mémorisées, le net est entier. Une couverture complète
 devient un net entier ; des références périmées nécessitent une réimportation.
 Un clic prévisualise la portée mémorisée ; la coche définit la portée de l'action.
-L'action exécute alors le Gloss préparatoire imposé dans le corridor, puis
-Centering atomiquement.
+L'action exécute Gloss avec les options choisies.
 
 Une piste droite sélectionnée sert de graine. G0 détermine sa branche
 élémentaire maximale, puis toutes les étapes restent limitées à cette branche.

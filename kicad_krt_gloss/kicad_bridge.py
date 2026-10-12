@@ -44,10 +44,6 @@ class KiCadBoardBridge:
                 for code, net in board.GetNetsByNetcode().items()
                 if code in selected}
 
-    @staticmethod
-    def selected_pad_pair_distance_mm(board):
-        from .selection import selected_pad_pair_distance_mm
-        return selected_pad_pair_distance_mm(board)
 
     @staticmethod
     def selected_seed_segments(board, pcb_data):

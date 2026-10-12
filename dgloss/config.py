@@ -14,11 +14,6 @@ class GlossConfig:
     budget_seconds: float = 20.0
     enable_noncollinear_t_rails: bool = True
     enable_multipasses: bool = True
-    # G3.6 remains opt-in until its integrated validation is complete.  These
-    # settings are intentionally engine/API-only; the KiCad UI does not expose
-    # them yet.
-    enable_g3_6: bool = False
-    centering_proximity_mm: float = 1.0
     # Require corridor certificates for track shortcuts and joint motion.
     stay_in_corridor: bool = False
 

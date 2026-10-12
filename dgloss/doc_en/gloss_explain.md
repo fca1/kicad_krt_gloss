@@ -1,6 +1,6 @@
-# Gloss and Centering
+# Gloss
 
-## Two actions, two goals
+## Shorten and simplify
 
 A routed track joins fixed points such as pads, vias, and junctions. It must
 remain connected and respect required clearance from nearby copper.
@@ -8,9 +8,8 @@ remain connected and respect required clearance from nearby copper.
 | Action | Goal | Possible effect on length |
 |---|---|---|
 | Gloss | Shorten and simplify existing routing | Reduces it, or keeps it while removing an unnecessary detour |
-| Centering | Place a track well in a passage | May keep it or increase it slightly |
 
-Neither action freely redraws a connection. Both work on existing routed copper
+Gloss does not freely redraw a connection. It works on existing routed copper
 and only in an allowed scope. Fixed items and protected areas are anchors or
 obstacles and are never moved. Every change preserves connectivity, widths,
 layers, required clearances, allowed routing directions, and obstacle avoidance.
@@ -38,26 +37,6 @@ Gloss can remove local detours, merge aligned segments, shorten a track
 approach, or locally move a via or junction when that mobility is allowed. A
 gain too small to distinguish from the grid is rejected.
 
-## Centering
+## Result
 
-Centering searches for **gates**: passages formed by two obstacles around a
-track. It measures the actual available space on each side and places the track
-as evenly as possible while keeping consistent margins. An isolated obstacle
-does not define a gate. If the exact axis is impossible, it chooses the best
-feasible centering; if no safe movement exists, the track stays put.
-
-![An off-centre track is moved to the middle of its passage.](../../docs/assets/centering-before-after.png)
-
-One branch can cross several gates. Centering can split a track into segments
-that pass cleanly through their axes. This follows the passage between obstacles
-rather than minimum length, so it can be slightly longer than Gloss alone.
-
-## Action order and result
-
-Centering is not a Gloss stage. When both are requested, Gloss first improves
-the track while staying in its admissible corridor, Centering then places it in
-the detected gates, and no later geometric transformation is applied.
-
-The result may be shorter, simpler, better centred, or unchanged when no
-improvement obeys every rule. No change is normal and means the existing
-geometry is already the best safe solution in the examined scope.
+The result is shorter, simpler, or unchanged when no admissible improvement is found.

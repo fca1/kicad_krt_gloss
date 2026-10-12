@@ -19,32 +19,24 @@ KiCad KRGloss**.
 
 ## Choose the scope
 
-| General | Choose nets or branches |
-| --- | --- |
-| ![General: visible net names, 1 EB scope and action buttons.](docs/assets/dialog-general.png) | **Check** a net to include it; **click** a row to highlight its scope.<br><br>**Add / Replace** imports the KiCad selection. **Clear** empties the list.<br><br>With **Use elementary branches** enabled, importing a selected track remembers its full branch, bounded by pads, free ends or junctions. **n EB** means partial branch scope; a blank EB cell means the whole net. Without remembered branches, checking a net selects the whole net. |
+**Check** a net to include it; **click** a row to highlight its scope.
+**Add / Replace** imports the KiCad selection; **Clear** empties the list.
+
+With **Use elementary branches** enabled, importing a selected track remembers
+its full branch, bounded by pads, free ends or junctions. **n EB** means partial
+branch scope; a blank EB cell means the whole net. Without remembered branches,
+checking a net selects the whole net.
 
 If nothing is selected in KiCad, the dialog opens with no checked net. The
-action buttons remain disabled until at least one net is checked.
+Gloss button remains disabled until at least one net is checked.
 
 ## Gloss
 
-| Gloss | Shorten and simplify |
-| --- | --- |
-| ![Gloss: corridor and via illustrations, settings and action buttons.](docs/assets/dialog-gloss.png) | **Stay in corridor** prevents crossing or jumping over an obstacle.<br><br>**Movable vias** allows eligible unlocked vias to move.<br><br>**Repeat Gloss until stable** adds passes up to the G4 limit.<br><br>Click **Gloss**. No change is normal when no safe improvement exists. |
+- **Stay in corridor** prevents crossing or jumping over an obstacle.
+- **Movable vias** allows eligible unlocked vias to move.
+- **Repeat Gloss until stable** adds passes up to the G4 limit.
 
-## Centering and Proximity max
-
-| Centering | Set Proxi using two pads |
-| --- | --- |
-| ![Centering: Proximity max 2.54 mm, illustration and Refresh button.](docs/assets/dialog-centering.png) | **1.** In KiCad, select **exactly two pads**.<br><br>**2.** Open the **Centering** tab and click **Refresh**.<br><br>**3.** Check the **centre-to-centre distance** shown in **Proximity max** (0–5 mm).<br><br>**4.** In General, check the target net or import its branches, then click **Centering**. |
-
-The two-pad selection is used only to measure Proximity max. The checked net
-or remembered elementary branches define which track is processed.
-
-Proximity max is the largest pad centre-to-centre spacing accepted when
-detecting a gate. Centering first runs a corridor-constrained Gloss, then moves
-the track towards the middle of valid gates. No geometry transformation runs
-after Centering.
+Click **Gloss**. No change is normal when no safe improvement exists.
 
 ## Review the result
 
@@ -53,7 +45,7 @@ creates or reuses **TrackGloss Changes** on a free User layer: old copper is
 dashed and new copper is solid. This layer is a visual aid, not a replacement
 for KiCad's visual inspection and DRC.
 
-Gloss and Centering modify existing routing only. Locked or protected copper,
+Gloss modifies existing routing only. Locked or protected copper,
 arcs, differential pairs and constrained tracks remain protected.
 
 ## Author and licence

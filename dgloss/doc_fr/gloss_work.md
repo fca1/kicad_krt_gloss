@@ -17,8 +17,7 @@ techniques. `gloss_rules.md` reste l'autorité : en cas d'écart, ce document do
 - Travailler à la résolution réelle de la grille KRT. Aucune recherche
   arbitraire au micron et aucune résolution indépendante ne sont introduites.
 - Pour les phases de réduction, accepter uniquement un gain strictement
-  supérieur au pas de grille utile ; le centering est évalué après selon son
-  objectif propre.
+  supérieur au pas de grille utile.
 
 ## Liaison post-smooth
 
@@ -123,7 +122,7 @@ grille près. Au premier obstacle confirmé par le contrôle exact KRT, la reche
 revient dans le dernier intervalle et l'affine. Le candidat retenu est comparé à
 la chaîne existante, contrôlé par KRT puis soumis au contrôle de connectivité
 avant application. La construction géométrique ne décide pas si le glissement
-est utile : raccourcissement, centrage ou transformation future relèvent de la
+est utile : raccourcissement ou transformation future relèvent de la
 politique appelante.
 
 La recomposition octolinéaire historique entre deux points fixes (segments dans
@@ -169,9 +168,7 @@ déplacer le cuivre.
 Une certification finale commune vérifie la connectivité de tous les nets, la
 géométrie octolinéaire et l'absence de segment créé par une transformation
 géométrique plus court que le pas réel de la grille. Les phases de réduction
-respectent le gain strictement supérieur au pas utile de la grille ; le
-centering, exécuté ensuite, est évalué selon son objectif de passage entre les
-obstacles et peut conserver ou augmenter légèrement la longueur. Une
+respectent le gain strictement supérieur au pas utile de la grille. Une
 réémission géométriquement conservatrice de KRT n'est pas assimilée à une
 création de cuivre. À l'échec, restaurer exactement le résultat KRT.
 

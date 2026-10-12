@@ -16,7 +16,7 @@ be corrected here rather than by weakening the specification.
 - Work at the actual KRT grid resolution, with no arbitrary micron search or
   independent resolution.
 - For length-reduction phases, accept only a gain strictly greater than the
-  useful grid step; centering is evaluated afterward by its own objective.
+  useful grid step.
 
 ## Post-smooth integration
 
@@ -110,7 +110,7 @@ quantization. At the first obstacle confirmed by exact KRT checking, search
 returns to the last interval and refines it. The selected candidate is compared
 with the existing chain, checked by KRT, and connectivity-checked before
 application. Geometry does not decide whether a slide is useful: shortening,
-centering, or a future transformation belongs to the calling policy.
+or a future transformation belongs to the calling policy.
 
 The historical octolinear reconstruction between two fixed points (segments in
 three successive directions) is a chamfer family, not the definition of segment
@@ -152,8 +152,7 @@ copper.
 A common final certification checks connectivity of all nets, octilinear
 geometry, and that no segment created by a geometric transformation is shorter
 than the real grid step. Length-reduction phases enforce a gain strictly
-greater than the useful grid step; centering runs afterward and is evaluated by
-its obstacle-passage objective, so it may preserve or slightly increase length.
+greater than the useful grid step.
 A geometry-preserving KRT re-emission is not treated as new copper. On failure,
 restore the exact KRT result.
 

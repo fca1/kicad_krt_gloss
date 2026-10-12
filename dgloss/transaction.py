@@ -10,10 +10,10 @@ class GlossOutcome:
     input_strip_vias: list = field(default_factory=list)
     # Complete mutation history, used to resolve chained via moves.
     changes: dict = field(default_factory=lambda: {
-        "segments": [], "vias": [], "doors": []})
+        "segments": [], "vias": []})
     # Strict post-smooth -> final delta, intended only for visualisation.
     visual_changes: dict = field(
-        default_factory=lambda: {"segments": [], "vias": [], "doors": []})
+        default_factory=lambda: {"segments": [], "vias": []})
     stats: dict = field(default_factory=dict)
 
 

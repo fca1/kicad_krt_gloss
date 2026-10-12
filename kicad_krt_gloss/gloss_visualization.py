@@ -5,7 +5,7 @@ plain structured changes and therefore remains importable without pcbnew.
 """
 
 from .debug_overlay import (LAYER_NAME, USER_LAYER_NAMES, choose_user_layer,
-                            door_lines, line_parts as _line_parts,
+                            line_parts as _line_parts,
                             overlay_lines)
 
 
@@ -105,8 +105,7 @@ def add_changes_to_board(board, changes, stage="G4"):
 
     segments = changes.get("segments") or []
     vias = changes.get("vias") or []
-    doors = changes.get("doors") or []
-    if not segments and not vias and not doors:
+    if not segments and not vias:
         owned_ids = {
             getattr(pcbnew, f"User_{name.split('.')[1]}", None)
             for name in USER_LAYER_NAMES
@@ -132,7 +131,7 @@ def add_changes_to_board(board, changes, stage="G4"):
             board.RemoveNative(item)
     count = 0
 
-    def add_line(start, end, width, *, dash_dot=False):
+    def add_line(start, end, width):
         nonlocal count
         shape = pcbnew.PCB_SHAPE(board)
         shape.SetShape(pcbnew.SHAPE_T_SEGMENT)
@@ -140,19 +139,10 @@ def add_changes_to_board(board, changes, stage="G4"):
         shape.SetEnd(pcbnew.VECTOR2I(mm_to_iu(end[0]), mm_to_iu(end[1])))
         shape.SetWidth(mm_to_iu(max(0.03, width)))
         shape.SetLayer(layer_id)
-        if dash_dot:
-            style = getattr(pcbnew, "LINE_STYLE_DASHDOT", None)
-            if style is None:
-                styles = getattr(pcbnew, "LINE_STYLE", None)
-                style = getattr(styles, "DASHDOT", None)
-            if style is not None and hasattr(shape, "SetLineStyle"):
-                shape.SetLineStyle(style)
         board.Add(shape)
         count += 1
 
     for start, end, width in overlay_lines(changes):
         add_line(start, end, width)
-    for start, end, width in door_lines(changes):
-        add_line(start, end, width, dash_dot=True)
     board.SetModified()
     return count

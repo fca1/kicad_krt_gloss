@@ -47,7 +47,7 @@ def main():
     p.add_argument('--output',required=True,type=Path)
     p.add_argument('--budget',type=float,default=20.)
     args=p.parse_args()
-    data=dict(protocol='one run per variant, no warm-up, corridor=True, no Centering',
+    data=dict(protocol='one run per variant, no warm-up, corridor=True',
               budget=args.budget,inputs={},runs=[])
     args.output.parent.mkdir(parents=True,exist_ok=True)
     modes=['baseline','motion','motion_pad']

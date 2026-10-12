@@ -60,18 +60,6 @@ def overlay_lines(changes):
         yield (old.x, old.y), (new.x, new.y), 0.05
 
 
-def door_lines(changes):
-    """Yield the applied G3.6 doors that need a dash-dot marker."""
-    for door in changes.get("doors") or []:
-        if isinstance(door, dict):
-            start, end = door.get("edge_a"), door.get("edge_b")
-        else:
-            start = getattr(door, "edge_a", None)
-            end = getattr(door, "edge_b", None)
-        if start is not None and end is not None and start != end:
-            yield tuple(start), tuple(end), 0.12
-
-
 def choose_user_layer(layer_names, occupied, requested="auto"):
     """Choose an owned layer first, otherwise the lowest genuinely free one."""
     if requested != "auto":
@@ -179,8 +167,7 @@ def write_cli_debug_overlay(path, changes, requested="auto"):
     layer_names, occupied = _file_layer_inventory(content)
     owned = [name for name in USER_LAYER_NAMES
              if layer_names.get(name) == LAYER_NAME]
-    has_changes = bool(changes.get("segments") or changes.get("vias") or
-                       changes.get("doors"))
+    has_changes = bool(changes.get("segments") or changes.get("vias"))
     if not has_changes:
         if not owned:
             return None
@@ -204,12 +191,6 @@ def write_cli_debug_overlay(path, changes, requested="auto"):
     from dgloss.krt_api import generate_gr_line_sexpr
     graphics = [generate_gr_line_sexpr(start, end, width, layer_name)
                 for start, end, width in overlay_lines(changes)]
-    # KiCad calls the requested "trait mixte" dash-dot. KRT's writer emits
-    # solid lines, so retain its S-expression format and change only the style.
-    graphics.extend(
-        generate_gr_line_sexpr(start, end, width, layer_name).replace(
-            "(type solid)", "(type dash_dot)")
-        for start, end, width in door_lines(changes))
     graphics = "\n".join(graphics)
     final_paren = content.rfind(")")
     content = content[:final_paren] + "\n" + graphics + "\n" + content[final_paren:]

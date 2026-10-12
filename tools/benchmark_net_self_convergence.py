@@ -52,7 +52,7 @@ def main():
     data=dict(pack_id='PACK0',board=str(board),sha256=entry['sha256'],
         setup_seconds=perf_counter()-started,max_passes=args.max_passes,
         net_budget_seconds=args.net_budget,
-        protocol='One independent convergence sequence per eligible net, sorted id; each starts from original board; foreign nets remain fixed; full production chain per call, corridor=False, no G4, no Centering, no marginal cutoff; unchanged geometric signature confirms fixed point; last no-change call included in calls_to_confirm; setup/reset/certification separately timed',
+        protocol='One independent convergence sequence per eligible net, sorted id; each starts from original board; foreign nets remain fixed; full production chain per call, corridor=False, no G4, no marginal cutoff; unchanged geometric signature confirms fixed point; last no-change call included in calls_to_confirm; setup/reset/certification separately timed',
         excluded=list(excluded),runs=[])
     args.output.parent.mkdir(parents=True,exist_ok=True)
     selected=GlossConfig(repeat_until_stable=False,budget_seconds=args.net_budget)

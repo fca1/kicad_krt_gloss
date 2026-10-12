@@ -20,7 +20,7 @@ carte modifiée ne doit pas remplacer silencieusement la référence.
 
 Protocole initial : un passage par carte, sans répétition ni préchauffage,
 Gloss de production, grille 0,1 mm, `stay_in_corridor=False`, budget 60 s,
-sans Centering et sans écriture des PCB. Mesurer le chargement séparément ;
+sans écriture des PCB. Mesurer le chargement séparément ;
 `nets/s = nets_processed / temps_Gloss`, contexte et validation finale inclus.
 Signaler toute variation de configuration pour les campagnes ultérieures.
 

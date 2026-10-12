@@ -87,8 +87,6 @@ class BranchMemory:
         return list(selected.values())
 
 
-
-
 def thin_overlay_lines(changes):
     """Only new track copies are 0.1 mm; old dashes/vias retain their policy."""
     for change in changes.get('segments') or []:
@@ -132,7 +130,9 @@ def activate(action_module, *, board_provider=None):
                 for child in sizer.GetChildren():
                     window = child.GetWindow()
                     if window in (self.grid_step, self.budget_seconds):
-                        window.SetFont(self.centering_proximity_mm.GetFont())
+                        font = window.GetFont()
+                        font.SetPointSize(max(14, round(font.GetPointSize() * 1.5)))
+                        window.SetFont(font)
                         window.InvalidateBestSize()
                         window.SetMinSize(window.GetBestSize())
                     elif child.GetSizer():
@@ -201,7 +201,7 @@ def activate(action_module, *, board_provider=None):
 
         def _preview_branches(self, names):
             enabled = self._eb_enabled()
-            net_list = self.centering_net_panel.net_list
+            net_list = self.scope_net_panel.net_list
             if hasattr(net_list, 'refresh_scope'):
                 net_list.refresh_scope()
             if getattr(self, '_scope_illustration', None) is not None:
@@ -217,7 +217,7 @@ def activate(action_module, *, board_provider=None):
         def _capture_branches(self, *, add, update_checks=True):
             try:
                 def state():
-                    checked = set(self.centering_net_panel.get_selected_nets())
+                    checked = set(self.scope_net_panel.get_selected_nets())
                     return {name: (name in checked, frozenset(self._branch_memory.by_net.get(name, ())))
                             for name in checked | self._branch_memory.by_net.keys()}
                 before = state()
@@ -234,26 +234,26 @@ def activate(action_module, *, board_provider=None):
                         self._branch_memory.clear()
                 names = set(incoming)
                 if add:
-                    names.update(self.centering_net_panel.get_selected_nets())
+                    names.update(self.scope_net_panel.get_selected_nets())
                 if update_checks:
-                    self.centering_net_panel.set_selected_nets(names)
-                    self._clear_centering_highlight()
+                    self.scope_net_panel.set_selected_nets(names)
+                    self._clear_scope_highlight()
                 self._sync_net_selection()
                 if update_checks:
                     after = state()
                     empty = (False, frozenset())
                     changed = {name for name in before.keys() | after.keys()
                                if before.get(name, empty) != after.get(name, empty)}
-                    self.centering_net_panel.net_list.reveal_first_changed(changed)
+                    self.scope_net_panel.net_list.reveal_first_changed(changed)
             except StaleBranches as exc:
-                self.centering_status.SetLabel(str(exc))
+                self.scope_status.SetLabel(str(exc))
 
-        def _on_import_centering(self, add):
+        def _on_import_scope(self, add):
             self._capture_branches(add=add)
 
-        def _on_clear_centering_selection(self, event):
+        def _on_clear_scope_selection(self, event):
             self._branch_memory.clear()
-            super()._on_clear_centering_selection(event)
+            super()._on_clear_scope_selection(event)
             self._sync_net_selection()
 
         def _close_branch_preview(self, event):
@@ -280,7 +280,7 @@ def activate(action_module, *, board_provider=None):
             seeds = parent._branch_memory.resolve(data, names, index, enabled=parent._eb_enabled())
         except StaleBranches as exc:
             parent.append_log('\nEB scope cancelled: '+str(exc)+'\n')
-            parent.centering_status.SetLabel(str(exc))
+            parent.scope_status.SetLabel(str(exc))
             parent._preview_branches(names)
             return None, []
         parent.append_log('\nRemembered scope: '+parent._branch_memory.describe(names, parent._eb_enabled())+'\n')

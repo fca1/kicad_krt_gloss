@@ -50,5 +50,4 @@ def _final_visual_changes(baseline_segments, baseline_vias, pcb_data,
             for via in pcb_data.vias
             if id(via) in roots and id(via) in final_via_ids
             for old in [roots[id(via)]]]
-    return GlossChanges(segments=segments, vias=vias,
-                        doors=list(history.doors))
+    return GlossChanges(segments=segments, vias=vias)

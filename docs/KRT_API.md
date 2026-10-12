@@ -37,6 +37,6 @@ Le module est inclus par la copie du répertoire `dgloss` lors du packaging.
 Validation du 7 septembre 2026 : 78 tests ciblés réussis, couvrant la frontière
 d'import, la résolution différée, l'identité des objets, les microsegments,
 le corridor, les glissements, le prototype de déplacement, les règles Gloss,
-la transaction Centering et les frontières du plugin. Démarrage CLI vérifié
+les transactions et les frontières du plugin. Démarrage CLI vérifié
 avec `python gloss.py --help`. Pas de nouvelle mesure de performance sur carte
 ni de test interactif dans KiCad pour cette modification.
