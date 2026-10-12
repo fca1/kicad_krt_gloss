@@ -48,6 +48,16 @@ hors chronométrage, G5 valide ; 361 tests ciblés passent. Les sorties complete
 relues conservent clearance et connectivité. Voir les
 [mesures et contrats des présélections](reports/GLOSS_SPATIAL_FILTERS_2026_10_12.md).
 
+Une [nouvelle passe d'audit](reports/GLOSS_FOLLOWUP_AUDIT_2026_10_12.md) de
+`4bd0eb8` reconfirme les 361 tests et les résultats des grandes cartes. Cinq
+nouvelles paires sur chart_plotter_hat avec corridor ne reproduisent pas une
+hausse temporelle stable : médianes 3,707 → 3,691 s. Un prototype externe de
+présélection des pads polygonaux gagne 5,9 % en médiane sur azukar_fpga, avec
+30 889 décisions de clearance comparées et identiques. Le prototype de
+réutilisation des tableaux de cuivre ne montre pas de gain. Ces prototypes
+ne sont pas intégrés ; les pads polygonaux puis les perçages fixes restent les
+priorités proposées. Aucune nouvelle baisse globale de plus de 20 % n'est prouvée.
+
 Cette branche conserve uniquement l’action Gloss. Les points d’entrée publics
 sont `run_final_gloss` et `run_post_smooth_gloss`. Le moteur de placement dans
 les passages, ses prototypes, réglages, commandes et visualisations ont été
