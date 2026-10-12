@@ -194,7 +194,13 @@ def _reachable_segment_slides(context, source, outside, net_vias, anchors,
                     high = bound
                 elif old_length - calculate_route_length(segments) > step + 1e-12:
                     best = segments
-        if high is not None and max_steps is None:
+        # Length is affine in the offset until a member reverses. Even the
+        # rejected upper endpoint must offer a useful gain for refinement to
+        # matter. Keep borderline cases (including tolerated joint gaps and
+        # floating-point cancellation) on the original search path.
+        gain_margin = 1e-7 * max(1.0, old_length, abs(rate))
+        if (high is not None and max_steps is None and
+                abs(rate) * high >= step - gain_margin):
             for _ in range(24):
                 if (high-low <= 1e-7 or
                         (deadline is not None and perf_counter() >= deadline)):
@@ -256,21 +262,28 @@ def _candidate_geometry_valid(context, segments):
         for segment in segments)
 
 
-def _shortest_path(edges, points, excluded):
+def _shortest_path(edges, points, excluded, prepared=None):
     """Select the best G3 DAG path, ignoring exact-KRT rejected edges."""
+    # The caller may reuse this preparation only for this immutable graph.
+    # Exact rejections change ``excluded``, never the edge geometry or order.
+    if prepared is None:
+        prepared = {}
     n = len(points) - 1
     best = [dict() for _ in range(n + 1)]
     previous = {}
     best[0][(None, False)] = (0.0, 0)
     for i in range(n):
+        if not best[i]:
+            continue
+        if i not in prepared:
+            prepared[i] = [(edge, _edge_directions(edge[1], points[i], points[edge[0]]))
+                           for edge in sorted(edges[i], key=lambda item: (item[0], item[3]))]
         for state, cost in list(best[i].items()):
             prior_direction, prior_changed = state
-            for edge in sorted(edges[i], key=lambda item: (item[0], item[3])):
+            for edge, (first_direction, last_direction) in prepared[i]:
                 j, candidate, changed, length, edge_id = edge
                 if edge_id in excluded:
                     continue
-                first_direction, last_direction = _edge_directions(
-                    candidate, points[i], points[j])
                 if (prior_direction is not None and
                         _right_angle(prior_direction, first_direction) and
                         (prior_changed or changed)):
@@ -397,10 +410,11 @@ def _best_chain_replacement(context, chain, net_id, foreign_obstacles,
     # becomes that family's sole option, exactly matching the eager policy.
     excluded = set()
     exact_status = {}
+    prepared_paths = {}
     while True:
         if deadline is not None and perf_counter() >= deadline:
             return None
-        selected = _shortest_path(edges, chain.points, excluded)
+        selected = _shortest_path(edges, chain.points, excluded, prepared_paths)
         if not selected:
             return None
         changed_selection = False

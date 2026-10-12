@@ -17,6 +17,14 @@ clearance ni de partition électrique. Le mode corridor gagne 4,0446 mm contre
 0,8870 mm. 272 tests ciblés passent. Ces essais ne remplacent pas un DRC complet
 et n'impliquent ni installation du plugin ni nouvelle campagne PACK0.
 
+Les recherches sont maintenant filtrées par des bornes de gain conservatrices
+(affinement de glissement et connecteurs de pad). Le graphe d'une chaîne prépare
+ses directions une seule fois, réutilisées lors des rejets KRT successifs.
+Sur `complete1`, géométrie strictement identique dans les trois modes testés ;
+médianes mesurées : 5,46 → 3,88 s à vias fixes, 5,78 → 3,38 s à vias mobiles,
+corridor pratiquement inchangé à 2,3 s. 321 tests ciblés passent.
+Voir [mesures, preuves et limites](reports/GLOSS_PERFORMANCE_2026_10_12.md).
+
 Cette branche conserve uniquement l’action Gloss. Les points d’entrée publics
 sont `run_final_gloss` et `run_post_smooth_gloss`. Le moteur de placement dans
 les passages, ses prototypes, réglages, commandes et visualisations ont été

@@ -151,6 +151,14 @@ def _best_pad_connector(context, pad, chain, points, outside, net_vias, foreign,
     """
     centre, anchor = (pad.global_x, pad.global_y), points[-1]
     old_length = calculate_route_length(chain)
+    # Every family uses octolinear legs: its length is at least this metric
+    # between the fixed endpoints. Preserve near-threshold searches to allow
+    # for the geometry tolerances and floating-point cancellation.
+    dx, dy = abs(anchor[0] - centre[0]), abs(anchor[1] - centre[1])
+    lower_bound = max(dx, dy) + (math.sqrt(2.0) - 1.0) * min(dx, dy)
+    gain_margin = 1e-7 * max(1.0, old_length, lower_bound)
+    if old_length - lower_bound < context.coord.grid_step - gain_margin:
+        return None
     best, score = None, None
     for source, family in _connector_families(centre, anchor, chain[0], context.coord.grid_step):
         for candidate in family:
