@@ -103,6 +103,8 @@ def test_g0_rebuilds_all_layers_with_krt_rust_map():
     context = build_gloss_context(pcb, config)
     assert context.net_ids == [1, 2]
     assert set(context.layer_map) == {"F.Cu", "B.Cu"}
+    assert context.working_obstacles is None
+    context.foreign_obstacles(1)
     assert context.working_obstacles is not None
     assert hasattr(context.working_obstacles, "segment_blocked")
 

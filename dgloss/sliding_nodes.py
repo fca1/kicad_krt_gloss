@@ -276,7 +276,7 @@ def slide_t_nodes(context, results, deadline=None, *,
     for net_id in net_ids:
         if deadline is not None and perf_counter() >= deadline:
             break
-        foreign = context.foreign_obstacles(net_id)
+        foreign = None  # Junction candidates use exact geometry only.
         nodes = defaultdict(list)
         for segment in context.pcb_data.segments:
             if (segment.net_id != net_id or

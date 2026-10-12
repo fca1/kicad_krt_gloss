@@ -25,6 +25,16 @@ médianes mesurées : 5,46 → 3,88 s à vias fixes, 5,78 → 3,38 s à vias mob
 corridor pratiquement inchangé à 2,3 s. 321 tests ciblés passent.
 Voir [mesures, preuves et limites](reports/GLOSS_PERFORMANCE_2026_10_12.md).
 
+La grille KRT est désormais construite seulement à sa première utilisation,
+depuis le cuivre courant ; les étapes purement exactes ne la préparent plus.
+Le cache des distances aux pads conserve 32 768 entrées pour les passes G4.
+Face à `44c6c16`, complete1 avec une passe G4 gagne 23,2 % sans corridor et
+38,5 % avec corridor (trois essais). PACK0 conserve exactement ses résultats
+dans les deux modes, G5 valide partout ; son temps cumulé baisse de 4,3 % et
+16,9 % respectivement. Le seuil de 20 % n'est donc pas atteint sur tout le
+corpus. 336 tests ciblés passent. Voir le
+[bilan détaillé](reports/GLOSS_LAZY_OBSTACLES_2026_10_12.md).
+
 Cette branche conserve uniquement l’action Gloss. Les points d’entrée publics
 sont `run_final_gloss` et `run_post_smooth_gloss`. Le moteur de placement dans
 les passages, ses prototypes, réglages, commandes et visualisations ont été

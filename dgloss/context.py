@@ -86,6 +86,16 @@ class GlossContext:
 
     def foreign_obstacles(self, net_id):
         """Reusable KRT obstacle map with only ``net_id`` copper removed."""
+        if self.working_obstacles is None:
+            # Exact-only stages never need a raster. Build from CURRENT copper
+            # when the first raster consumer arrives, including prior edits.
+            net_clearances = getattr(self.config, "net_clearances", None) or None
+            base = build_base_obstacle_map(
+                self.pcb_data, self.config, self.net_ids,
+                net_clearances=net_clearances, static_base=True)
+            self.net_obstacles = precompute_all_net_obstacles(
+                self.pcb_data, self.net_ids, self.config, extra_clearance=0.0)
+            self.working_obstacles = build_working_obstacle_map(base, self.net_obstacles)
         if self.foreign_working is None:
             self.foreign_working = self.working_obstacles.clone_fresh()
         elif self.foreign_excluded_net_id == net_id:
@@ -102,6 +112,8 @@ class GlossContext:
 
     def refresh_net_obstacles(self, net_id):
         """Incrementally replace one changed net in the persistent KRT map."""
+        if self.working_obstacles is None:
+            return  # The first raster query will build from current copper.
         old_cache = self.net_obstacles.get(net_id)
         if old_cache is not None:
             remove_net_obstacles_from_cache(self.working_obstacles, old_cache)
@@ -151,7 +163,7 @@ def resolve_gloss_scope(pcb_data, net_ids=None, excluded_net_ids=None):
 def build_gloss_context(pcb_data, config, net_ids=None, *,
                         excluded_net_ids=None, exclusion_reasons=None,
                         editable_segment_ids=None):
-    """Rebuild KRT obstacles from the post-smooth board."""
+    """Prepare exact validators; defer the KRT raster until its first query."""
     import math
     from .board_views import BoardViews
     pcb_data._gloss_views = BoardViews(pcb_data)
@@ -173,20 +185,14 @@ def build_gloss_context(pcb_data, config, net_ids=None, *,
                      else present_net_ids.intersection(net_ids))
     net_clearances = getattr(gloss_config, "net_clearances", None) or None
     gloss_config.set_net_clearances(net_clearances, net_ids)
-    base = build_base_obstacle_map(
-        pcb_data, gloss_config, net_ids,
-        net_clearances=net_clearances, static_base=True)
-    caches = precompute_all_net_obstacles(
-        pcb_data, net_ids, gloss_config, extra_clearance=0.0)
-    working = build_working_obstacle_map(base, caches)
     return GlossContext(
         pcb_data=pcb_data,
         config=gloss_config,
         coord=GridCoord(gloss_config.grid_step),
         layer_map=build_layer_map(layers),
         net_ids=net_ids,
-        working_obstacles=working,
-        net_obstacles=caches,
+        working_obstacles=None,
+        net_obstacles={},
         clearance_adapter=KrtClearanceAdapter(pcb_data, gloss_config),
         search_cache=SearchCache(pcb_data, gloss_config),
         excluded_net_ids=set(excluded_net_ids or ()),

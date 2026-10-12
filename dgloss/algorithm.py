@@ -76,10 +76,13 @@ def _adaptive_chamfer_candidates(context, obstacles, a, b, layer, width,
             a, b, layer, width, net_id, context.coord.grid_step, index, order)
 
     def clears(segments):
+        nonlocal obstacles
         if (not segments or any(
                 calculate_route_length([segment]) <
                 context.coord.grid_step - 1e-9 for segment in segments)):
             return False
+        if obstacles is None:
+            obstacles = context.foreign_obstacles(net_id)
         if _clears_krt_grid(context, obstacles, segments):
             return True
         return context.clearance_adapter.connector_clears(segments)
@@ -515,7 +518,7 @@ def shorten_routes(context, results, deadline=None, *, net_ids,
         net_vias = board_views(context.pcb_data).vias(net_id)
         before_length = calculate_route_length(net_segments, net_vias,
                                                context.pcb_data)
-        foreign = context.foreign_obstacles(net_id)
+        foreign = None  # Resolved only by an actual adaptive raster probe.
 
         removed_net = []
         added_net = []

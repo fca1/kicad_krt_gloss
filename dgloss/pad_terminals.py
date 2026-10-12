@@ -200,7 +200,7 @@ def optimize_pad_terminals(context, results, deadline=None, *, net_ids,
     for net_id in net_ids:
         if deadline is not None and perf_counter() >= deadline:
             break
-        foreign = context.foreign_obstacles(net_id)
+        foreign = None  # Pad candidates use exact geometry, not the raster.
         net_changed = False
         processed = set()
 

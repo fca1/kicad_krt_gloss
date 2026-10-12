@@ -1,0 +1,145 @@
+[
+  {
+    "board": "azukar_fpga",
+    "corridor": false,
+    "g4": true,
+    "before": 31.367314200033434,
+    "after": 30.220136699965224,
+    "percent": 3.6572385278271224,
+    "gain": 136.1458,
+    "signature": "b02b1ffbf5500f21b09a01ec6b898e31dc07334e3e5c6ab4abda20beca3329da",
+    "runs": 2
+  },
+  {
+    "board": "azukar_fpga",
+    "corridor": true,
+    "g4": true,
+    "before": 24.168555399985053,
+    "after": 21.681191400042735,
+    "percent": 10.291736344092195,
+    "gain": 73.377,
+    "signature": "de75a54b42c867188afb0c9eff52e50d48f81fd177d4f27ad7107d796674ce72",
+    "runs": 2
+  },
+  {
+    "board": "chart_plotter_hat",
+    "corridor": false,
+    "g4": true,
+    "before": 6.183928199927323,
+    "after": 5.421045399969444,
+    "percent": 12.336540388144302,
+    "gain": 71.1592,
+    "signature": "03c0add2e30dea6421e300511a9f0d98f34a30650a72dd84a6dcd91222f40daa",
+    "runs": 2
+  },
+  {
+    "board": "chart_plotter_hat",
+    "corridor": true,
+    "g4": true,
+    "before": 4.794832899933681,
+    "after": 3.6453441999619827,
+    "percent": 23.97348821035238,
+    "gain": 44.0047,
+    "signature": "d8029b2e38f01d154c77724c4290106293c8824d86db3bf621a89900ea500033",
+    "runs": 2
+  },
+  {
+    "board": "complete1",
+    "corridor": false,
+    "g4": false,
+    "before": 3.091661399928853,
+    "after": 2.84275740000885,
+    "percent": 8.050816946698337,
+    "gain": 8.4176,
+    "signature": "7be9198e22d6ee35308c7f30a7ef0d0e5f71121c25b1282557545ad197701d8f",
+    "runs": 2
+  },
+  {
+    "board": "complete1",
+    "corridor": false,
+    "g4": true,
+    "before": 5.487304399954155,
+    "after": 4.214128699968569,
+    "percent": 23.202206533251978,
+    "gain": 14.724,
+    "signature": "c9ed7b31a8bef335cda1ce1505148c2095e250fe46cf8166f9b5e381c33d6449",
+    "runs": 6
+  },
+  {
+    "board": "complete1",
+    "corridor": true,
+    "g4": true,
+    "before": 3.4025726000545546,
+    "after": 2.091649900074117,
+    "percent": 38.52739835615614,
+    "gain": 7.4974,
+    "signature": "863ad3ce902b7d8e07dea778bffd5447a674fdbe887bb02ef3f105f2d527de23",
+    "runs": 6
+  },
+  {
+    "board": "environment_sensor",
+    "corridor": false,
+    "g4": true,
+    "before": 3.920312299975194,
+    "after": 3.7721908999374136,
+    "percent": 3.77830613236394,
+    "gain": 25.5638,
+    "signature": "1349ebafdf61011d62cd018e1d4282beb47b43a1e7f7834f529632c118843c57",
+    "runs": 2
+  },
+  {
+    "board": "environment_sensor",
+    "corridor": true,
+    "g4": true,
+    "before": 2.6971825000364333,
+    "after": 2.1342726999428123,
+    "percent": 20.870289648031502,
+    "gain": 14.8151,
+    "signature": "194249a3d3aabc9ade9ec72c23d9fafa56b8bee8cee5372f105e345fa6b4a4a8",
+    "runs": 2
+  },
+  {
+    "board": "micro_dmm",
+    "corridor": false,
+    "g4": true,
+    "before": 0.7006236000452191,
+    "after": 0.6144876999314874,
+    "percent": 12.294176232169784,
+    "gain": 9.6291,
+    "signature": "a143e5a0eee8d5a425dd5e8145192d25bf4667b63dc4970fde07562bb6fbb116",
+    "runs": 2
+  },
+  {
+    "board": "micro_dmm",
+    "corridor": true,
+    "g4": true,
+    "before": 0.5710164000047371,
+    "after": 0.20165089995134622,
+    "percent": 64.6856202466911,
+    "gain": 3.8484,
+    "signature": "c90698a0be23651e82cc354e9b307f0b570565677b3cf7834cd0f28c4448105b",
+    "runs": 2
+  },
+  {
+    "board": "tildagon_base",
+    "corridor": false,
+    "g4": true,
+    "before": 51.57021439995151,
+    "after": 49.725324200000614,
+    "percent": 3.577433643465,
+    "gain": 118.0965,
+    "signature": "1ac4668f2b338bcb22ca13492a41cd3ee54e37e2dec68895282c3338e0e51a63",
+    "runs": 2
+  },
+  {
+    "board": "tildagon_base",
+    "corridor": true,
+    "g4": true,
+    "before": 37.1802782000741,
+    "after": 30.05144199996721,
+    "percent": 19.17370322444947,
+    "gain": 50.8782,
+    "signature": "dcc45ae48b2288290ef2c3b075d0f1eef742ab8c403053102572bb3d331180b1",
+    "runs": 2
+  }
+]

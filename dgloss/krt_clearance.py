@@ -108,7 +108,7 @@ class KrtClearanceAdapter:
         # Pads and rules are immutable during this adapter's single Gloss run.
         # Never cache distances to tracks/vias: those move between candidates.
         # Keep coordinates exact (no grid rounding of a clearance certificate).
-        self._pad_distance = lru_cache(maxsize=8192)(self._uncached_pad_distance)
+        self._pad_distance = lru_cache(maxsize=32768)(self._uncached_pad_distance)
         self._copper_batch = None
         self.copper_data_stats = {"builds": 0, "reuses": 0, "certificate_hits": 0}
 

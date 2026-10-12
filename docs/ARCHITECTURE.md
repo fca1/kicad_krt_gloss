@@ -69,8 +69,14 @@ KRT. Leur mémoïsation est bornée à 16 384 requêtes. Les chaînes sont réut
 uniquement si leurs segments, vias et périmètre modifiable sont identiques.
 
 `GlossContext.apply_replacement` applique le cuivre déjà validé et notifie les
-caches et le périmètre modifiable. Les cartes d'obstacles sont rafraîchies une fois
-par net modifié dans chaque étape. KRT propose les fusions sur une copie ; seuls
+caches et le périmètre modifiable. La carte d'obstacles sur grille est construite
+à la première sonde de chanfrein qui la consulte, depuis le cuivre courant.
+Avant cette construction, les notifications de rafraîchissement ne construisent
+rien. Ensuite, les cartes sont rafraîchies une fois par net modifié dans chaque
+étape. Les étapes purement géométriques ne demandent pas de carte sur grille.
+Le cache des distances exactes aux pads, fixes pendant l'action, conserve au
+maximum 32 768 entrées pour limiter les évictions entre passes G4.
+KRT propose les fusions sur une copie ; seuls
 les remplacements prouvés préserver le support cuivre et la connectivité sont
 publiés par ce même chemin. L'étiquette `geometry_preserving` exige cette preuve.
 

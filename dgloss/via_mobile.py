@@ -163,8 +163,6 @@ def move_mobile_vias(context, results, *, net_ids, stage="G3.1",
     for net_id in net_ids:
         if deadline is not None and perf_counter() >= deadline:
             break
-        foreign = context.foreign_obstacles(net_id)
-
         net_changed = False
         for old_via in _progressing_vias(context, net_id):
             if deadline is not None and perf_counter() >= deadline:
