@@ -214,3 +214,6 @@ standard. Le packager inclut le Cargo.toml original, auparavant oublié.
 avec Gloss sur une carte détachée, G5 valide et fichier source préservé.
 KRT reste intact ; aucune publication ni ZIP. Un redémarrage complet de KiCad
 est nécessaire après installation. Voir [diagnostic et recette](reports/KRT_GLOSS_IMPORTS_2026_10_12.md).
+
+Correction 2e24417 installée localement et contrôlée dans les deux ordres ;
+sauvegarde et empreintes dans le rapport ci-dessus. Redémarrage utilisateur attendu.

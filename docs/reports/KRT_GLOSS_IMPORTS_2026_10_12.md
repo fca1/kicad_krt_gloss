@@ -59,3 +59,17 @@ Déploiement local prévu après commit dédié, limité à runtime.py,
 isolated_krt.py, dgloss/krt_api.py et KRT/rust_router/Cargo.toml. Sauvegarder
 les fichiers remplacés et vérifier leur identité au commit. Redémarrage complet
 de KiCad nécessaire : les anciens modules déjà chargés ne sont pas réparés à chaud.
+
+
+## Déploiement réalisé
+
+Les quatre fichiers sont installés depuis le commit 2e244177cd4143681c2128c70895e37a9900dc1a,
+avec Cargo.toml issu du sous-module 9577628635e3de81d2c1fd8ac882254c0fa7d032.
+Identité binaire des fichiers au contenu Git vérifiée après copie. Les deux
+ordres passent de nouveau depuis le dossier installé en Python KiCad natif.
+Sauvegarde : `C:/Users/frant/Documents/KiCad/plugin-backups/kicadkrtgloss-before-isolation-20261012-152543`.
+Le manifest.json de cette sauvegarde indique les deux fichiers remplacés et
+les deux fichiers nouvellement ajoutés, ainsi que les SHA-256 déployés.
+Aucune modification du plugin KRT standard, des binaires Rust ou des PCB.
+Le sous-module conserve ses fichiers non suivis préexistants. Le redémarrage
+et la recette interactive de l’utilisateur restent à effectuer.
