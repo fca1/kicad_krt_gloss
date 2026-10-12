@@ -217,3 +217,27 @@ est nécessaire après installation. Voir [diagnostic et recette](reports/KRT_GL
 
 Correction 2e24417 installée localement et contrôlée dans les deux ordres ;
 sauvegarde et empreintes dans le rapport ci-dessus. Redémarrage utilisateur attendu.
+
+## 12 octobre 2026 — Publication 0.1.4
+
+Après le « go » explicite pour créer le ZIP et publier, la
+[préversion GitHub 0.1.4](https://github.com/fca1/kicad_krt_gloss/releases/tag/v0.1.4)
+est publiée depuis `b5c7d3cdda5c08fc42c908ca7b251a002b7b5b68`, tag `v0.1.4`.
+Elle inclut l'isolation KRT. Pièces jointes : `KiCadKrtGloss-0.1.4.zip`,
+`metadata.json` externe PCM et `SHA256SUMS.txt`.
+
+Archive publique téléchargée à nouveau et vérifiée : 10 414 835 octets,
+SHA-256 `f1db3fa91aa3c0f98c182b10a3d3515866e39e526a484c489b2f4d615449c878`.
+Le kit local retenu est `dist/publication-0.1.4-b5c7d3c-final` ; le premier
+dossier sans suffixe `-final` est incomplet, arrêté faute de `jsonschema`.
+La dépendance a été installée dans `.build/release-tools-venv`, sans modifier
+le code. Les notes générées ont été remplacées par les notes revues, complétées
+avec l'isolation KRT et des liens vers la révision source publiée.
+
+Contrôles : six tests ciblés packaging/isolation réussis avec le bootstrap
+documenté, schéma PCM v2, intégrité ZIP, liens README et quatre binaires.
+Le paquet extrait passe aussi les deux ordres de coexistence en Python KiCad
+natif. Ces derniers contrôles n'exercent pas de carte ; les recettes sur carte
+restent celles du rapport de coexistence. Recette interactive et DRC complet
+restent non consignés ; aucune validation Linux/macOS ni soumission au catalogue
+PCM officiel n'est impliquée. Redémarrer complètement KiCad après mise à jour.
