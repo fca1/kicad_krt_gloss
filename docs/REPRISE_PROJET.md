@@ -75,6 +75,17 @@ La version du package reste 0.1.4. Ne pas confondre le binaire local non suivi
 `KRT/rust_router/grid_router.pyd` avec les binaires officiels téléchargés lors
 de la préparation PCM. Voir [le bilan KRT](reports/KRT_UPDATE_2026_10_12.md).
 
+La version 0.1.4 issue de `d1897cb` est maintenant déployée localement pour
+les essais manuels dans
+`C:/Users/frant/Documents/KiCad/10.0/3rdparty/plugins/com_github_fca1_kicadkrtgloss`.
+Les 274 fichiers du paquet sont vérifiés et le chargement natif utilise le
+binaire officiel Windows KRT 0.23.0. Le test natif de plusieurs branches passe,
+G5 valide et carte source intacte. L'ancienne installation est sauvegardée dans
+`C:/Users/frant/Documents/KiCad/plugin-backups/kicadkrtgloss-before-d1897cb-20261012-140731`.
+Le registre PCM conserve son historique 0.1.3 : ce remplacement est manuel.
+Les prototypes de la dernière passe restent exclus du moteur installé.
+Voir [la trace de déploiement](reports/GLOSS_DEPLOYMENT_2026_10_12.md).
+
 ## Ordre de lecture
 
 1. [AGENTS.md](../AGENTS.md) : autorisations et règles de collaboration.
