@@ -1,6 +1,7 @@
 """Shared route geometry, independent of optimization stages."""
 
 import math
+from .same_net_index import SameNetSegments
 
 from .krt_api import (Segment, FP_EPS_MM, pos_key, point_to_pad_distance,
     point_to_segment_distance, segments_intersect)
@@ -114,15 +115,17 @@ def _touches_other_same_net(candidate, outside, vias, allowed_ends):
     """Reject a new same-net junction: G3 changes length, never topology."""
     allowed = {pos_key(*point) for point in allowed_ends}
     for new in candidate:
-        for old in outside:
+        dx, dy = new.end_x - new.start_x, new.end_y - new.start_y
+        length = math.hypot(dx, dy)
+        if length > 1e-9:
+            ux, uy = dx / length, dy / length
+        neighbours = outside.near(new) if isinstance(outside, SameNetSegments) else outside
+        for old in neighbours:
             if new.layer != old.layer:
                 continue
             # An allowed common endpoint does not authorize retracing copper.
             # Test positive collinear overlap before the endpoint exception.
-            dx, dy = new.end_x - new.start_x, new.end_y - new.start_y
-            length = math.hypot(dx, dy)
             if length > 1e-9:
-                ux, uy = dx / length, dy / length
                 offsets = [(old.start_x - new.start_x, old.start_y - new.start_y),
                            (old.end_x - new.start_x, old.end_y - new.start_y)]
                 if all(abs(x * uy - y * ux) <= 1e-7 for x, y in offsets):

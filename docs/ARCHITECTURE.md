@@ -59,6 +59,28 @@ Les références électriques restent en cache uniquement pour les nets inchang�
 sans zone ; chaque modification invalide tous les nets possédant une zone.
 Les contrôles finaux G5 restent présents, sans réutilisation des grades finaux.
 
+`zone_models` présélectionne les pistes et vias pouvant atteindre la grille
+d'une petite zone, avec leurs rayons, les clearances de classes et une marge
+de deux cellules arrondie vers l'extérieur. KRT construit ensuite le modèle
+complet ; pads, règles, contours et keepouts restent ceux de la carte entière.
+Les zones dont la grille couvre au moins un quart du rectangle de la carte
+gardent le chemin original pour éviter une présélection peu rentable. Ce seuil
+ne change que le coût. En cas d'échec de la présélection, KRT reçoit la carte
+entière. Le modèle est publié dans les deux caches KRT existants et suit les
+invalidations habituelles.
+
+`same_net_index` fournit un instantané ordonné des segments extérieurs à une
+recherche de chaîne, de connecteur de pad ou de réduction locale. Une grille
+paresseuse présélectionne leurs axes ; les prédicats de contact et de recouvrement
+restent inchangés. La requête inclut une marge supérieure à la tolérance de
+colinéarité. Les petits ensembles gardent le parcours intégral ; les grandes
+requêtes ou les ensembles avec beaucoup de longs segments utilisent un filtre
+vectorisé des rectangles englobants. Les grands segments restent sinon dans
+une liste de débordement toujours consultée. Les contacts aux extrémités sont
+indexés avec les clés de position KRT exactes. L'ordre initial est conservé.
+L'index ne survit pas à la recherche et
+n'est jamais partagé entre révisions du cuivre.
+
 Chaque contexte ouvre une nouvelle durée de vie pour les vues et les certificats.
 Pendant une action, pads et règles sont fixes ; les pistes et vias sont remplacés
 par de nouveaux objets, sans modification en place. Les vues par net suivent les

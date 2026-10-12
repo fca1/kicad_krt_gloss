@@ -325,7 +325,8 @@ def _best_chain_replacement(context, chain, net_id, foreign_obstacles,
     """Shortest valid path through a chain's ordered vertices (DAG dynamic program)."""
     n = len(chain.segments)
     span_ids = {id(seg) for seg in chain.segments}
-    outside = [seg for seg in net_segments if id(seg) not in span_ids]
+    from .same_net_index import SameNetSegments
+    outside = SameNetSegments(seg for seg in net_segments if id(seg) not in span_ids)
     edges = defaultdict(list)
 
     # Keeping an original edge is always a valid option.

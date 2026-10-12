@@ -8,6 +8,7 @@ from .topology import ReplacementGuard
 from .krt_clearance import stable_copper_search
 from .local_candidates import micro_free_candidates
 from .corner_reduction import reduce_corner
+from .same_net_index import SameNetSegments
 from dgloss.krt_api import calculate_route_length
 
 
@@ -46,7 +47,7 @@ def local_replacement(context, chain, net_id, current, vias, deadline=None):
                             if slide:
                                 candidates.append([s for s in slide.segments
                                                    if calculate_route_length([s]) > 1e-7])
-            outside = fixed + segments[:i] + segments[i + size:]
+            outside = SameNetSegments(fixed + segments[:i] + segments[i + size:])
             guard = ReplacementGuard(context.pcb_data, net_id, fixed + segments, vias)
             candidates = [repaired for candidate in candidates
                           for repaired in micro_free_candidates(
@@ -76,7 +77,7 @@ def local_replacement(context, chain, net_id, current, vias, deadline=None):
             # do not replace it with an unrelated vertex-matching deformation.
             source = segments[i:i + 2]
             source_points = points[i:i + 3]
-            outside = fixed + segments[:i] + segments[i + 2:]
+            outside = SameNetSegments(fixed + segments[:i] + segments[i + 2:])
             candidate = reduce_corner(context, source_points, source[0], deadline,
                                       outside=outside, vias=vias)
             if candidate:

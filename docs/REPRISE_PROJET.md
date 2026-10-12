@@ -35,6 +35,19 @@ dans les deux modes, G5 valide partout ; son temps cumulé baisse de 4,3 % et
 corpus. 336 tests ciblés passent. Voir le
 [bilan détaillé](reports/GLOSS_LAZY_OBSTACLES_2026_10_12.md).
 
+Les petites zones reçoivent maintenant une présélection conservatrice du cuivre
+avant leur construction par KRT. Les recherches de chaînes, de connecteurs de
+pads et de réductions locales indexent leurs voisins du même net, avec maintien
+de l'ordre et des prédicats existants. Face à `8121a1d`, azukar_fpga gagne
+45,8 % sans corridor et 51,3 % avec corridor dans la série finale. Le cumul PACK0
+baisse de 19,3 % et 25,8 % ; chart_plotter_hat avec corridor montre toutefois
+une petite hausse de 1,5 % en médiane de trois essais. Ne pas promettre 20 %
+sur chaque carte ni une absence universelle de régression temporelle.
+Les 13 configurations conservent exactement leur géométrie et les statistiques
+hors chronométrage, G5 valide ; 361 tests ciblés passent. Les sorties complete1
+relues conservent clearance et connectivité. Voir les
+[mesures et contrats des présélections](reports/GLOSS_SPATIAL_FILTERS_2026_10_12.md).
+
 Cette branche conserve uniquement l’action Gloss. Les points d’entrée publics
 sont `run_final_gloss` et `run_post_smooth_gloss`. Le moteur de placement dans
 les passages, ses prototypes, réglages, commandes et visualisations ont été

@@ -7,6 +7,7 @@ from .execution import perf_counter
 from .topology import ReplacementGuard
 from .board_views import board_views
 from .krt_clearance import stable_copper_search
+from .same_net_index import SameNetSegments
 from dgloss.krt_api import point_to_pad_distance
 from dgloss.krt_api import calculate_route_length
 from dgloss.krt_api import pos_key, FP_EPS_MM
@@ -122,7 +123,9 @@ def _new_boundary_right_angle(candidate, anchor, outside):
     start = candidate[0].start_x, candidate[0].start_y
     _first, direction = _edge_directions(candidate, start, anchor)
     anchor_key = pos_key(*anchor)
-    for sibling in outside:
+    neighbours = (outside.at_endpoint(candidate[-1].layer, anchor_key)
+                  if isinstance(outside, SameNetSegments) else outside)
+    for sibling in neighbours:
         if sibling.layer != candidate[-1].layer:
             continue
         if anchor_key == pos_key(sibling.start_x, sibling.start_y):
@@ -159,6 +162,7 @@ def _best_pad_connector(context, pad, chain, points, outside, net_vias, foreign,
     gain_margin = 1e-7 * max(1.0, old_length, lower_bound)
     if old_length - lower_bound < context.coord.grid_step - gain_margin:
         return None
+    outside = SameNetSegments(outside)
     best, score = None, None
     for source, family in _connector_families(centre, anchor, chain[0], context.coord.grid_step):
         for candidate in family:
