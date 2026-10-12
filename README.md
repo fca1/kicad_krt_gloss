@@ -13,9 +13,14 @@ is the result, while the dotted overlay preserves the former path for review.
 
 ## Install
 
+Version **0.1.4** is a **testing** release for **KiCad 10.x** (SWIG runtime).
+Windows has been tested locally; Linux and macOS binaries are packaged, but
+installation on those systems has not been validated for this release.
+
 In KiCad, open **Plugin and Content Manager**, choose **Install from File…**,
 select the plugin ZIP, then open **PCB Editor → Tools → External Plugins →
-KiCad KRGloss**.
+KiCad KRT Gloss**. Restart PCB Editor after installation or update and first
+test on a copy of your board.
 
 ## Choose the scope
 
@@ -32,9 +37,13 @@ Gloss button remains disabled until at least one net is checked.
 
 ## Gloss
 
-- **Stay in corridor** prevents crossing or jumping over an obstacle.
+- **Stay in corridor** requires a continuous admissible movement; it is off
+  by default.
 - **Movable vias** allows eligible unlocked vias to move.
 - **Repeat Gloss until stable** adds passes up to the G4 limit.
+
+The G4 limit is 1–10 additional passes (1 by default). These passes are
+additional to the initial time budget.
 
 Click **Gloss**. No change is normal when no safe improvement exists.
 
@@ -44,6 +53,9 @@ The **Log** tab records the options, net names and result. The plugin also
 creates or reuses **TrackGloss Changes** on a free User layer: old copper is
 dashed and new copper is solid. This layer is a visual aid, not a replacement
 for KiCad's visual inspection and DRC.
+
+A known limitation remains in KRT's perpendicular via-sweep crossing check.
+Review moved vias and run KiCad DRC before fabrication; G5 is not a full DRC.
 
 Gloss modifies existing routing only. Locked or protected copper,
 arcs, differential pairs and constrained tracks remain protected.

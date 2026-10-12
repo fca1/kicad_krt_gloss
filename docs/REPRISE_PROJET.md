@@ -171,6 +171,14 @@ cuivre et de la connectivité avant application.
 
 ## Validation et livraison
 
+La [procédure de déploiement et publication](COMMUNITY_RELEASE.md) décrit le
+staging sans ZIP, l'installation locale, la recette et le retour arrière.
+Les [notes 0.1.4](RELEASE_NOTES_0.1.4.md) reprennent les validations récentes.
+Le générateur `tools/prepare_publication.py` contient encore un ancien résumé
+PACK0 : remplacer ses notes générées par ces notes revues avant publication
+et résoudre leurs liens vers la révision source publiée. Cette mise à jour
+documentaire ne vaut ni recette interactive, ni création de ZIP, ni publication.
+
 Après un « go », limiter les modifications au périmètre autorisé, lancer des tests
 rapides et ciblés, actualiser ce guide puis faire un commit dédié. Préserver les
 modifications et fichiers non suivis préexistants. Aucun ZIP sans demande explicite.

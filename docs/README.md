@@ -3,6 +3,9 @@
 - [Guide de reprise du projet](REPRISE_PROJET.md) : état intégré, règles,
   subtilités, pistes non intégrées et limites de validation.
 - [Architecture](ARCHITECTURE.md) : responsabilités des modules et caches.
+- [Deployment and publication](COMMUNITY_RELEASE.md): staging, local installation,
+  acceptance, rollback and publication kit preparation.
+- [0.1.4 release notes](RELEASE_NOTES_0.1.4.md): changes, evidence and limitations.
 
 - [PACK0](PACK0.md) defines the project's five reference boards for runtime
   measurements and regression checks; [PACK0.json](PACK0.json) records their hashes.
