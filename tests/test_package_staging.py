@@ -18,6 +18,9 @@ def test_staging_preserves_runtime_and_version_contract(tmp_path, monkeypatch):
     assert runpy.run_path(str(plugin / "version.py"))["__version__"] == package_pcm.VERSION
     assert not list(tmp_path.rglob("*.zip"))
     assert (plugin / "KRT/VERSION").read_text().strip() == package_pcm.KRT_VERSION
+    assert (plugin / "KRT/rust_router/Cargo.toml").read_bytes() == (
+        package_pcm.KRT / "rust_router/Cargo.toml").read_bytes()
+    assert (plugin / "isolated_krt.py").is_file()
     for name in package_pcm.BINARIES:
         assert (plugin / "KRT/rust_router" / name).is_file()
     assert not (plugin / "KRT/rust_router/grid_router.pyd").exists()

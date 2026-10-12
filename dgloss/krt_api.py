@@ -11,6 +11,7 @@ and zone_models.py. The runtime bootstrap is necessarily outside this boundary.
 """
 
 from importlib import import_module
+import sys
 
 # Local API name -> (KRT module, attribute); None exposes a module.
 _EXPORTS = {
@@ -111,6 +112,10 @@ def __getattr__(name):
         module_name, attribute = _EXPORTS[name]
     except KeyError:
         raise AttributeError(f"{__name__!r} has no attribute {name!r}") from None
+    # Le CLI peut utiliser ses imports habituels ; le plugin configure une
+    # copie privée pour ne pas mélanger ses classes avec celles de KRT ouvert.
+    if "_gloss_embedded_krt" in sys.modules:
+        module_name = "_gloss_embedded_krt." + module_name
     module = import_module(module_name)
     value = module if attribute is None else getattr(module, attribute)
     globals()[name] = value

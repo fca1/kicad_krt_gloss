@@ -74,8 +74,15 @@ def configure_krt_runtime():
     package_dir = Path(__file__).resolve().parent
     root = krt_root()
     binary = _resolve_rust_binary(root)
-    runtime_dir = binary.parent if binary is not None else root / "rust_router"
-    for path in (package_dir, root, root / "py_router", runtime_dir):
+    # Seul dgloss reste accessible sous son nom public. Les imports plats de
+    # KRT sont redirigés dans un espace privé, même après fermeture du dialogue.
+    if binary is not None:
+        source = package_dir / "isolated_krt.py"
+        spec = importlib.util.spec_from_file_location("_gloss_krt_loader", source)
+        loader = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(loader)
+        loader.install(root, binary)
+    for path in (package_dir,):
         value = os.fspath(path)
         if value not in sys.path:
             sys.path.insert(0, value)
@@ -88,9 +95,9 @@ def ensure_krt_dependencies(parent=None):
     source = root / "kicad_routing_plugin" / "deps_check.py"
     if not source.is_file():
         return True
-    spec = importlib.util.spec_from_file_location("krg_krt_deps_check", source)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    configure_krt_runtime()
+    module = importlib.import_module(
+        "_gloss_embedded_krt.kicad_routing_plugin.deps_check")
     # PyPI distribution names need not match Python import names.
     # KRT 0.22 declares Pillow but its generic fallback tries `import Pillow`.
     module.IMPORT_TESTS.setdefault("Pillow", "from PIL import Image")

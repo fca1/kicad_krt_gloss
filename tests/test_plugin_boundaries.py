@@ -726,9 +726,8 @@ def test_plugin_config_delegates_dru_rules_to_krt():
 
 
 def test_rule_installation_retains_live_table_after_file_channels():
-    from design_rules import DesignRules
+    from dgloss.krt_api import DesignRules, GridRouteConfig
     from dgloss.rules import install_gloss_rules
-    from routing_config import GridRouteConfig
 
     live = DesignRules(board_min={"min_clearance": 0.25})
     disk = DesignRules(board_min={"min_clearance": 0.1},

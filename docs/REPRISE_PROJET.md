@@ -203,3 +203,14 @@ G5 valide, cuivre hors portée et fichier source préservés. Les quatre onglets
 restants et les polices des champs de calcul sont contrôlés. Des avertissements
 wxWidgets de parentage et de fermeture restent émis ; pas de qualification
 visuelle dans l’éditeur ni de nouvelle campagne de performance. Aucun ZIP créé.
+
+
+## 12 octobre 2026 — Isolation de Gloss et du plugin KRT
+
+La copie embarquée est désormais importée sous `_gloss_embedded_krt`, sans
+ajouter ses chemins au sys.path global ni remplacer les modules du plugin KRT
+standard. Le packager inclut le Cargo.toml original, auparavant oublié.
+46 tests ciblés et les deux ordres de lancement en Python natif passent,
+avec Gloss sur une carte détachée, G5 valide et fichier source préservé.
+KRT reste intact ; aucune publication ni ZIP. Un redémarrage complet de KiCad
+est nécessaire après installation. Voir [diagnostic et recette](reports/KRT_GLOSS_IMPORTS_2026_10_12.md).

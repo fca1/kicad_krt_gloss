@@ -92,6 +92,10 @@ def build(output_dir, *, stage_only=False):
         shutil.copy2(KRT / "LICENSE", runtime / "LICENSE")
         shutil.copy2(KRT / "VERSION", runtime / "VERSION")
         _download_binaries(runtime / "rust_router")
+        # Le contrôle de compatibilité Rust lit ce fichier depuis __file__.
+        shutil.copy2(KRT / "rust_router" / "Cargo.toml",
+                     runtime / "rust_router" / "Cargo.toml")
+        shutil.copy2(PLUGIN / "isolated_krt.py", plugins / "isolated_krt.py")
 
         shutil.copy2(PLUGIN / "metadata.json", stage / "metadata.json")
         resources = stage / "resources"

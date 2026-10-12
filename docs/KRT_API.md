@@ -40,3 +40,14 @@ le corridor, les glissements, le prototype de déplacement, les règles Gloss,
 les transactions et les frontières du plugin. Démarrage CLI vérifié
 avec `python gloss.py --help`. Pas de nouvelle mesure de performance sur carte
 ni de test interactif dans KiCad pour cette modification.
+
+
+## Isolation au 12 octobre 2026
+
+Après configure_krt_runtime, la façade résout les modules dans
+`_gloss_embedded_krt`. Le chargeur propre au plugin redirige les imports plats
+des sources KRT sans les modifier, avec des chemins privés. Ainsi le moteur
+Gloss et le plugin standard gardent des classes, modules et états séparés.
+Le chargement de dépendances tierces reste normal ; aucun remplacement global
+de builtins.__import__, aucun retrait de modules standard. Les imports de test
+qui construisent des objets pour Gloss doivent passer par sa façade.
