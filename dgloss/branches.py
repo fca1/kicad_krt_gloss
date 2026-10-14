@@ -86,15 +86,19 @@ def elementary_branch_segment_ids(pcb_data, seed_segments):
                                   if item is not segment), None)
                 if following is None or id(following) in found:
                     break
-                found.add(id(following))
                 a = (pos_key(following.start_x, following.start_y),
                      following.layer)
                 b = (pos_key(following.end_x, following.end_y),
                      following.layer)
-                if following.layer != node[1]:
-                    node = b if a[0] == node[0] else a
-                else:
-                    node = b if a == node else a
+                entry = a if a[0] == node[0] else b
+                # A pad terminal is a boundary from either direction, even
+                # when only the wider segment (or the other via layer) touches.
+                point = actual[(id(following), entry)]
+                if _pad_stops(pcb_data, net_id, point, following.layer,
+                              following.width / 2.0):
+                    break
+                found.add(id(following))
+                node = b if entry == a else a
                 segment = following
             return found
 

@@ -84,6 +84,33 @@ def test_changed_topology_requires_reimport():
     with pytest.raises(StaleBranches):m.resolve(pcb,['A'],index)
 
 
+@pytest.mark.parametrize('order', [('a', 'b'), ('b', 'a')])
+def test_full_native_selection_near_pad_promotes_and_partial_stays_scoped(order):
+    from kicad_krt_gloss.native_branch_selection import capture
+    a = Segment(0, 0, 1, 0, .1, 'F.Cu', 1)
+    b = Segment(1, 0, 2, 0, .4, 'F.Cu', 1)
+    pad = NS(global_x=1., global_y=.25, size_x=.2, size_y=.2,
+             shape='rect', layers=['F.Cu'], rect_rotation=0.,
+             polygons=None, net_id=1)
+    pcb = NS(segments=[a,b], vias=[], pads_by_net={1:[pad]},
+             board_info=NS(copper_layers=['F.Cu']), nets={1:NS(name='GND')})
+    index = {'a':a, 'b':b}
+    selected = set(order)
+    def track(uid):
+        return NS(GetClass=lambda:'PCB_TRACK', IsSelected=lambda:uid in selected,
+                  m_Uuid=NS(AsString=lambda:uid))
+    board = NS(GetTracks=lambda:[track(uid) for uid in order])
+    memory = BranchMemory()
+    memory.import_branches(capture(board, pcb, index, None, {'GND'}), add=False)
+    assert {id(s) for s in memory.resolve(pcb, ['GND'], index)} == {id(a), id(b)}
+    assert memory.promote_complete_nets(pcb, index, ['GND']) == {'GND'}
+    selected.clear()
+    selected.add('a')
+    memory.import_branches(capture(board, pcb, index, None, {'GND'}), add=False)
+    assert not memory.promote_complete_nets(pcb, index, ['GND'])
+    assert memory.resolve(pcb, ['GND'], index) == [a]
+
+
 @pytest.mark.parametrize('width',[.05,.1,.2,.8])
 def test_only_full_new_overlay_is_thin(width):
     old=Segment(0,0,3,0,width,'F.Cu',1)

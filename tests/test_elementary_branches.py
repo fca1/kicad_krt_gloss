@@ -2,6 +2,7 @@
 
 from pathlib import Path
 import sys
+import pytest
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -99,6 +100,45 @@ def test_two_seeds_on_the_same_branch_are_counted_once():
 
     assert selected == {id(first), id(second)}
     assert count == 1
+
+
+@pytest.mark.parametrize('angle', [0, 45, 90])
+@pytest.mark.parametrize('reflection', [-1, 1])
+def test_pad_touching_only_wide_side_stops_both_directions(angle, reflection):
+    from itertools import permutations
+    from math import cos, sin, radians
+    def transform(x, y):
+        c, s = cos(radians(angle)), sin(radians(angle))
+        return c*x - s*y*reflection, s*x + c*y*reflection
+    narrow = _seg(0, 0, 1, 0, width=0.1)
+    wide = _seg(1, 0, 2, 0, width=0.4)
+    for segment in (narrow, wide):
+        segment.start_x, segment.start_y = transform(segment.start_x, segment.start_y)
+        segment.end_x, segment.end_y = transform(segment.end_x, segment.end_y)
+    px, py = transform(1., .25)
+    pad = SimpleNamespace(
+        global_x=px, global_y=py, size_x=0.2, size_y=0.2,
+        shape="rect", layers=["F.Cu"], rect_rotation=angle,
+        polygons=None, net_id=1)
+    pcb = _pcb([narrow, wide], pads=[pad])
+    for seed in (narrow, wide):
+        assert elementary_branch_segment_ids(pcb, [seed]) == ({id(seed)}, 1)
+    for seeds in permutations([narrow, wide]):
+        assert elementary_branch_segment_ids(pcb, seeds) == (
+            {id(narrow), id(wide)}, 2)
+
+
+def test_pad_on_other_side_of_via_stops_both_directions():
+    front = _seg(0, 0, 1, 0)
+    back = _seg(1, 0, 2, 0, layer="B.Cu")
+    via = Via(1, 0, 0.5, 0.25, ["F.Cu", "B.Cu"], 1)
+    pad = SimpleNamespace(
+        global_x=1.0, global_y=0.0, size_x=0.4, size_y=0.4,
+        shape="rect", layers=["B.Cu"], rect_rotation=0.0,
+        polygons=None, net_id=1)
+    pcb = _pcb([front, back], pads=[pad], vias=[via])
+    for seed in (front, back):
+        assert elementary_branch_segment_ids(pcb, [seed]) == ({id(seed)}, 1)
 
 
 def test_context_transports_editability_through_replacements():

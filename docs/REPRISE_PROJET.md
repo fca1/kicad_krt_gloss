@@ -1,5 +1,22 @@
 # Reprendre Smooth Gloss KRT — branche gloss_only
 
+## 14 octobre 2026 — Faux refus EB sur sélection totale
+
+Le parcours des branches arrête désormais une jonction si l'un des deux
+segments touche un pad sur sa couche, avec sa demi-largeur. Auparavant,
+seul le segment d'arrivée était testé : une transition de largeur près d'un
+pad (ou un pad sur l'autre couche d'un via) rendait la branche dépendante
+du sens de parcours. Une carte inchangée pouvait être refusée avec
+`branch topology changed`, empêchant aussi la promotion en net entier.
+
+Les protections contre les références périmées et les mappings incomplets
+restent actives. 32 tests ciblés passent ; la sélection totale, la relecture
+et la sélection partielle passent aussi en Python KiCad natif, dans le dépôt
+et dans le plugin installé. La revue et les limites de la suite complète
+sont consignées dans le [rapport](reports/EB_PAD_SCOPE_2026_10_14.md).
+Le fichier corrigé est installé localement ; rouvrir l'éditeur PCB pour le
+charger. Aucune recette sur la carte utilisateur ni DRC complet n'est impliqué.
+
 ## État du 12 octobre 2026
 
 La comparaison `cube_pcb1_complete1.brd` / Fusion a conduit à trois corrections
