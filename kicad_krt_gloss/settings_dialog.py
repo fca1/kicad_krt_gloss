@@ -356,7 +356,9 @@ class GlossSettingsDialog(wx.Dialog):
             pcb_data = SimpleNamespace(nets={}, pads_by_net={}, footprints={})
         self.scope_net_panel = NetSelectionPanel(
             panel, pcb_data,
-            instructions=("Click a net to highlight it in KiCad.\n"
+            instructions=(("Branch highlighting is unavailable in IPC mode.\n"
+                           if os.environ.get('KRG_IPC') == '1' else
+                           "Click a net to highlight it in KiCad.\n") +
                           "Check nets for Gloss."),
             show_hide_checkbox=False,
             show_hide_differential=False,

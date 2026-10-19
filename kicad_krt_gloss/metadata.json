@@ -2,7 +2,7 @@
   "$schema": "https://go.kicad.org/pcm/schemas/v2",
   "name": "KiCad KRT Gloss",
   "description": "Apply the KRT-based final track gloss to selected or all routed nets.",
-  "description_full": "Shorten and simplify an already routed PCB while preserving connectivity and clearances. Select one or more nets to gloss them; the before-and-after result is shown on the TrackGloss User layer. Developed by Frantz with assistance from ChatGPT/Codex (OpenAI).\n\nVery based on KiCad Routing Tools (KRT) by DrAndyHaas\nhttps://github.com/drandyhaas/KiCadRoutingTools",
+  "description_full": "Shorten and simplify routed nets through the KiCad IPC API, using KRT for clearance and connectivity validation. Supports remembered branches without highlighting. Optional before-and-after drawings use a free enabled User layer. Requires recent KiCad 10.99/11 rule-reading commands. Developed by Frantz with assistance from ChatGPT/Codex (OpenAI).\n\nBased on KiCad Routing Tools (KRT) by DrAndyHaas\nhttps://github.com/drandyhaas/KiCadRoutingTools",
   "identifier": "com.github.fca1.kicadkrtgloss",
   "type": "plugin",
   "author": {
@@ -17,21 +17,29 @@
       "github": "https://github.com/fca1/kicad_krt_gloss"
     }
   },
-  "license": "MIT",
+  "license": "GPL-3.0-or-later",
   "resources": {
     "homepage": "https://github.com/fca1/kicad_krt_gloss",
     "repository": "https://github.com/fca1/kicad_krt_gloss",
     "bugtracker": "https://github.com/fca1/kicad_krt_gloss/issues"
   },
-  "tags": ["routing", "tracks", "cleanup", "gloss"],
+  "tags": [
+    "routing",
+    "tracks",
+    "cleanup",
+    "gloss"
+  ],
   "versions": [
     {
-      "version": "0.1.4",
+      "version": "0.1.5",
       "status": "testing",
-      "kicad_version": "10.0",
-      "kicad_version_max": "10.99",
-      "runtime": "swig",
-      "platforms": ["linux", "macos", "windows"]
+      "kicad_version": "10.99",
+      "runtime": "ipc",
+      "platforms": [
+        "linux",
+        "macos",
+        "windows"
+      ]
     }
   ]
 }

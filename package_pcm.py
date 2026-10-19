@@ -16,7 +16,7 @@ import zipfile
 ROOT = Path(__file__).resolve().parent
 PLUGIN = ROOT / "kicad_krt_gloss"
 KRT = ROOT / "KRT"
-VERSION = "0.1.4"
+VERSION = "0.1.5"
 KRT_VERSION = (KRT / "VERSION").read_text(encoding="utf-8").strip()
 BINARIES = (
     "grid_router-linux-x86_64.so",
@@ -54,6 +54,10 @@ def build(output_dir, *, stage_only=False):
         plugins = stage / "plugins"
         plugins.mkdir()
         for name in ("__init__.py", "action_plugin.py", "board_adapter.py", "kicad_bridge.py",
+                     "ipc_entry.py", "ipc_bridge.py", "ipc_rules.py", "ipc_snapshot.py", "ipc_protocol.pb",
+                     "ipc_overlay.py",
+                     "IPC_PROTOCOL_NOTICE.txt", "COPYING-IPC-GPL3.txt", "COPYING-PROTOBUF.txt",
+                     "plugin.json", "requirements.txt",
                      "debug_overlay.py", "gloss_visualization.py", "runtime.py", "selection.py",
                      "branch_selection_prototype.py", "branch_scope_list.py", "native_branch_selection.py",
                      "settings_dialog.py", "progress_dialog.py", "version.py", "icon_24.png", "icon_64.png",
@@ -76,6 +80,8 @@ def build(output_dir, *, stage_only=False):
         readme_docs = plugins / "docs"
         readme_docs.mkdir()
         shutil.copy2(ROOT / "docs" / "AUTHORS.md", readme_docs / "AUTHORS.md")
+        shutil.copy2(ROOT / "docs" / "IPC.md", readme_docs / "IPC.md")
+        _copytree(PLUGIN / "ipc_protocol_sources", plugins / "ipc_protocol_sources")
         _copytree(ROOT / "docs" / "assets", readme_docs / "assets")
         _copytree(ROOT / "dgloss", plugins / "dgloss")
 

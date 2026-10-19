@@ -1,5 +1,9 @@
 # Community testing release — 0.1.4
 
+Historical release procedure. Current development is **0.1.5 / IPC / KRT
+0.23.1** for recent KiCad 10.99/11; see [IPC installation](IPC.md).
+The commands below now stage the current version, not the historical release.
+
 Updated 12 October 2026. This procedure describes the repository tools; it does
 not establish that a GitHub release or PCM catalogue entry has been published.
 

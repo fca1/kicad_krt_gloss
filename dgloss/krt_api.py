@@ -15,6 +15,13 @@ import sys
 
 # Local API name -> (KRT module, attribute); None exposes a module.
 _EXPORTS = {
+    'BoardInfo': ('kicad_parser', 'BoardInfo'),
+    'Net': ('kicad_parser', 'Net'),
+    'Pad': ('kicad_parser', 'Pad'),
+    'PCBData': ('kicad_parser', 'PCBData'),
+    'Via': ('kicad_parser', 'Via'),
+    'iter_footprint_blocks': ('kicad_parser', 'iter_footprint_blocks'),
+    'parse_dru': ('design_rules', 'parse_dru'),
     'COINCIDENCE_TOL': ('connectivity', 'COINCIDENCE_TOL'),
     'DesignRules': ('design_rules', 'DesignRules'),
     'FP_EPS_MM': ('check_drc', 'FP_EPS_MM'),

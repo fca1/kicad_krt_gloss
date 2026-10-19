@@ -69,3 +69,11 @@ def test_second_installation_requires_restart(engines, tmp_path):
     loader, _, _ = engines
     with pytest.raises(RuntimeError, match="redémarrer"):
         loader.install(tmp_path / "other", tmp_path / "unused.pyd")
+
+
+def test_ipc_runtime_blocks_optional_swig_imports(engines, monkeypatch):
+    loader, root, _ = engines
+    finder = loader._Finder(root, root / 'unused.pyd')
+    monkeypatch.setenv('KRG_IPC', '1')
+    with pytest.raises(ModuleNotFoundError, match='SWIG'):
+        finder.import_local('pcbnew')

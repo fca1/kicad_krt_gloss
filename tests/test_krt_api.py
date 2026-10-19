@@ -2,6 +2,7 @@
 
 import ast
 import importlib.util
+import sys
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -30,10 +31,12 @@ def test_lazy_resolution_preserves_identity_and_resolves_once(monkeypatch):
     assert calls == []
     assert api.Segment is segment_type
     assert api.Segment is segment_type
-    assert calls == ["kicad_parser"]
+    expected = ("_gloss_embedded_krt.kicad_parser"
+                if "_gloss_embedded_krt" in sys.modules else "kicad_parser")
+    assert calls == [expected]
     with pytest.raises(AttributeError):
         api.nonexistent_symbol
-    assert calls == ["kicad_parser"]
+    assert calls == [expected]
 
 
 def test_krt_imports_are_confined_to_boundary():
@@ -62,9 +65,9 @@ def test_real_core_exports_match_krt():
     from kicad_krt_gloss.runtime import configure_krt_runtime
     configure_krt_runtime()
     from dgloss import krt_api
-    from kicad_parser import Segment
-    from net_queries import calculate_route_length
-    from check_connected import check_net_connectivity
+    from _gloss_embedded_krt.kicad_parser import Segment
+    from _gloss_embedded_krt.net_queries import calculate_route_length
+    from _gloss_embedded_krt.check_connected import check_net_connectivity
     assert krt_api.Segment is Segment
     assert krt_api.calculate_route_length is calculate_route_length
     assert krt_api.check_net_connectivity is check_net_connectivity

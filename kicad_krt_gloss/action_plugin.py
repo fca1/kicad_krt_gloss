@@ -7,7 +7,10 @@ import os
 import sys
 import traceback
 
-import pcbnew
+if os.environ.get('KRG_IPC') == '1':
+    pcbnew = None
+else:
+    import pcbnew
 import wx
 
 from .kicad_bridge import KiCadBoardBridge
@@ -19,7 +22,7 @@ PLUGIN_DIR = os.path.dirname(os.path.abspath(__file__))
 KICAD = KiCadBoardBridge()
 
 
-class KiCadKrtGlossPlugin(pcbnew.ActionPlugin):
+class KiCadKrtGlossPlugin(pcbnew.ActionPlugin if pcbnew is not None else object):
     _settings = dict(DEFAULTS)
     _last_log = ""
     _settings_dialog = None

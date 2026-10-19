@@ -4,6 +4,7 @@ import builtins
 import importlib
 import importlib.abc
 import importlib.util
+import os
 from pathlib import Path
 import sys
 import types
@@ -61,6 +62,8 @@ class _Finder(importlib.abc.MetaPathFinder):
         self.private_sys = _PrivateSys()
 
     def import_local(self, name, globals=None, locals=None, fromlist=(), level=0):
+        if not level and name.split('.')[0] == 'pcbnew' and os.environ.get('KRG_IPC') == '1':
+            raise ModuleNotFoundError('SWIG is unavailable in the Gloss IPC runtime', name=name)
         if not level and name == "sys":
             return self.private_sys
         if not level and name.split(".")[0] in self.names:

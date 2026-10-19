@@ -4,10 +4,12 @@ Le plugin KiCad charge une carte détachée, configure le moteur et applique
 uniquement son résultat certifié. KRT conserve la responsabilité des distances,
 obstacles, clearances et graphes électriques. La façade `dgloss/krt_api.py`
 résout les symboles une fois ; elle n'ajoute pas de dispatch par candidat.
-`kicad_krt_gloss/kicad_bridge.py` est la frontière inverse : elle rassemble les
-accès KRG aux bindings natifs de KiCad (carte active, sélection, application,
-rafraîchissement), sans réimplémenter l'import, les règles ou les validations
-KRT.
+`kicad_krt_gloss/ipc_bridge.py` est la frontière inverse courante : elle lit
+la carte et les règles actives, prépare un instantané privé pour KRT et publie
+le résultat certifié dans une transaction IPC. `ipc_rules.py` adapte les règles
+et `ipc_snapshot.py` les poses d'empreintes KiCad 11, sans modifier KRT.
+`kicad_bridge.py` conserve la frontière historique SWIG pour les régressions
+KiCad 10. Voir [les capacités et limites IPC](IPC.md).
 
 ## Responsabilités
 

@@ -1,5 +1,36 @@
 # Reprendre Smooth Gloss KRT — branche gloss_only
 
+## 19 octobre 2026 — IPC, développement 0.1.5
+
+La cible courante est l'action externe IPC pour KiCad 10.99/11, validée sur
+10.99.0-2520-g89476220a8. L'utilisateur a autorisé la migration sans surlignage
+des branches. Les sélections et la mémoire de branches restent disponibles.
+Lire [architecture et limites IPC](IPC.md) et le
+[rapport de validation](reports/IPC_KRT_2026_10_19.md) avant de poursuivre.
+
+KRT reste intact, mis à jour vers la dernière release vérifiée **0.23.1**,
+commit `295f9ee197517e8323726853361eb137cc08ba9e`, avec les binaires officiels.
+Les accès à la carte ouverte passent par `ipc_bridge.py`; `kicad_bridge.py`
+reste la référence historique SWIG. Le chargeur privé interdit les imports
+pcbnew dans le processus IPC. Ne pas rétablir de repli SWIG silencieux.
+
+Les règles minimales et classes sont lues en direct. Le fichier `.kicad_dru`
+reste nécessaire pour les filtres de couches que l'IPC ne représente pas ;
+ses propriétés représentées sont comparées aux règles actives. Enregistrer
+les règles avant Gloss. Les transformations d'empreinte non unitaires sont
+refusées. G5 demeure obligatoire ; ce n'est pas un DRC KiCad complet.
+
+93 tests ciblés passent. Sur une copie jetable, branches /A et via /B sont
+appliqués puis annulés en une opération : UUID et propriétés restaurés,
+cuivre hors net inchangé, fichier source inchangé. Le dialogue externe s'ouvre
+sans charger pcbnew. Aucun ZIP ni publication n'a été demandé ou créé.
+Installation locale dans `Documents/KiCad/10.99/plugins/com.github.fca1.kicadkrtgloss` ;
+redémarrer l'éditeur avec le serveur API activé. KiCad a créé son environnement
+Python 3.13 ; les dépendances y sont installées et l'entrée installée a aussi
+été testée avec cet interpréteur. Le clic dans la barre d'outils n'est pas
+couvert par cette recette de lancement direct.
+Les sections suivantes décrivent les versions historiques.
+
 ## 14 octobre 2026 — Faux refus EB sur sélection totale
 
 Le parcours des branches arrête désormais une jonction si l'un des deux

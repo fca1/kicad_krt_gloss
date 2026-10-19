@@ -1,5 +1,12 @@
 # Interface Gloss / KRT
 
+Référence du 19 octobre 2026 : KRT 0.23.1, commit
+`295f9ee197517e8323726853361eb137cc08ba9e`. Le plugin 0.1.5 utilise IPC ;
+voir [IPC.md](IPC.md). Le parseur, les modèles et les règles restent ceux de
+KRT, isolés dans `_gloss_embedded_krt`. Les fixtures de tests doivent utiliser
+ces mêmes classes : mélanger des Pad publics et privés casse les `isinstance`
+du SpatialIndex et produisait cinq échecs de tests artificiels.
+
 Les imports KRT du moteur `dgloss`, de la CLI `gloss.py` et du plugin
 passent par `dgloss/krt_api.py`. KRT reste inchangé et conserve l'autorité
 pour la géométrie, les obstacles, les clearances et les validations.

@@ -35,10 +35,8 @@ from dgloss.via_mobile import move_mobile_vias, refine_mobile_vias
 from kicad_krt_gloss.gloss_visualization import (
     _line_parts, add_changes_to_board, add_layer_user,
     disable_intermediate_layers)
-from kicad_parser import BoardInfo, Net, Pad, PCBData, Segment, Via
-from net_queries import calculate_route_length
-from routing_config import GridRouteConfig
-from routing_utils import pos_key
+from dgloss.krt_api import (BoardInfo, Net, Pad, PCBData, Segment, Via,
+                           calculate_route_length, GridRouteConfig, pos_key)
 
 
 def _pad(ref, x, y, net_id, layer="F.Cu", size=0.5):

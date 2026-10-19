@@ -1,0 +1,6 @@
+kicad-python==0.8.0
+wxPython>=4.2
+numpy>=1.22
+scipy>=1.11
+shapely>=2.0
+Pillow>=9.2.0

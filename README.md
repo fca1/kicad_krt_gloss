@@ -13,18 +13,19 @@ is the result, while the dotted overlay preserves the former path for review.
 
 ## Install
 
-Version **0.1.4** is a **testing** release for **KiCad 10.x** (SWIG runtime).
-Windows has been tested locally; Linux and macOS binaries are packaged, but
-installation on those systems has not been validated for this release.
+The development version **0.1.5** uses **IPC** and KRT **0.23.1**. It targets
+KiCad **10.99 / 11** with the live design-rule API. Windows 10.99 is the local
+test platform; Linux and macOS execution has not been validated.
 
-In KiCad, open **Plugin and Content Manager**, choose **Install from File…**,
-select the plugin ZIP, then open **PCB Editor → Tools → External Plugins →
-KiCad KRT Gloss**. Restart PCB Editor after installation or update and first
-test on a copy of your board.
+Place the staged plugin contents in the KiCad version's `plugins/` directory,
+enable the KiCad API server, and launch **KRT Gloss** from the PCB toolbar.
+KiCad installs the Python dependencies from `requirements.txt`. Restart PCB
+Editor after installation and first test on a copy of your board. See the
+[IPC installation and limitations](docs/IPC.md). No 0.1.5 release is published yet.
 
 ## Choose the scope
 
-**Check** a net to include it; **click** a row to highlight its scope.
+**Check** a net to include it. IPC mode does not highlight nets or branches.
 **Add / Replace** imports the KiCad selection; **Clear** empties the list.
 
 With **Use elementary branches** enabled, importing a selected track remembers
@@ -50,8 +51,8 @@ Click **Gloss**. No change is normal when no safe improvement exists.
 ## Review the result
 
 The **Log** tab records the options, net names and result. The plugin also
-creates or reuses **TrackGloss Changes** on a free User layer: old copper is
-dashed and new copper is solid. This layer is a visual aid, not a replacement
+adds a **KRT Gloss changes (IPC)** group on a free enabled User layer when one
+is available: old copper is dashed and new copper is solid. This is a visual aid, not a replacement
 for KiCad's visual inspection and DRC.
 
 A known limitation remains in KRT's perpendicular via-sweep crossing check.
@@ -67,5 +68,8 @@ developed with assistance from **ChatGPT/Codex (OpenAI)**.
 
 **DrAndyHaas** is the author and primary code provenance of
 [KiCad Routing Tools (KRT)](https://github.com/drandyhaas/KiCadRoutingTools).
-KiCad KRGloss is distributed under the [MIT License](LICENSE); detailed
-provenance is recorded in [AUTHORS.md](docs/AUTHORS.md) and [NOTICE](NOTICE).
+The Gloss sources retain their [MIT License](LICENSE). The IPC distribution
+also includes KiCad protocol definitions under GPL-3.0-or-later and protobuf
+definitions under their BSD license; see `IPC_PROTOCOL_NOTICE.txt` and the
+included license texts. Detailed provenance is recorded in
+[AUTHORS.md](docs/AUTHORS.md) and [NOTICE](NOTICE).
