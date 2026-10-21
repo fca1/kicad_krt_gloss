@@ -20,13 +20,18 @@ the toolbar. The launcher requires KiCad's instance-specific socket environment
 and never guesses which of multiple open editors to modify.
 
 The rule-reading commands require a sufficiently recent 10.99 / 11 build.
-Version 10.99.0-2520-g89476220a8 is the validation target. Capability failures
+The current validation target is `10.99.0-5583-g6a6fb7561d`; the initial IPC
+validation used `10.99.0-2520-g89476220a8`. Capability failures
 stop the action; this is not a claim of support for every nightly build.
-On 2026-10-21 the installed build was `10.99.0-5583-g6a6fb7561d`:
-both the baseline and optimized plugin fail at kicad-python 0.8's empty
-`GetNetClasses` request with `the requested project  is not open`. Snapshot
-normalization was checked, but complete import/application remains unvalidated
-on that build. See the [performance report](reports/GLOSS_IPC_PERFORMANCE_2026_10_21.md).
+The failure recorded during the [performance review](reports/GLOSS_IPC_PERFORMANCE_2026_10_21.md)
+on build 5583 is resolved by a targeted adapter: `GetNetClasses` now names the
+board's project explicitly and includes the terminal path separator required
+by that build's project validator. Only the request is normalized; the board's
+document identity remains unchanged. The adapter uses the private descriptor
+pool and keeps kicad-python 0.8.0 and its global descriptors unchanged.
+Live import, application and Undo have passed on disposable copies on build
+5583, including remembered `/A` branches, `/B` via movement and corridor mode.
+These checks do not cover launching from the toolbar.
 The historical SWIG sources remain for comparison and KiCad 10 regression tests;
 the IPC manifest and distribution metadata select the external IPC action.
 
@@ -55,28 +60,51 @@ the IPC manifest and distribution metadata select the external IPC action.
   Named/option-bearing constraints outside the adapter's coverage are refused.
 - Every result still requires G5. A changed board or rules snapshot prevents
   publication. Track creation and via movement are checked against their IPC
-  receipts; deletion statuses are checked individually. A failed transaction
+  receipts; via updates preserve the original UUID and all properties except
+  position (the SDK's creation-oriented `clone()` clears the UUID). The receipt
+  must contain exactly the requested via UUIDs and positions. Deletion statuses
+  are checked individually. A failed transaction
   is dropped. The successful copper change is one Undo operation.
-- Zone refill follows publication. A refill failure reports that copper was
-  applied and requires Undo or refill/DRC. G5 is not a full KiCad DRC.
+- Zone refill is requested after publication. Recent 10.99 editor builds
+  acknowledge a refill of all zones before it finishes; the request returning
+  does not establish completion or a successful DRC. A refill request failure
+  reports that copper was applied and requires Undo or refill/DRC. G5 is not
+  a full KiCad DRC.
 - Optional before/after drawings belong to `KRT Gloss changes (IPC)` on a free,
   enabled User layer. If all such layers are occupied, the drawing is skipped.
 - No source board is saved by Gloss. A no-op creates no Undo transaction.
 
 ## Protocol provenance
 
-`ipc_protocol.pb` is a private descriptor pool for the KiCad rule-reading
-commands missing from kicad-python 0.8.0. Corresponding sources are included
+`ipc_protocol.pb` is a private descriptor pool for KiCad rule reads and the
+explicit project field of `GetNetClasses` missing from kicad-python 0.8.0.
+Corresponding sources are included
 in `ipc_protocol_sources/`, from KiCad commit
 `dcadf9baa30d43d7d1b3d0342345f05ec0da26e1`; Google protobuf sources are v29.6.
 Generate a descriptor set with protoc 29 and `--include_imports`, using
-`board/board_commands.proto` as input. See `IPC_PROTOCOL_NOTICE.txt` and the
+both `board/board_commands.proto` and `common/commands/project_commands.proto`
+as inputs. The additional project command uses the same pinned KiCad source;
+this adaptation does not update the protocol provenance or the SDK.
+See `IPC_PROTOCOL_NOTICE.txt` and the
 included GPL and protobuf license texts. Existing MIT source notices remain.
 
 ## Acceptance
 
 `tools/check_ipc_gloss.py` requires an explicit socket and expected board path.
 Use only a disposable copy for `--apply`: the tool applies Gloss, checks copper
-outside the selected net and uses one Undo to verify restoration. It never
-saves the board. `--branches` exercises remembered branches and `--corridor`
-exercises the corridor option. Unit tests are in `tests/test_ipc.py`.
+outside the selected scope (including other branches of the same net), compares
+live tracks and vias with the certified KRT geometry at nanometre precision,
+and uses one Undo to verify restoration. It never saves the board. `--branches`
+exercises remembered branches, `--corridor` exercises the corridor option and
+`--stale-check --apply` verifies rejection after a temporary live edit.
+Cleanup follows actual transaction publication, including zero-length gains
+and errors after publication.
+
+`tools/check_ipc_dialog.py` runs the actual installed entry point and wx dialog
+with `--plugin-root`, `--socket`, `--expected-board` and optional `--output` JSON.
+On the disposable fixture it exercises Add/Replace/Clear, branch memory despite
+a changed native selection, the real Gloss worker/progress dialog, G5,
+application and one Undo. It checks source integrity and that pcbnew stays
+unloaded. This is a programmatic dialog exercise, not a toolbar click test.
+Unit tests are in `tests/test_ipc.py`, `tests/test_ipc_project.py` and
+`tests/test_ipc_bridge.py`.

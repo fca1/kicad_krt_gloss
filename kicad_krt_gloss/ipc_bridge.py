@@ -206,7 +206,9 @@ class IpcBoardBridge:
             old, new = change['old'], change['new']
             name = self.data.nets[old.net_id].name
             key = round(old.x, 6), round(old.y, 6), name
-            via = via_positions.pop(key).clone()
+            original = via_positions.pop(key)
+            # SDK clone() clears the UUID for creation. Updates must retain it.
+            via = type(original)(proto=original.proto)
             if (round(via.diameter / 1e6, 6) != round(old.size, 6) or
                     round(via.drill_diameter / 1e6, 6) != round(old.drill, 6)):
                 raise RuntimeError('Via padstack differs from the KRT snapshot')
@@ -224,8 +226,8 @@ class IpcBoardBridge:
                                                  for a, b in zip(actual, created)):
                 raise RuntimeError('KiCad did not create the certified tracks exactly')
             updates = board.update_items(list(moved.values())) if moved else []
-            if len(updates) != len(moved) or any(
-                    a.position != moved[_uid(a)].position for a in updates):
+            if (len(updates) != len(moved) or {_uid(a) for a in updates} != moved.keys() or any(
+                    a.position != moved[_uid(a)].position for a in updates)):
                 raise RuntimeError('KiCad did not move the certified vias exactly')
             if remove:
                 # kipy.remove_items discards per-item statuses. Deleted items remain
@@ -245,7 +247,7 @@ class IpcBoardBridge:
         except Exception:
             board.drop_commit(commit)
             raise
-        # Zone fill is a blocking IPC operation after publication, as in KiCad UI.
+        # Request refill after publication; recent editors schedule it asynchronously.
         try:
             if board.get_zones():
                 board.refill_zones()

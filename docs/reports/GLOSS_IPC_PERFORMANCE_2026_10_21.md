@@ -120,7 +120,12 @@ avec 2 048 espaces par bloc. Leurs temps individuels n'ont pas été conservés 
 les trois essais individuels de l'instantané réel figurent dans les données.
 Les pads réels correspondent également aux pads du fichier source.
 
-**Limite constatée sur la nightly actuellement installée :** KiCad est maintenant
+**Suivi :** la compatibilité 5583 et l'installation ont ensuite été corrigées
+et validées dans une intervention dédiée ; voir le
+[rapport IPC 5583](IPC_5583_2026_10_21.md). Le constat ci-dessous décrit
+la situation au moment des mesures de performance.
+
+**Limite constatée sur la nightly lors des mesures :** KiCad est maintenant
 `10.99.0-5583-g6a6fb7561d`, alors que la recette du 19 octobre portait sur
 `10.99.0-2520-g89476220a8`. L'import complet échoue avant et après ces changements
 avec `the requested project  is not open`, pendant `Project.get_net_classes()`.

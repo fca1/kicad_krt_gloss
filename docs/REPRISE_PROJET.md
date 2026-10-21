@@ -1,5 +1,28 @@
 # Reprendre Smooth Gloss KRT — branche gloss_only
 
+## 21 octobre 2026 — compatibilité 5583 corrigée et installation validée
+
+La cible actuelle est `10.99.0-5583-g6a6fb7561d`. Le pont privé adresse
+explicitement le projet pour lire les classes et normalise son séparateur
+terminal, sans modifier le document ni kicad-python 0.8.0. Le refus de lecture
+observé pendant les optimisations est résolu ; aucun contrôle de règle retiré.
+
+La recette a aussi révélé que `clone()` du SDK efface l'UUID des vias : un
+accusé favorable ne prouvait pas leur déplacement réel. Les copies de mise
+à jour conservent maintenant l'identité et les accusés vérifient les UUID.
+La géométrie réellement appliquée est comparée au résultat KRT, puis Undo
+restaure intégralement cuivre et dessins. Les anciennes affirmations de
+déplacement réel de via du 19 octobre étaient insuffisamment vérifiées.
+
+151 tests ciblés passent. Le dialogue réel, mémoire EB, Gloss, pistes/via,
+rejet de résultat périmé, corridor sans changement et dessins IPC passent
+sur la copie jetable. Installation mise à jour (304 fichiers vérifiés) et
+retestée avec son Python KiCad 3.13. KRT 0.23.1 reste intact ; les quatre
+optimisations sont incluses. Aucun ZIP. Lire le
+[diagnostic, preuves et limites](reports/IPC_5583_2026_10_21.md).
+Le clic de barre d'outils et le remplissage d'une zone réelle ne font pas
+partie de cette recette ; G5 ne remplace pas un DRC KiCad complet.
+
 ## 21 octobre 2026 — quatre optimisations de performance
 
 Le cycle initial IPC partage un seul instantané, purgé avant la boucle du
@@ -16,15 +39,13 @@ corridor et 3,7 % avec corridor. 404 tests ciblés passent, avec un xfail connu
 et un test de présentation préexistant exclu. Lire le
 [rapport et ses limites](reports/GLOSS_IPC_PERFORMANCE_2026_10_21.md).
 
-Attention : la nightly installée est désormais `10.99.0-5583-g6a6fb7561d`.
-Elle refuse la lecture des classes par kicad-python 0.8 avec
-`the requested project  is not open`, avant comme après ces optimisations.
-La conversion de l'instantané réel conserve les 31 pads, mais l'import complet
-et l'application IPC ne sont pas revalidés sur cette version. La compatibilité
-avec cette nouvelle nightly reste à traiter ; ne pas extrapoler la validation
-du 19 octobre. Ne pas supprimer les contrôles de règles pour la contourner.
-Les optimisations sont intégrées au dépôt ; le plugin installé le 19 octobre
-n'est pas redéployé sur cette nightly pendant cette intervention.
+État historique à la fin de cette étape : la nightly `10.99.0-5583-g6a6fb7561d`
+refusait la lecture des classes par kicad-python 0.8 avec
+`the requested project  is not open`, avant comme après les optimisations.
+La conversion conservait les 31 pads mais l'import complet, l'application
+et le déploiement restaient bloqués. La compatibilité et le déploiement sont
+désormais traités dans l'étape ci-dessus ; conserver ce constat comme origine
+du diagnostic. Aucun contrôle de règles n'a été supprimé pour contourner le refus.
 
 ## 19 octobre 2026 — IPC, développement 0.1.5
 

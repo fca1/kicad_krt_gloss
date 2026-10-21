@@ -2,5 +2,9 @@ ipc_protocol.pb contains generated KiCad protocol descriptors.
 Copyright The KiCad Developers. GPL-3.0-or-later.
 Source: https://gitlab.com/kicad/code/kicad/-/tree/dcadf9baa30d43d7d1b3d0342345f05ec0da26e1/api/proto
 Generated using kicad-python 87b945a0d56b26a78bf547db9771ff9bf3a057ea.
+Descriptor inputs: board/board_commands.proto and common/commands/project_commands.proto,
+including their imports, from the same KiCad source commit above.
+The project commands supply explicit GetNetClasses project targeting for the
+private adapter; kicad-python 0.8.0 and its global descriptor pool are unchanged.
 Google Protocol Buffers descriptors: Copyright Google LLC, BSD-3-Clause.
 All other files retain their existing license notices.

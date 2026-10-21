@@ -1,11 +1,12 @@
 """Read live KiCad rules, then let the unmodified KRT parser interpret them.
 
-The private descriptor pool extends kicad-python 0.8 with KiCad 11 rule reads.
+The private descriptor pool extends kicad-python 0.8 with KiCad 11 rule/project reads.
 ipc_protocol.pb is generated from KiCad dcadf9baa30d43d7d1b3d0342345f05ec0da26e1
 api/proto (GPL-3.0-or-later), not from KRT. No global protobuf registrations.
 """
 from functools import lru_cache
 import json
+import os
 from pathlib import Path
 
 
@@ -29,6 +30,27 @@ def read_rules(board, custom=False):
     command = cls(request)()
     command.board.ParseFromString(board.document.SerializeToString())
     return board.client.send(command, cls(response))
+
+
+def read_net_classes(board):
+    """Address the current project explicitly, without altering the SDK pool.
+
+    KiCad 10.99-5583 advertises GetProjectDirectory (without a final separator)
+    but validates this request against GetProjectPath (with that separator).
+    Keep the document intact and normalize only the project request's path.
+    """
+    from google.protobuf.message_factory import GetMessageClass
+    from kipy.project_types import NetClass
+    from kipy.proto.common.commands.project_commands_pb2 import NetClassesResponse
+    project = board.document.project
+    if not project.name or not project.path or not os.path.isabs(project.path):
+        raise RuntimeError('IPC board has no complete project identity; open a saved project')
+    request = GetMessageClass(protocol().FindMessageTypeByName(
+        'kiapi.common.commands.GetNetClasses'))()
+    request.project.ParseFromString(project.SerializeToString())
+    request.project.path = os.path.join(os.path.normpath(project.path), '')
+    response = board.client.send(request, NetClassesResponse)
+    return [NetClass(item) for item in response.net_classes]
 
 
 def enum_name(message, field, value):
@@ -128,7 +150,7 @@ def project_settings(board):
     rules = {key: getattr(constraints, field).value_nm / 1e6
              for field, key in MINIMUMS.items() if constraints.HasField(field)}
     classes = []
-    for cls in board.get_project().get_net_classes():
+    for cls in read_net_classes(board):
         row = {'name': cls.name, 'priority': cls.priority}
         for key in ('clearance', 'track_width', 'via_diameter', 'via_drill',
                     'diff_pair_gap', 'diff_pair_via_gap', 'microvia_diameter', 'microvia_drill'):
