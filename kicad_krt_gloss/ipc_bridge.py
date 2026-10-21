@@ -4,6 +4,7 @@ KRT reads a private snapshot including live project rules. No source save,
 SWIG objects, net-code assumptions, or selection changes are used here.
 """
 from collections import defaultdict
+from contextlib import contextmanager
 import json
 from pathlib import Path
 import tempfile
@@ -28,6 +29,8 @@ class IpcBoardBridge:
         self.temporary = tempfile.TemporaryDirectory(prefix='krg-ipc-')
         self.path = Path(self.temporary.name) / 'snapshot.kicad_pcb'
         self.data = None
+        self._initial_import_active = False
+        self._initial_data = None
 
     def close(self):
         self.temporary.cleanup()
@@ -38,11 +41,31 @@ class IpcBoardBridge:
     def refresh(self):
         pass  # IPC commit publication refreshes the editor.
 
+    @contextmanager
+    def initial_import(self):
+        """Share the initial import only until Run returns, before the event loop.
+
+        Selection inspection, dialog preparation and initial branch capture read
+        the same snapshot. Later dialog actions always import again. Publication
+        still verifies the live state, including for the direct single-net run.
+        """
+        if self._initial_import_active:
+            raise RuntimeError('IPC opening is already in progress')
+        self._initial_import_active = True
+        self._initial_data = None
+        try:
+            yield
+        finally:
+            self._initial_data = None
+            self._initial_import_active = False
+
     def _state(self):
         project, dru = project_settings(self.board)
         return self.board.get_as_string(), json.dumps(project, sort_keys=True), dru
 
     def build_pcb_data(self, board):
+        if self._initial_import_active and self._initial_data is not None:
+            return self._initial_data
         from dgloss.krt_api import parse_kicad_pcb
         from .ipc_snapshot import normalize_snapshot
         state = self._state()
@@ -58,6 +81,8 @@ class IpcBoardBridge:
             raise RuntimeError('Board or rules changed during IPC import; retry Gloss')
         self.state, self.data = state, data
         self.import_index = self.branch_track_index(board, data)
+        if self._initial_import_active:
+            self._initial_data = data
         return data
 
     def _track_key(self, track):
@@ -81,7 +106,7 @@ class IpcBoardBridge:
         return {track.net.name for track in board.get_selection() if isinstance(track, Track)}
 
     def selected_net_ids(self, board):
-        if self.data is None:
+        if self.data is None or (self._initial_import_active and self._initial_data is None):
             self.build_pcb_data(board)
         return sorted(self.net_ids[name] for name in self.selected_net_names(board)
                       if name in self.net_ids and self.net_ids[name])

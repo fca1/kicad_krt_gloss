@@ -53,9 +53,23 @@ contrôle les imports et les accès natifs identifiés sur les modules de produc
 
 Les préparations de clearance sont dans `clearance_preparation.py`, derrière
 `KrtClearanceAdapter`. Pads/règles fixes : arêtes et règles préparées par couche.
+Les rectangles des pads polygonaux couvrent tous leurs composants, indépendamment
+du centre déclaré du pad. Les capsules KRT des perçages exposés et leurs bornes
+sont préparées une fois par adaptateur, pour la durée d'une action. Les trous
+oblongs, décentrés ou dépassant leur anneau de cuivre gardent leur géométrie KRT.
+Pour les segments, la présélection inclut la demi-largeur réelle, le rayon des
+capsules et les clearances applicables, y compris les overrides locaux.
+Les bornes sont arrondies vers l'extérieur, avec une marge numérique KRT.
+Des bornes ou requêtes non finies, des coordonnées extrêmes ou un contour
+inexploitable conservent le calcul complet. Les obstacles retenus passent
+toujours par les distances exactes KRT ; seules les décisions au seuil sont
+conservées, pas les distances intermédiaires des obstacles écartés. Le helper
+des perçages appelé sans demi-largeur continue de fournir la distance complète.
+
 Cuivre mobile : rectangles englobants reconstruits à chaque nouvelle liste de
 segments. Les prédicats KRT des vias restent dans les méthodes `_exact`, après
-présélection conservatrice cuivre/perçages ; les pads sont tous conservés.
+présélection conservatrice cuivre/perçages ; ces chemins de vias conservent
+tous les pads.
 Les premières distances bloquantes interrompent les contrôles inutiles.
 Les références électriques restent en cache uniquement pour les nets inchangés
 sans zone ; chaque modification invalide tous les nets possédant une zone.
@@ -98,7 +112,7 @@ caches et le périmètre modifiable. La carte d'obstacles sur grille est constru
 Avant cette construction, les notifications de rafraîchissement ne construisent
 rien. Ensuite, les cartes sont rafraîchies une fois par net modifié dans chaque
 étape. Les étapes purement géométriques ne demandent pas de carte sur grille.
-Le cache des distances exactes aux pads, fixes pendant l'action, conserve au
+Le cache des distances aux pads, fixes pendant l'action, conserve au
 maximum 32 768 entrées pour limiter les évictions entre passes G4.
 KRT propose les fusions sur une copie ; seuls
 les remplacements prouvés préserver le support cuivre et la connectivité sont

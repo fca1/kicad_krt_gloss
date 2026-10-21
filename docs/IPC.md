@@ -22,6 +22,11 @@ and never guesses which of multiple open editors to modify.
 The rule-reading commands require a sufficiently recent 10.99 / 11 build.
 Version 10.99.0-2520-g89476220a8 is the validation target. Capability failures
 stop the action; this is not a claim of support for every nightly build.
+On 2026-10-21 the installed build was `10.99.0-5583-g6a6fb7561d`:
+both the baseline and optimized plugin fail at kicad-python 0.8's empty
+`GetNetClasses` request with `the requested project  is not open`. Snapshot
+normalization was checked, but complete import/application remains unvalidated
+on that build. See the [performance report](reports/GLOSS_IPC_PERFORMANCE_2026_10_21.md).
 The historical SWIG sources remain for comparison and KiCad 10 regression tests;
 the IPC manifest and distribution metadata select the external IPC action.
 
@@ -31,8 +36,17 @@ the IPC manifest and distribution metadata select the external IPC action.
   Net/branch highlighting is unavailable, as explicitly accepted by the user.
 - A fresh live snapshot and live minimums/net classes feed KRT. UUIDs and net
   names identify objects; IPC net codes are not assumed to match the parser.
+- During the initial `Run`, selection inspection, dialog preparation and
+  initial branch capture share one consistent snapshot. This reuse ends when
+  `Run` returns, including on failure, before the dialog event loop begins.
+  Every subsequent Add, Replace or Gloss action imports the live board again.
+  The direct single-net run and dialog runs retain the live-state checks
+  before publication; reuse never authorizes applying a stale result.
 - KiCad 11 footprint `transform` poses are converted in the private snapshot
   only when scale is exactly (1, 1). Scaled or unknown transforms are refused.
+  Converted poses and untouched text are assembled as fragments in one pass,
+  avoiding a full snapshot copy for every footprint. Pose validation and the
+  refusal of unsupported transforms remain unchanged.
 - KiCad's custom-rule IPC omits arbitrary layer masks. The sibling saved
   `.kicad_dru` remains authoritative for their syntax, as on the native path.
   The adapter compares names, conditions, constraints, severity and represented

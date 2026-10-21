@@ -1,5 +1,31 @@
 # Reprendre Smooth Gloss KRT — branche gloss_only
 
+## 21 octobre 2026 — quatre optimisations de performance
+
+Le cycle initial IPC partage un seul instantané, purgé avant la boucle du
+dialogue ; les actions ultérieures importent à nouveau. La normalisation des
+poses assemble des fragments. Les pads polygonaux et perçages fixes reçoivent
+une présélection conservatrice avant les distances KRT inchangées.
+KRT reste intact en 0.23.1 ; aucun cache supplémentaire de cuivre mobile ni
+optimisation de topologie n'est ajouté.
+
+36 exécutions PACK0, dix configurations avec/sans corridor : géométrie exacte
+et statistiques hors temps identiques, G5 valide partout. Azukar gagne 14,3 %
+sans corridor en médiane de trois essais ; le cumul PACK0 gagne 6,1 % sans
+corridor et 3,7 % avec corridor. 404 tests ciblés passent, avec un xfail connu
+et un test de présentation préexistant exclu. Lire le
+[rapport et ses limites](reports/GLOSS_IPC_PERFORMANCE_2026_10_21.md).
+
+Attention : la nightly installée est désormais `10.99.0-5583-g6a6fb7561d`.
+Elle refuse la lecture des classes par kicad-python 0.8 avec
+`the requested project  is not open`, avant comme après ces optimisations.
+La conversion de l'instantané réel conserve les 31 pads, mais l'import complet
+et l'application IPC ne sont pas revalidés sur cette version. La compatibilité
+avec cette nouvelle nightly reste à traiter ; ne pas extrapoler la validation
+du 19 octobre. Ne pas supprimer les contrôles de règles pour la contourner.
+Les optimisations sont intégrées au dépôt ; le plugin installé le 19 octobre
+n'est pas redéployé sur cette nightly pendant cette intervention.
+
 ## 19 octobre 2026 — IPC, développement 0.1.5
 
 La cible courante est l'action externe IPC pour KiCad 10.99/11, validée sur

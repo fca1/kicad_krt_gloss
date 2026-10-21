@@ -62,9 +62,28 @@ def _exact_foreign_segment_distance(pcb_data, net_id, x1, y1, x2, y2,
     return float(np.min(distance - excess))
 
 
-def _exact_foreign_hole_distance(pcb, net_id, x1, y1, x2, y2, clearance):
-    nid, ax, ay, bx, by, radius, local = _foreign_hole_capsules(pcb)
+def _exact_foreign_hole_distance(pcb, net_id, x1, y1, x2, y2, clearance,
+                                 *, prepared_holes=None, half_width=None):
+    arrays = (prepared_holes[0] if prepared_holes is not None
+              else _foreign_hole_capsules(pcb))
+    nid, ax, ay, bx, by, radius, local = arrays
     mask = nid != net_id
+    if not mask.any():
+        return float('inf')
+    if prepared_holes is not None and half_width is not None:
+        from .clearance_preparation import candidate_bounds, FILTER_COORD_LIMIT
+        query = candidate_bounds(x1, y1, x2, y2, half_width+clearance)
+        if query is not None:
+            bounds, valid = prepared_holes[1:]
+            # Each capsule's own local override must survive the broad phase.
+            excess = np.maximum(0., local-clearance)
+            valid = valid & np.isfinite(excess) & (excess <= FILTER_COORD_LIMIT)
+            with np.errstate(over='ignore', invalid='ignore'):
+                near = ((bounds[2] >= np.nextafter(query[0]-excess, -np.inf)) &
+                        (bounds[0] <= np.nextafter(query[2]+excess, np.inf)) &
+                        (bounds[3] >= np.nextafter(query[1]-excess, -np.inf)) &
+                        (bounds[1] <= np.nextafter(query[3]+excess, np.inf)))
+            mask &= near | ~valid
     if not mask.any():
         return float('inf')
     distance = _seg_capsule_axis_dist(x1, y1, x2, y2, ax[mask], ay[mask], bx[mask], by[mask])
@@ -146,6 +165,10 @@ class KrtClearanceAdapter:
     def _uncached_pad_distance(self, net_id, x1, y1, x2, y2, layer, effective, half_width):
         from .clearance_preparation import prepared_pad_distance
         return prepared_pad_distance(self, net_id, x1, y1, x2, y2, layer, effective, half_width)
+
+    def _prepared_holes(self):
+        from .clearance_preparation import prepared_holes
+        return prepared_holes(self)
 
     def _collect_keepouts(self, for_vias=False):
         keepouts = []
@@ -263,7 +286,7 @@ class KrtClearanceAdapter:
             if net_id != template.net_id and any(
                     poly and inside(poly[0]) for poly in pad.polygons):
                 return False
-        nid, ax, ay, _bx, _by, _r, _lc = _foreign_hole_capsules(self.pcb)
+        nid, ax, ay, _bx, _by, _r, _lc = self._prepared_holes()[0]
         if enclosed(nid, ax, ay):
             return False
         for rings, _bounds, layers in self.keepouts:

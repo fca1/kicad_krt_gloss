@@ -10,7 +10,8 @@ POSE = re.compile(r'\(transform\s*\(translate\s+' + NUMBER + r'\s+' + NUMBER +
 
 def normalize_snapshot(text):
     from dgloss.krt_api import iter_footprint_blocks
-    for start, end, block, reference, _ in reversed(list(iter_footprint_blocks(text))):
+    parts, offset = [], 0
+    for start, end, block, reference, _ in iter_footprint_blocks(text):
         if '(transform' not in block:
             continue
         matches = list(POSE.finditer(block))
@@ -21,6 +22,9 @@ def normalize_snapshot(text):
         if not all(map(math.isfinite, (x, y, angle, sx, sy))) or (sx, sy) != (1., 1.):
             raise RuntimeError(f'{reference}: scaled footprints are not supported by KRT 0.23.1')
         pose = '(at ' + ' '.join(match.groups()[:3]) + ')'
-        translated = block[:match.start()] + pose + block[match.end():]
-        text = text[:start] + translated + text[end:]
-    return text
+        parts.extend((text[offset:start], block[:match.start()], pose, block[match.end():]))
+        offset = end
+    if not parts:
+        return text
+    parts.append(text[offset:])
+    return ''.join(parts)

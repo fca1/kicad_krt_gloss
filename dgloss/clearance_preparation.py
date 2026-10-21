@@ -3,8 +3,63 @@
 Integrated from the validated performance prototype. KRT predicates remain
 unchanged; pads/rules are fixed per run, copper arrays follow list revisions.
 """
+import math
 import numpy as np
 from . import krt_clearance as clearance, krt_sweep as sweep
+
+
+# Outside this range, rounding can consume KRT's nanometre comparison epsilon.
+# This only disables the broad phase; the original exact calculation remains.
+FILTER_COORD_LIMIT = clearance.FP_EPS_MM / (32 * np.finfo(float).eps)
+
+
+def candidate_bounds(x1, y1, x2, y2, reach):
+    values = (x1, y1, x2, y2, reach)
+    if reach < 0 or not all(math.isfinite(v) and abs(v) <= FILTER_COORD_LIMIT
+                            for v in values):
+        return None
+    margin = math.nextafter(reach + clearance.FP_EPS_MM, math.inf)
+    return (math.nextafter(min(x1, x2)-margin, -math.inf),
+            math.nextafter(min(y1, y2)-margin, -math.inf),
+            math.nextafter(max(x1, x2)+margin, math.inf),
+            math.nextafter(max(y1, y2)+margin, math.inf))
+
+
+def polygon_bounds(polygons):
+    """Enclose every component; malformed/extreme outlines use the exact path."""
+    try:
+        points = [point for ring in polygons for point in ring]
+        if not points or any(not ring for ring in polygons):
+            return None
+        if any(len(point) != 2 or not all(
+                math.isfinite(v) and abs(v) <= FILTER_COORD_LIMIT for v in point)
+                for point in points):
+            return None
+        xs, ys = zip(*points)
+        return (math.nextafter(min(xs), -math.inf),
+                math.nextafter(min(ys), -math.inf),
+                math.nextafter(max(xs), math.inf),
+                math.nextafter(max(ys), math.inf))
+    except (TypeError, ValueError, OverflowError):
+        return None
+
+
+def prepared_holes(self):
+    """KRT's fixed drill capsules, retained for this adapter's single action."""
+    if '_fixed_holes' not in self.__dict__:
+        arrays = clearance._foreign_hole_capsules(self.pcb)
+        _nid, ax, ay, bx, by, radius, local = arrays
+        valid = np.ones(len(ax), dtype=bool)
+        for values in (ax, ay, bx, by, radius, local):
+            valid &= np.isfinite(values) & (np.abs(values) <= FILTER_COORD_LIMIT)
+        valid &= radius >= 0
+        with np.errstate(over='ignore', invalid='ignore'):
+            bounds = (np.nextafter(np.minimum(ax, bx)-radius, -np.inf),
+                      np.nextafter(np.minimum(ay, by)-radius, -np.inf),
+                      np.nextafter(np.maximum(ax, bx)+radius, np.inf),
+                      np.nextafter(np.maximum(ay, by)+radius, np.inf))
+        self._fixed_holes = arrays, bounds, valid
+    return self._fixed_holes
 
 
 def early_segment(self, seg):
@@ -20,7 +75,8 @@ def early_segment(self, seg):
             prepared_copper=self._prepared_copper(seg.layer), half_width=seg.width/2) >= required:
         return False
     if not clearance._exact_foreign_hole_distance(self.pcb, seg.net_id,
-            seg.start_x, seg.start_y, seg.end_x, seg.end_y, self.npth_clearance
+            seg.start_x, seg.start_y, seg.end_x, seg.end_y, self.npth_clearance,
+            prepared_holes=self._prepared_holes(), half_width=seg.width/2
             ) >= self.npth_clearance + seg.width / 2 - clearance.FP_EPS_MM:
         return False
     return self._edge_clears(seg) and self._keepouts_clear(seg)
@@ -37,8 +93,10 @@ def prepared_pad_distance(self, net_id, x1, y1, x2, y2, layer, effective, half_w
         ax = cx + corners_x*c - corners_y*s
         ay = cy + corners_x*s + corners_y*c
         cache[layer] = arrays, (ix, iy, ax, ay, np.roll(ax, -1, axis=0),
-                               np.roll(ay, -1, axis=0)), {}
-    arrays, geometry, rule_cache = cache[layer]
+                               np.roll(ay, -1, axis=0)), {}, [
+            (foreign_net, pad, polygon_bounds(pad.polygons))
+            for foreign_net, pad in custom]
+    arrays, geometry, rule_cache, custom_bounds = cache[layer]
     nid, cx, cy, hx, hy, radius, c, s, ex, ey, local, custom = arrays
     if effective not in rule_cache:
         rules = np.maximum(effective, local)
@@ -61,10 +119,14 @@ def prepared_pad_distance(self, net_id, x1, y1, x2, y2, layer, effective, half_w
             distance = np.where((np.abs(lx) <= ix[near]) & (np.abs(ly) <= iy[near]), 0., distance)
         distance = np.maximum(0., distance-radius[near])
         best = float(np.min(distance-(rules[near]-effective)))
-    for foreign_net, pad in custom:
+    for foreign_net, pad, bounds in custom_bounds:
         if foreign_net != net_id:
             rule = max(effective, getattr(pad, 'local_clearance', 0.) or 0.,
                        (self.net_clearances or {}).get(foreign_net, effective))
+            query = candidate_bounds(x1, y1, x2, y2, rule+half_width) if bounds else None
+            if query is not None and (bounds[2] < query[0] or bounds[0] > query[2]
+                                      or bounds[3] < query[1] or bounds[1] > query[3]):
+                continue
             best = min(best, sweep.polygon_axis_distance(x1, y1, x2, y2, pad.polygons)
                        -(rule-effective))
     return best

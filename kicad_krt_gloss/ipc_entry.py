@@ -28,7 +28,8 @@ def main():
         branches.activate(action)
         plugin = action.KiCadKrtGlossPlugin()
         plugin.__class__._last_log = 'IPC mode: branch selection is available; branch highlighting is unavailable.\n'
-        plugin.Run()
+        with bridge.initial_import():
+            plugin.Run()
         if plugin._settings_dialog is not None:
             app.MainLoop()
     except Exception as exc:

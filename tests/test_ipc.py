@@ -27,6 +27,184 @@ def test_scaled_footprints_are_refused(scale):
         normalize_snapshot(f'(kicad_pcb (footprint "x" (transform (translate 1 2) (rotate 30) (scale {scale}))))')
 
 
+def test_multiple_poses_preserve_interleaved_legacy_footprints_and_quoted_parentheses():
+    pose_a = '(transform (translate 12.30 -4.56) (rotate 3e1) (scale 1 1))'
+    pose_b = '(transform (translate -5 6) (rotate -90) (scale 1.0 1e0))'
+    text = (f'(kicad_pcb (footprint "a" {pose_a} (property "Value" "part (A)"))\n'
+            '(segment (start 1 2) (end 3 4))\n'
+            '(footprint "legacy" (at 7 8 10) (pad "1" (at 0 0)))\n'
+            f'(footprint "b" {pose_b} (pad "2" (at 1 2)))\n(end))')
+    expected = text.replace(pose_a, '(at 12.30 -4.56 3e1)').replace(pose_b, '(at -5 6 -90)')
+    assert normalize_snapshot(text) == expected
+
+
+@pytest.mark.parametrize('pose', [
+    '(transform (translate 1 2) (rotate 30) (scale 1 1)) '
+    '(transform (translate 3 4) (rotate 60) (scale 1 1))',
+    '(transform (translate 1 2) (rotate 30))',
+    '(transform (translate 1e999 2) (rotate 30) (scale 1 1))',
+])
+def test_malformed_pose_after_valid_footprint_still_refused(pose):
+    text = ('(kicad_pcb (footprint "valid" '
+            '(transform (translate 1 2) (rotate 30) (scale 1 1))) '
+            f'(footprint "invalid" {pose}))')
+    with pytest.raises(RuntimeError, match='not supported|unsupported'):
+        normalize_snapshot(text)
+
+
+@pytest.fixture
+def import_cycle(monkeypatch):
+    """Count real adapter imports while supplying an editor-free snapshot."""
+    from dgloss import krt_api
+    calls = {'states': 0, 'parsed': [], 'tracks': 0, 'vias': 0}
+    live = ['original board', '{}', '(version 1)']
+
+    def items(kind):
+        calls[kind] += 1
+        return []
+
+    board = SimpleNamespace(get_tracks=lambda: items('tracks'), get_vias=lambda: items('vias'))
+    bridge = IpcBoardBridge(SimpleNamespace(get_board=lambda: board))
+
+    def state():
+        calls['states'] += 1
+        return tuple(live)
+
+    def parse(path):
+        text = Path(path).read_text(encoding='utf-8')
+        calls['parsed'].append(text)
+        return SimpleNamespace(nets={len(calls['parsed']): SimpleNamespace(name=text)}, segments=[])
+
+    monkeypatch.setattr(krt_api, 'parse_kicad_pcb', parse)
+    monkeypatch.setattr(bridge, '_state', state)
+    monkeypatch.setattr(bridge, 'selected_net_names', lambda _: {live[0]})
+    try:
+        yield bridge, board, live, calls
+    finally:
+        bridge.close()
+
+
+def test_initial_cycle_shares_one_import_then_each_dialog_action_is_fresh(import_cycle):
+    bridge, board, live, calls = import_cycle
+    with bridge.initial_import():
+        assert bridge.selected_net_ids(board) == [1]
+        first = bridge.build_pcb_data(board)
+        assert bridge.build_pcb_data(board) is first
+        assert calls == {'states': 2, 'parsed': ['original board'], 'tracks': 1, 'vias': 1}
+    assert bridge._initial_data is None and not bridge._initial_import_active
+    live[:] = ['changed board', '{"rules": "changed"}', '(version 1) ; changed']
+    second = bridge.build_pcb_data(board)
+    third = bridge.build_pcb_data(board)
+    assert second is not first and third is not second
+    assert bridge.state == tuple(live)
+    assert calls['states'] == 6
+    assert calls['parsed'] == ['original board', 'changed board', 'changed board']
+
+
+def test_second_initial_cycle_reloads_net_ids_and_never_reuses_mutated_data(import_cycle):
+    bridge, board, live, calls = import_cycle
+    with bridge.initial_import():
+        assert bridge.selected_net_ids(board) == [1]
+        first = bridge.data
+        first.segments.append('engine mutation')
+    live[0] = 'new net name'
+    with bridge.initial_import():
+        assert bridge.selected_net_ids(board) == [2]
+        assert bridge.data is not first
+        assert bridge.data.segments == []
+        assert bridge.net_ids == {'new net name': 2}
+    assert bridge._initial_data is None and not bridge._initial_import_active
+    assert calls['states'] == 4
+
+
+def test_initial_cycle_exception_clears_reuse(import_cycle):
+    bridge, board, _live, calls = import_cycle
+    with pytest.raises(ValueError, match='cancel opening'):
+        with bridge.initial_import():
+            first = bridge.build_pcb_data(board)
+            raise ValueError('cancel opening')
+    assert bridge._initial_data is None and not bridge._initial_import_active
+    assert bridge.build_pcb_data(board) is not first
+    assert calls['states'] == 4
+
+
+def test_initial_cycle_keeps_torn_import_guard(import_cycle, monkeypatch):
+    bridge, board, live, _calls = import_cycle
+    states = iter([tuple(live), ('modified during import', live[1], live[2])])
+    monkeypatch.setattr(bridge, '_state', lambda: next(states))
+    with pytest.raises(RuntimeError, match='during IPC import'):
+        with bridge.initial_import():
+            bridge.build_pcb_data(board)
+    assert bridge._initial_data is None and not bridge._initial_import_active
+
+
+@pytest.mark.parametrize('changed_field', [0, 1, 2])
+def test_reused_opening_snapshot_still_rejects_changed_board_rules_or_dru(import_cycle, changed_field):
+    bridge, board, live, _calls = import_cycle
+    with bridge.initial_import():
+        first = bridge.build_pcb_data(board)
+        live[changed_field] += ' changed'
+        assert bridge.build_pcb_data(board) is first
+        outcome = SimpleNamespace(stats={'g5_valid': True}, input_strip_segments=[], changes={})
+        with pytest.raises(RuntimeError, match='changed during Gloss'):
+            bridge.apply_outcome(board, [], outcome)
+
+
+@pytest.mark.parametrize('mode', ['dialog', 'direct', 'no-op', 'failure'])
+def test_entry_releases_initial_snapshot_before_event_loop_or_exit(import_cycle, monkeypatch, mode):
+    import importlib.util
+    import sys
+    import types
+    import kipy
+    bridge, board, live, calls = import_cycle
+    path = Path(__file__).resolve().parents[1] / 'kicad_krt_gloss/ipc_entry.py'
+    spec = importlib.util.spec_from_file_location('_entry_scope_test', path)
+    entry = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(entry)
+    errors, event_loops = [], []
+
+    class Plugin:
+        _settings_dialog = object() if mode == 'dialog' else None
+
+        def Run(self):
+            assert bridge.selected_net_ids(board) == [1]
+            first = bridge.build_pcb_data(board)
+            if mode == 'dialog':
+                assert bridge.build_pcb_data(board) is first  # Initial EB capture.
+            assert len(calls['parsed']) == 1
+            if mode == 'no-op':
+                outcome = SimpleNamespace(stats={'g5_valid': True}, input_strip_segments=[], changes={})
+                assert bridge.apply_outcome(board, [], outcome) == (0, 0, 0, None)
+            if mode == 'failure':
+                raise ValueError('opening failed')
+
+    def main_loop():
+        assert bridge._initial_data is None and not bridge._initial_import_active
+        event_loops.append(True)
+        live[0] = 'changed after dialog opened'
+        bridge.build_pcb_data(board)
+        assert calls['parsed'] == ['original board', live[0]]
+
+    modules = {
+        '_krg_ipc.runtime': SimpleNamespace(configure_krt_runtime=lambda: None),
+        '_krg_ipc.ipc_bridge': SimpleNamespace(IpcBoardBridge=lambda _: bridge),
+        '_krg_ipc.action_plugin': SimpleNamespace(KiCadKrtGlossPlugin=Plugin),
+        '_krg_ipc.branch_selection_prototype': SimpleNamespace(activate=lambda _: None),
+    }
+    entry.importlib = SimpleNamespace(import_module=modules.__getitem__)
+    monkeypatch.setitem(sys.modules, 'wx', SimpleNamespace(
+        App=lambda _: SimpleNamespace(MainLoop=main_loop),
+        MessageBox=lambda *args: errors.append(args), OK=1, ICON_ERROR=2))
+    monkeypatch.setitem(sys.modules, '_krg_ipc', types.ModuleType('_krg_ipc'))
+    monkeypatch.setattr(kipy, 'KiCad', lambda **_: object())
+    monkeypatch.setenv('KICAD_API_SOCKET', 'test-explicit-socket')
+    monkeypatch.setenv('KRG_IPC', '1')
+    assert entry.main() == (1 if mode == 'failure' else 0)
+    assert bridge._initial_data is None and not bridge._initial_import_active
+    assert len(event_loops) == (1 if mode == 'dialog' else 0)
+    assert bool(errors) == (mode == 'failure')
+
+
 def test_live_rule_units_and_condition_are_preserved():
     response = message('CustomRulesResponse')
     response.status = 2

@@ -1,0 +1,552 @@
+{
+  "baseline_commit": "f587864",
+  "date": "2026-10-21",
+  "python": "3.13.2 (tags/v3.13.2:4f8bb39, Feb  4 2025, 15:23:48) [MSC v.1942 64 bit (AMD64)]",
+  "platform": "Windows-11-10.0.26300-SP0",
+  "source_sha256": {
+    "before": "3787730f3c13f5ac3fe5720de86dbd2aadf1bff8506c73530fad8d642c92553d",
+    "after": "73f016720ea8d65ed57d6e2c36696fbdf4adbdb0283c80507f318cf79575e6c9"
+  },
+  "krt_commit": "295f9ee197517e8323726853361eb137cc08ba9e",
+  "krt_sources_sha256": "05bf751647fa52ab471781b1a3257b4f79a5d1ef6d9f1ee4bf1fe17b64b2f316",
+  "rust_sha256": "0c60ea2062a3023795db92bceae54e7f9dec0bf3b34bb86bda5908d651e18aad",
+  "budget_seconds": 600,
+  "g4_max_passes": 1,
+  "mobile_vias": true,
+  "excluded_preliminary_trials": [
+    "azukar-before-1.json",
+    "azukar-after-1.json"
+  ],
+  "exclusion_reason": "Preliminary after run used an intermediate code revision; before run lacks source hashes.",
+  "runs": 36,
+  "rows": [
+    {
+      "board": "azukar_fpga",
+      "corridor": false,
+      "records": {
+        "before": [
+          {
+            "trial": 2,
+            "seconds": 14.617598500000895,
+            "load_seconds": 0.31538089999958174
+          },
+          {
+            "trial": 3,
+            "seconds": 14.779690799998207,
+            "load_seconds": 0.3289814000017941
+          },
+          {
+            "trial": 4,
+            "seconds": 15.210145699998975,
+            "load_seconds": 0.32060989999808953
+          }
+        ],
+        "after": [
+          {
+            "trial": 2,
+            "seconds": 12.661181800001941,
+            "load_seconds": 0.32351070000004256
+          },
+          {
+            "trial": 3,
+            "seconds": 12.583615300001838,
+            "load_seconds": 0.31707099999766797
+          },
+          {
+            "trial": 4,
+            "seconds": 12.929997700000968,
+            "load_seconds": 0.3204157000000123
+          }
+        ]
+      },
+      "medians": {
+        "before": 14.779690799998207,
+        "after": 12.661181800001941
+      },
+      "reduction_percent": 14.333919624330182,
+      "geometry_sha256": "e111e58162c36f646700833579f2870cefcddc7a56c0e90f6c5abbd1e4feca21",
+      "inputs": {
+        "C:\\Users\\frant\\Documents\\kicad_track_gloss_stress\\sources\\set23\\azukar_fpga.kicad_pcb": "8534f62e77e04c7169aa2f3ffaee795f1da493b7d1de4813620cde6f770d13fe",
+        "C:\\Users\\frant\\Documents\\kicad_track_gloss_stress\\sources\\set23\\azukar_fpga.kicad_pro": "14b6f9588dcd4eede566ebe761e81b577ebe0f4d089ab242eac2e93ffef4bdf5"
+      },
+      "stable_stats_sha256": "2d86c65c1feb7c76493eaeb8fe02dcd9b1845d59af5472bd35bfba83f90e3e62",
+      "saved_mm": 136.1458,
+      "g5_valid": true,
+      "budget_expired": false,
+      "exact_geometry_and_stats_equal": true
+    },
+    {
+      "board": "azukar_fpga",
+      "corridor": true,
+      "records": {
+        "before": [
+          {
+            "trial": 1,
+            "seconds": 9.172768299999007,
+            "load_seconds": 0.3185492000011436
+          }
+        ],
+        "after": [
+          {
+            "trial": 1,
+            "seconds": 8.459997599999042,
+            "load_seconds": 0.3180438999988837
+          }
+        ]
+      },
+      "medians": {
+        "before": 9.172768299999007,
+        "after": 8.459997599999042
+      },
+      "reduction_percent": 7.770508059165104,
+      "geometry_sha256": "f57c5b2affa855d614102eaddc0eccd9c307c278f0776b20f3247b9e3cd42eed",
+      "inputs": {
+        "C:\\Users\\frant\\Documents\\kicad_track_gloss_stress\\sources\\set23\\azukar_fpga.kicad_pcb": "8534f62e77e04c7169aa2f3ffaee795f1da493b7d1de4813620cde6f770d13fe",
+        "C:\\Users\\frant\\Documents\\kicad_track_gloss_stress\\sources\\set23\\azukar_fpga.kicad_pro": "14b6f9588dcd4eede566ebe761e81b577ebe0f4d089ab242eac2e93ffef4bdf5"
+      },
+      "stable_stats_sha256": "b60a907c8bd1442470aeab37e7b12ae6b59d5d6fef4b6b8e15bbc6647c3ead5d",
+      "saved_mm": 73.377,
+      "g5_valid": true,
+      "budget_expired": false,
+      "exact_geometry_and_stats_equal": true
+    },
+    {
+      "board": "tildagon_base",
+      "corridor": false,
+      "records": {
+        "before": [
+          {
+            "trial": 1,
+            "seconds": 43.65063740000187,
+            "load_seconds": 0.5652565999989747
+          }
+        ],
+        "after": [
+          {
+            "trial": 1,
+            "seconds": 42.60695339999802,
+            "load_seconds": 0.5516864999990503
+          }
+        ]
+      },
+      "medians": {
+        "before": 43.65063740000187,
+        "after": 42.60695339999802
+      },
+      "reduction_percent": 2.390993722359269,
+      "geometry_sha256": "53fda91aae4a8b2192a127c807fc4946a6c67126af6f6220dc978c0bde4e57d5",
+      "inputs": {
+        "C:\\Users\\frant\\Documents\\kicad_track_gloss_stress\\sources\\set15\\tildagon_base.kicad_pcb": "d751d4b1aa20c047496b231f3f0bd5041d5e3c936fafa7fca779883d09777e91",
+        "C:\\Users\\frant\\Documents\\kicad_track_gloss_stress\\sources\\set15\\tildagon_base.kicad_pro": "45e22ccb27fff9709aec4b0abe5522c300bb3dc12b8e16791535704c1c8a4410"
+      },
+      "stable_stats_sha256": "f3d0c6f5103c22cecd36a8c68e134659a842285027287898aa9c1af6b4ff0922",
+      "saved_mm": 118.0965,
+      "g5_valid": true,
+      "budget_expired": false,
+      "exact_geometry_and_stats_equal": true
+    },
+    {
+      "board": "tildagon_base",
+      "corridor": true,
+      "records": {
+        "before": [
+          {
+            "trial": 1,
+            "seconds": 26.58582970000134,
+            "load_seconds": 0.5546671999982209
+          }
+        ],
+        "after": [
+          {
+            "trial": 1,
+            "seconds": 26.297564199998305,
+            "load_seconds": 0.553515999999945
+          }
+        ]
+      },
+      "medians": {
+        "before": 26.58582970000134,
+        "after": 26.297564199998305
+      },
+      "reduction_percent": 1.084282504085332,
+      "geometry_sha256": "be22dd5b6b2e3d4e27dafb67507d0e9f278036642d39f003f11808228a324d9e",
+      "inputs": {
+        "C:\\Users\\frant\\Documents\\kicad_track_gloss_stress\\sources\\set15\\tildagon_base.kicad_pcb": "d751d4b1aa20c047496b231f3f0bd5041d5e3c936fafa7fca779883d09777e91",
+        "C:\\Users\\frant\\Documents\\kicad_track_gloss_stress\\sources\\set15\\tildagon_base.kicad_pro": "45e22ccb27fff9709aec4b0abe5522c300bb3dc12b8e16791535704c1c8a4410"
+      },
+      "stable_stats_sha256": "c74aa9a2376d7d541309b1674122251665d4dcd339aa0af4720effc7c11c021c",
+      "saved_mm": 50.8782,
+      "g5_valid": true,
+      "budget_expired": false,
+      "exact_geometry_and_stats_equal": true
+    },
+    {
+      "board": "micro_dmm",
+      "corridor": false,
+      "records": {
+        "before": [
+          {
+            "trial": 1,
+            "seconds": 0.6033892999985255,
+            "load_seconds": 0.05237040000065463
+          }
+        ],
+        "after": [
+          {
+            "trial": 1,
+            "seconds": 0.5600324000006367,
+            "load_seconds": 0.050408600000082515
+          }
+        ]
+      },
+      "medians": {
+        "before": 0.6033892999985255,
+        "after": 0.5600324000006367
+      },
+      "reduction_percent": 7.185559968994282,
+      "geometry_sha256": "e7fae1873d9510eb5c4647c83b31db6dc78688cae249297b509808a7056afa0f",
+      "inputs": {
+        "C:\\Users\\frant\\Documents\\kicad_track_gloss_stress\\sources\\set23\\micro_dmm.kicad_pcb": "e4c246f797d22445c3821edc722a0a02b92039e07b9f2257c3b2b4c8b34e05a9",
+        "C:\\Users\\frant\\Documents\\kicad_track_gloss_stress\\sources\\set23\\micro_dmm.kicad_pro": "cb63de7119e92da1d8d28c725650b4acb16b7f168e799d630bae901fd75db35c"
+      },
+      "stable_stats_sha256": "5c05df3f701f9de30f54a4ee3d67bd21807a3351fe29ba2d2c1b6bc9a02728b7",
+      "saved_mm": 9.6291,
+      "g5_valid": true,
+      "budget_expired": false,
+      "exact_geometry_and_stats_equal": true
+    },
+    {
+      "board": "micro_dmm",
+      "corridor": true,
+      "records": {
+        "before": [
+          {
+            "trial": 1,
+            "seconds": 0.20202270000299904,
+            "load_seconds": 0.0506835999985924
+          },
+          {
+            "trial": 2,
+            "seconds": 0.20257180000044173,
+            "load_seconds": 0.05107309999948484
+          },
+          {
+            "trial": 3,
+            "seconds": 0.20821710000018356,
+            "load_seconds": 0.05916319999960251
+          }
+        ],
+        "after": [
+          {
+            "trial": 1,
+            "seconds": 0.21029289999933098,
+            "load_seconds": 0.05695879999984754
+          },
+          {
+            "trial": 2,
+            "seconds": 0.19007259999852977,
+            "load_seconds": 0.05017539999971632
+          },
+          {
+            "trial": 3,
+            "seconds": 0.18909290000010515,
+            "load_seconds": 0.05010190000029979
+          }
+        ]
+      },
+      "medians": {
+        "before": 0.20257180000044173,
+        "after": 0.19007259999852977
+      },
+      "reduction_percent": 6.1702566704174515,
+      "geometry_sha256": "9f0ce02336b1b2d76abe934298def22ff60e7dd4727bac9a759a175f0876c945",
+      "inputs": {
+        "C:\\Users\\frant\\Documents\\kicad_track_gloss_stress\\sources\\set23\\micro_dmm.kicad_pcb": "e4c246f797d22445c3821edc722a0a02b92039e07b9f2257c3b2b4c8b34e05a9",
+        "C:\\Users\\frant\\Documents\\kicad_track_gloss_stress\\sources\\set23\\micro_dmm.kicad_pro": "cb63de7119e92da1d8d28c725650b4acb16b7f168e799d630bae901fd75db35c"
+      },
+      "stable_stats_sha256": "342f2d8e4e92d84fac13adc99959ffe3ca07f55911034e3e190518d2c7c7d544",
+      "saved_mm": 3.8484,
+      "g5_valid": true,
+      "budget_expired": false,
+      "exact_geometry_and_stats_equal": true
+    },
+    {
+      "board": "chart_plotter_hat",
+      "corridor": false,
+      "records": {
+        "before": [
+          {
+            "trial": 1,
+            "seconds": 5.328237899997475,
+            "load_seconds": 0.10822940000070957
+          },
+          {
+            "trial": 2,
+            "seconds": 5.082442099999753,
+            "load_seconds": 0.10821619999842369
+          },
+          {
+            "trial": 3,
+            "seconds": 5.172772300000361,
+            "load_seconds": 0.1079728000004252
+          }
+        ],
+        "after": [
+          {
+            "trial": 1,
+            "seconds": 4.574672799997643,
+            "load_seconds": 0.1095210000021325
+          },
+          {
+            "trial": 2,
+            "seconds": 4.512921300000016,
+            "load_seconds": 0.10770580000098562
+          },
+          {
+            "trial": 3,
+            "seconds": 4.529577099998278,
+            "load_seconds": 0.10635000000183936
+          }
+        ]
+      },
+      "medians": {
+        "before": 5.172772300000361,
+        "after": 4.529577099998278
+      },
+      "reduction_percent": 12.434245365914098,
+      "geometry_sha256": "dafc55733a4e88b997d0827236cc122829d5343edb93a9420b75edfd0152ead2",
+      "inputs": {
+        "C:\\Users\\frant\\Documents\\kicad_track_gloss_stress\\sources\\set18\\chart_plotter_hat.kicad_pcb": "e5c8a670216dddc3e3e5e28555eecb3543b1515e7aebbff1785cb5998a1e8598",
+        "C:\\Users\\frant\\Documents\\kicad_track_gloss_stress\\sources\\set18\\chart_plotter_hat.kicad_pro": "c3d9933ccf0c8cb41867325f39f9f5755dcb4dd801e7f2abfc3cacbe28303903"
+      },
+      "stable_stats_sha256": "27c027ebd5e609d23acc29fd26561840f48f60c18c12ccbe76309dde242a487f",
+      "saved_mm": 71.1592,
+      "g5_valid": true,
+      "budget_expired": false,
+      "exact_geometry_and_stats_equal": true
+    },
+    {
+      "board": "chart_plotter_hat",
+      "corridor": true,
+      "records": {
+        "before": [
+          {
+            "trial": 1,
+            "seconds": 3.671465499999613,
+            "load_seconds": 0.10965990000113379
+          },
+          {
+            "trial": 2,
+            "seconds": 3.5631518000009237,
+            "load_seconds": 0.1084813999987091
+          },
+          {
+            "trial": 3,
+            "seconds": 3.5068016999975953,
+            "load_seconds": 0.10449200000221026
+          }
+        ],
+        "after": [
+          {
+            "trial": 1,
+            "seconds": 3.1115979999995034,
+            "load_seconds": 0.1084776999996393
+          },
+          {
+            "trial": 2,
+            "seconds": 3.3504618000006303,
+            "load_seconds": 0.11152640000000247
+          },
+          {
+            "trial": 3,
+            "seconds": 3.114257399996859,
+            "load_seconds": 0.10507370000050287
+          }
+        ]
+      },
+      "medians": {
+        "before": 3.5631518000009237,
+        "after": 3.114257399996859
+      },
+      "reduction_percent": 12.598239569920889,
+      "geometry_sha256": "07e50eec9eb3ff7df4108e536f491deb2ea13801aefaab8ac229d3d06109206f",
+      "inputs": {
+        "C:\\Users\\frant\\Documents\\kicad_track_gloss_stress\\sources\\set18\\chart_plotter_hat.kicad_pcb": "e5c8a670216dddc3e3e5e28555eecb3543b1515e7aebbff1785cb5998a1e8598",
+        "C:\\Users\\frant\\Documents\\kicad_track_gloss_stress\\sources\\set18\\chart_plotter_hat.kicad_pro": "c3d9933ccf0c8cb41867325f39f9f5755dcb4dd801e7f2abfc3cacbe28303903"
+      },
+      "stable_stats_sha256": "3bf851840a716094218228a86489994502f378a552251b7f167680aeb11ae540",
+      "saved_mm": 44.0047,
+      "g5_valid": true,
+      "budget_expired": false,
+      "exact_geometry_and_stats_equal": true
+    },
+    {
+      "board": "environment_sensor",
+      "corridor": false,
+      "records": {
+        "before": [
+          {
+            "trial": 1,
+            "seconds": 3.6918857999989996,
+            "load_seconds": 0.7220581000001403
+          }
+        ],
+        "after": [
+          {
+            "trial": 1,
+            "seconds": 3.4297004000000015,
+            "load_seconds": 0.7267231000005268
+          }
+        ]
+      },
+      "medians": {
+        "before": 3.6918857999989996,
+        "after": 3.4297004000000015
+      },
+      "reduction_percent": 7.101666037423726,
+      "geometry_sha256": "1123a289876fedb8519b2b1ce003f678686dcbb11334cb969cd40c6cc36b9945",
+      "inputs": {
+        "C:\\Users\\frant\\Documents\\kicad_track_gloss_stress\\sources\\set26\\environment_sensor.kicad_pcb": "493b0ee9eb319d68ea5c16f3ffa0dfcabeb585e1d0c35b6c45223b357ea2febc",
+        "C:\\Users\\frant\\Documents\\kicad_track_gloss_stress\\sources\\set26\\environment_sensor.kicad_pro": "006d824ed344dc60ba74d3e0b4df4d326a3d444e3b5fdbfaa0c51b7ade59d9d0"
+      },
+      "stable_stats_sha256": "7de354e51106f97a83f18874a86f0e5e1858ed95975389372b12965684ebafab",
+      "saved_mm": 25.5638,
+      "g5_valid": true,
+      "budget_expired": false,
+      "exact_geometry_and_stats_equal": true
+    },
+    {
+      "board": "environment_sensor",
+      "corridor": true,
+      "records": {
+        "before": [
+          {
+            "trial": 1,
+            "seconds": 2.0870110000032582,
+            "load_seconds": 0.7239684999985911
+          }
+        ],
+        "after": [
+          {
+            "trial": 1,
+            "seconds": 2.0266793000009784,
+            "load_seconds": 0.7443942999998399
+          }
+        ]
+      },
+      "medians": {
+        "before": 2.0870110000032582,
+        "after": 2.0266793000009784
+      },
+      "reduction_percent": 2.890818496030234,
+      "geometry_sha256": "fd6e8f8cf818edb704007f0e760713b3bf3cb6959f0f619296e8dc12854fcba5",
+      "inputs": {
+        "C:\\Users\\frant\\Documents\\kicad_track_gloss_stress\\sources\\set26\\environment_sensor.kicad_pcb": "493b0ee9eb319d68ea5c16f3ffa0dfcabeb585e1d0c35b6c45223b357ea2febc",
+        "C:\\Users\\frant\\Documents\\kicad_track_gloss_stress\\sources\\set26\\environment_sensor.kicad_pro": "006d824ed344dc60ba74d3e0b4df4d326a3d444e3b5fdbfaa0c51b7ade59d9d0"
+      },
+      "stable_stats_sha256": "aad1e016b45ebeea8846c82b196ab43ec032e33df4bff6dc3b06e7b37079ed9d",
+      "saved_mm": 14.8151,
+      "g5_valid": true,
+      "budget_expired": false,
+      "exact_geometry_and_stats_equal": true
+    }
+  ],
+  "totals": {
+    "False": {
+      "seconds": {
+        "before": 67.89837559999796,
+        "after": 63.78744509999888
+      },
+      "reduction_percent": 6.054534388594723
+    },
+    "True": {
+      "seconds": {
+        "before": 41.61133260000497,
+        "after": 40.088571099993715
+      },
+      "reduction_percent": 3.65948746378546
+    }
+  },
+  "ipc_probe": {
+    "kicad": "10.99.0 (10.99.0-5583-g6a6fb7561d)",
+    "inputs": {
+      "C:\\Users\\frant\\Downloads\\kicad_krt_gloss\\.build\\ipc-acceptance\\board.kicad_pcb": "08b5d8efe0990e9753f111b680fd1d95cf6ddb78e82888aa09182422c8f797fb",
+      "C:\\Users\\frant\\Downloads\\kicad_krt_gloss\\.build\\ipc-acceptance\\board.kicad_pro": "2a5441b50b95f7b5d849d8012ad2d211aed443ca2a41d0a590ea569de5bd0775",
+      "C:\\Users\\frant\\Downloads\\kicad_krt_gloss\\.build\\ipc-acceptance\\board.kicad_dru": "801f4f66c36f54e94a569f3e169b9120cfb1c593b8aa983de7e62ef98edfa80a"
+    },
+    "import_errors": {
+      "before": "KiCad returned error: the requested project  is not open",
+      "after": "KiCad returned error: the requested project  is not open"
+    },
+    "normalization_records": [
+      {
+        "side": "before",
+        "trial": 1,
+        "seconds": 0.0018660999994608574
+      },
+      {
+        "side": "after",
+        "trial": 1,
+        "seconds": 0.0016318999987561256
+      },
+      {
+        "side": "after",
+        "trial": 2,
+        "seconds": 0.001599700000951998
+      },
+      {
+        "side": "before",
+        "trial": 2,
+        "seconds": 0.0017755000008037314
+      },
+      {
+        "side": "before",
+        "trial": 3,
+        "seconds": 0.0016701000022294465
+      },
+      {
+        "side": "after",
+        "trial": 3,
+        "seconds": 0.0016740999999456108
+      }
+    ],
+    "normalization_medians": {
+      "before": 0.0017755000008037314,
+      "after": 0.0016318999987561256
+    },
+    "normalized_bytes": 115250,
+    "pads": 31,
+    "normalized_sha256": "8c7ba050e91af3a50171cf6c78c0a1a301669137ef5c342cb2817b242e3a1655",
+    "exact_text_and_pads_equal": true
+  },
+  "normalization_synthetic": [
+    {
+      "footprints": 100,
+      "bytes": 226530,
+      "median_before_ms": 2.254,
+      "median_after_ms": 1.358,
+      "exact_text_and_pads_equal": true,
+      "sha256": "f6ae0c1c33308e14e4816360517e54c8f42a7352f1ab2d753b7c6c5001c5eaed"
+    },
+    {
+      "footprints": 500,
+      "bytes": 1132930,
+      "median_before_ms": 183.435,
+      "median_after_ms": 6.936,
+      "exact_text_and_pads_equal": true,
+      "sha256": "ad70d2e40507b593ee06ad0f5052465be8021e048f92c6970b692aa4bd0f2de0"
+    }
+  ],
+  "tests": {
+    "passed": 404,
+    "xfailed": 1,
+    "deselected_preexisting_metadata_test": 1
+  },
+  "production_files_sha256": {
+    "dgloss\\clearance_preparation.py": "73881c0e378815f3d6bddab7fcb9a61320954e78fe7ecfe69012d921dfbeb27c",
+    "dgloss\\krt_clearance.py": "0c696bd792191bcfac165279d8c78f31aeda9480037574d6d6c72487ee3da3a2",
+    "kicad_krt_gloss\\ipc_bridge.py": "abdadd36b31cca4f8373e19c1d7bf4a3e21b160c1ac518099adb61a5e85f28ba",
+    "kicad_krt_gloss\\ipc_entry.py": "fbf15d20b7db5c64c822865d1a9d9da93a5fc742576c1ed8a6b48c13cd7f85f8",
+    "kicad_krt_gloss\\ipc_snapshot.py": "cb265f33a5d234f6a0b18dc24d718891d17654d7040edd46d32e3e67b992201b"
+  }
+}
