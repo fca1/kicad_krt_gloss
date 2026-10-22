@@ -1,0 +1,223 @@
+{
+  "kicad": "10.99.0 (10.99.0-5583-g6a6fb7561d)",
+  "fixture_sha256": "fd0e485ac692938572b2343c3fb7a5787dd0ebbdf55f239eb8cb1d933a007384",
+  "fixture": "tests/fixtures/ipc_zones/zones.kicad_pcb",
+  "launch": {
+    "method": "physical primary-button toolbar click via computer-use sky",
+    "mouse_buttons_swapped": true,
+    "installed_entry": "Documents/KiCad/10.99/plugins/com.github.fca1.kicadkrtgloss/ipc_entry.py",
+    "venv": "AppData/Local/KiCad/10.99/python-environments/com.github.fca1.kicadkrtgloss",
+    "observed_pcb_pid": 45820,
+    "observed_venv_child_pid": 46824,
+    "observed_python_child_pid": 47664
+  },
+  "gloss": {
+    "net": "/A",
+    "g5_valid": true,
+    "tracks_before": 3,
+    "tracks_after": 1,
+    "before_mm": 34.1421,
+    "after_mm": 30.0,
+    "saved_mm": 4.1421
+  },
+  "zones_before_reference": [
+    {
+      "id": "08d3eb30-0765-4100-9636-a4a31aa26ca5",
+      "name": "GND front",
+      "filled": true,
+      "polygons": 1,
+      "fill_sha256": "4f36f23ab92db07f617fb45754f9f310be5012beca3dc72a18192dda309834e6"
+    },
+    {
+      "id": "2bf02e7b-c81d-43b7-b5ea-a243d02f54e6",
+      "name": "GND back",
+      "filled": true,
+      "polygons": 1,
+      "fill_sha256": "f8b4386ae8fa5d69d5b1fbd484f41757ff14b3d5302e4963dc45a03fde34544b"
+    }
+  ],
+  "zones_immediately_before_gloss": [
+    {
+      "id": "2bf02e7b-c81d-43b7-b5ea-a243d02f54e6",
+      "filled": false,
+      "polygons": 0
+    },
+    {
+      "id": "08d3eb30-0765-4100-9636-a4a31aa26ca5",
+      "filled": false,
+      "polygons": 0
+    }
+  ],
+  "zones_after_plugin": [
+    {
+      "id": "2bf02e7b-c81d-43b7-b5ea-a243d02f54e6",
+      "name": "GND back",
+      "filled": true,
+      "polygons": 1,
+      "fill_sha256": "f8b4386ae8fa5d69d5b1fbd484f41757ff14b3d5302e4963dc45a03fde34544b"
+    },
+    {
+      "id": "08d3eb30-0765-4100-9636-a4a31aa26ca5",
+      "name": "GND front",
+      "filled": true,
+      "polygons": 1,
+      "fill_sha256": "4f36f23ab92db07f617fb45754f9f310be5012beca3dc72a18192dda309834e6"
+    }
+  ],
+  "drc_options": [
+    "--format",
+    "json",
+    "--units",
+    "mm",
+    "--severity-all",
+    "--all-track-errors",
+    "--exit-code-violations"
+  ],
+  "before_drc": {
+    "$schema": "https://schemas.kicad.org/drc.v1.json",
+    "coordinate_units": "mm",
+    "date": "2026-10-21T22:25:39",
+    "ignored_checks": [
+      {
+        "description": "Footprint has no courtyard defined",
+        "key": "missing_courtyard"
+      },
+      {
+        "description": "Track endpoint not centered on via",
+        "key": "track_not_centered_on_via"
+      },
+      {
+        "description": "Tuning profile track geometries",
+        "key": "tuning_profile_track_geometries"
+      },
+      {
+        "description": "Footprint doesn't match symbol's footprint filters",
+        "key": "footprint_filters_mismatch"
+      },
+      {
+        "description": "Footprint component type doesn't match footprint pads",
+        "key": "footprint_type_mismatch"
+      }
+    ],
+    "included_severities": [
+      "error",
+      "warning",
+      "exclusion"
+    ],
+    "kicad_version": "10.99.0",
+    "schematic_parity": [],
+    "source": "before.kicad_pcb",
+    "unconnected_items": [],
+    "violations": []
+  },
+  "after_drc_no_refill": {
+    "$schema": "https://schemas.kicad.org/drc.v1.json",
+    "coordinate_units": "mm",
+    "date": "2026-10-21T22:28:58",
+    "ignored_checks": [
+      {
+        "description": "Footprint has no courtyard defined",
+        "key": "missing_courtyard"
+      },
+      {
+        "description": "Track endpoint not centered on via",
+        "key": "track_not_centered_on_via"
+      },
+      {
+        "description": "Tuning profile track geometries",
+        "key": "tuning_profile_track_geometries"
+      },
+      {
+        "description": "Footprint doesn't match symbol's footprint filters",
+        "key": "footprint_filters_mismatch"
+      },
+      {
+        "description": "Footprint component type doesn't match footprint pads",
+        "key": "footprint_type_mismatch"
+      }
+    ],
+    "included_severities": [
+      "error",
+      "warning",
+      "exclusion"
+    ],
+    "kicad_version": "10.99.0",
+    "schematic_parity": [],
+    "source": "after.kicad_pcb",
+    "unconnected_items": [],
+    "violations": []
+  },
+  "after_drc_independent_refill": {
+    "$schema": "https://schemas.kicad.org/drc.v1.json",
+    "coordinate_units": "mm",
+    "date": "2026-10-21T22:28:59",
+    "ignored_checks": [
+      {
+        "description": "Footprint has no courtyard defined",
+        "key": "missing_courtyard"
+      },
+      {
+        "description": "Track endpoint not centered on via",
+        "key": "track_not_centered_on_via"
+      },
+      {
+        "description": "Tuning profile track geometries",
+        "key": "tuning_profile_track_geometries"
+      },
+      {
+        "description": "Footprint doesn't match symbol's footprint filters",
+        "key": "footprint_filters_mismatch"
+      },
+      {
+        "description": "Footprint component type doesn't match footprint pads",
+        "key": "footprint_type_mismatch"
+      }
+    ],
+    "included_severities": [
+      "error",
+      "warning",
+      "exclusion"
+    ],
+    "kicad_version": "10.99.0",
+    "schematic_parity": [],
+    "source": "after.kicad_pcb",
+    "unconnected_items": [],
+    "violations": []
+  },
+  "source_file_unchanged": true,
+  "same_project_rules_before_after": true,
+  "close": {
+    "dialog_disappeared": true,
+    "python_processes_remaining_after_close": [46824, 47664],
+    "identities_rechecked_before_targeted_stop": true,
+    "production_fix_applied": false,
+    "observed_limitation": "Modeless dialog is hidden without destruction; wx event loop does not exit"
+  },
+  "undo": [
+    {
+      "undo": 1,
+      "tracks": 1,
+      "copper_restored": false,
+      "zone_polygons": [
+        0,
+        0
+      ]
+    },
+    {
+      "undo": 2,
+      "tracks": 3,
+      "copper_restored": true,
+      "zone_polygons": [
+        0,
+        0
+      ]
+    }
+  ],
+  "limitations": [
+    "Synthetic small fixture; no schematic parity because no schematic",
+    "Five KiCad default ignored checks are recorded in DRC reports",
+    "F.Cu zone is outside edited tracks; second zone is on B.Cu; refill tested with initially empty polygons",
+    "Two Undo operations restore tracks when KiCad records the automatic refill separately",
+    "Close hides the modeless dialog but leaves its Python processes running"
+  ]
+}

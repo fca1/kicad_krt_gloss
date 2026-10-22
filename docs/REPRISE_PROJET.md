@@ -1,5 +1,30 @@
 # Reprendre Smooth Gloss KRT — branche gloss_only
 
+## 21 octobre 2026 — barre d'outils, zones et DRC validés
+
+La recette complémentaire du plugin installé `8572919` passe sur KiCad
+`10.99.0-5583-g6a6fb7561d`. Le clic réel dans la barre d'outils lance le
+dialogue via le Python de KiCad. Sur une copie synthétique, Gloss réduit
+trois pistes à une (34,1421 → 30 mm), G5 valide, puis remplit les deux zones
+initialement vides. Le DRC du cuivre réellement appliqué, sans remplissage
+supplémentaire, signale zéro violation et zéro connexion manquante, comme
+avant Gloss ; un remplissage CLI indépendant confirme le résultat.
+
+Limite confirmée : le remplissage des zones crée une transaction native
+distincte sur cette nightly. Il faut **deux Undo** : le premier annule le
+remplissage, le second restaure exactement le cuivre. Les recettes antérieures
+avec un seul Undo utilisaient une carte sans zone à remplir.
+
+La fermeture révèle aussi un défaut préexistant : Close masque le dialogue
+non modal sans le détruire, laissant sa boucle wx et ses processus Python
+actifs. Les processus de test ont été arrêtés après vérification de leur
+filiation ; ce défaut de cycle de vie est documenté, non corrigé ici.
+
+La fixture reproductible, les rapports DRC et un comparateur avec 18 tests
+ciblés sont conservés. Aucun code de production ni fichier KRT modifié ;
+la carte source est intacte. Lire la [recette et ses limites de couverture](reports/IPC_TOOLBAR_ZONES_DRC_2026_10_21.md)
+avant de réutiliser les outils d'acceptation.
+
 ## 21 octobre 2026 — compatibilité 5583 corrigée et installation validée
 
 La cible actuelle est `10.99.0-5583-g6a6fb7561d`. Le pont privé adresse
@@ -20,8 +45,8 @@ sur la copie jetable. Installation mise à jour (304 fichiers vérifiés) et
 retestée avec son Python KiCad 3.13. KRT 0.23.1 reste intact ; les quatre
 optimisations sont incluses. Aucun ZIP. Lire le
 [diagnostic, preuves et limites](reports/IPC_5583_2026_10_21.md).
-Le clic de barre d'outils et le remplissage d'une zone réelle ne font pas
-partie de cette recette ; G5 ne remplace pas un DRC KiCad complet.
+Le clic de barre d'outils, les zones et le DRC ont été validés ensuite dans
+la recette complémentaire ci-dessus ; G5 ne remplace pas un DRC KiCad complet.
 
 ## 21 octobre 2026 — quatre optimisations de performance
 

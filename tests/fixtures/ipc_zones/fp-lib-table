@@ -1,0 +1,4 @@
+(fp_lib_table
+  (version 7)
+  (lib (name "Acceptance")(type "KiCad")(uri "${KIPRJMOD}/Acceptance.pretty")(options "")(descr "Disposable acceptance fixture"))
+)

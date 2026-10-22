@@ -31,7 +31,10 @@ document identity remains unchanged. The adapter uses the private descriptor
 pool and keeps kicad-python 0.8.0 and its global descriptors unchanged.
 Live import, application and Undo have passed on disposable copies on build
 5583, including remembered `/A` branches, `/B` via movement and corridor mode.
-These checks do not cover launching from the toolbar.
+The complementary [toolbar, zones and DRC acceptance](reports/IPC_TOOLBAR_ZONES_DRC_2026_10_21.md)
+also passes on build 5583 with the installed plugin: a real toolbar click,
+two initially empty zones filled by Gloss, and no reported DRC violations or
+unconnected items before or after the change on the synthetic fixture.
 The historical SWIG sources remain for comparison and KiCad 10 regression tests;
 the IPC manifest and distribution metadata select the external IPC action.
 
@@ -64,15 +67,23 @@ the IPC manifest and distribution metadata select the external IPC action.
   position (the SDK's creation-oriented `clone()` clears the UUID). The receipt
   must contain exactly the requested via UUIDs and positions. Deletion statuses
   are checked individually. A failed transaction
-  is dropped. The successful copper change is one Undo operation.
+  is dropped. The copper change is one transaction. On build 5583, zone refill
+  adds a separate native transaction: the tested case requires two Undo
+  operations, first to remove the fill and then to restore the original copper.
 - Zone refill is requested after publication. Recent 10.99 editor builds
   acknowledge a refill of all zones before it finishes; the request returning
   does not establish completion or a successful DRC. A refill request failure
   reports that copper was applied and requires Undo or refill/DRC. G5 is not
-  a full KiCad DRC.
+  a full KiCad DRC. Completion has been verified on the acceptance fixture by
+  observing initially empty zones become filled with stable, nonempty polygons,
+  then running DRC on the exported live state without another refill.
 - Optional before/after drawings belong to `KRT Gloss changes (IPC)` on a free,
   enabled User layer. If all such layers are occupied, the drawing is skipped.
 - No source board is saved by Gloss. A no-op creates no Undo transaction.
+- Closing the tested IPC dialog hides it but leaves its Python processes
+  running. The modeless dialog's close handler does not destroy the window,
+  so the external wx event loop remains alive. This existing lifecycle defect
+  is documented in the toolbar acceptance report and is not corrected by it.
 
 ## Protocol provenance
 
@@ -91,7 +102,7 @@ included GPL and protobuf license texts. Existing MIT source notices remain.
 ## Acceptance
 
 `tools/check_ipc_gloss.py` requires an explicit socket and expected board path.
-Use only a disposable copy for `--apply`: the tool applies Gloss, checks copper
+Use only a disposable copy without zone refill for `--apply`: the tool applies Gloss, checks copper
 outside the selected scope (including other branches of the same net), compares
 live tracks and vias with the certified KRT geometry at nanometre precision,
 and uses one Undo to verify restoration. It never saves the board. `--branches`
@@ -102,9 +113,18 @@ and errors after publication.
 
 `tools/check_ipc_dialog.py` runs the actual installed entry point and wx dialog
 with `--plugin-root`, `--socket`, `--expected-board` and optional `--output` JSON.
-On the disposable fixture it exercises Add/Replace/Clear, branch memory despite
+On the disposable fixture without zones it exercises Add/Replace/Clear, branch memory despite
 a changed native selection, the real Gloss worker/progress dialog, G5,
 application and one Undo. It checks source integrity and that pcbnew stays
 unloaded. This is a programmatic dialog exercise, not a toolbar click test.
 Unit tests are in `tests/test_ipc.py`, `tests/test_ipc_project.py` and
 `tests/test_ipc_bridge.py`.
+
+These two scripts assume one Undo for cleanup; do not use their apply recipes
+to validate a board whose refill adds a transaction. For toolbar, zone refill
+and DRC acceptance, copy `tests/fixtures/ipc_zones/` and follow its README and
+the [recorded procedure](reports/IPC_TOOLBAR_ZONES_DRC_2026_10_21.md).
+`tools/check_ipc_drc.py BEFORE.json AFTER.json` compares native DRC reports,
+requiring the same declared version, units and coverage. Exit 0 means no new
+findings, not necessarily a clean board; unchanged ignored checks remain
+outside coverage. Its 18 unit tests are in `tests/test_ipc_drc.py`.
