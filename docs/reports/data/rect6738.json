@@ -1,0 +1,290 @@
+{
+  "A": {
+    "base": [
+      190.5,
+      129.3,
+      129.3,
+      133.5,
+      141.8,
+      129.6
+    ],
+    "opt": [
+      157.2,
+      121.2,
+      116.6,
+      120.9,
+      126.3,
+      122.5
+    ],
+    "geometry_identical": true,
+    "drc": {
+      "coordinate_units": "mm",
+      "reported_kicad_version": "10.99.0",
+      "included_severities": [
+        "error",
+        "exclusion",
+        "warning"
+      ],
+      "ignored_checks": [
+        {
+          "description": "Footprint has no courtyard defined",
+          "key": "missing_courtyard"
+        },
+        {
+          "description": "Track endpoint not centered on via",
+          "key": "track_not_centered_on_via"
+        },
+        {
+          "description": "Tuning profile track geometries",
+          "key": "tuning_profile_track_geometries"
+        },
+        {
+          "description": "Footprint doesn't match symbol's footprint filters",
+          "key": "footprint_filters_mismatch"
+        },
+        {
+          "description": "PTH inside courtyard",
+          "key": "pth_inside_courtyard"
+        },
+        {
+          "description": "NPTH inside courtyard",
+          "key": "npth_inside_courtyard"
+        },
+        {
+          "description": "Footprint component type doesn't match footprint pads",
+          "key": "footprint_type_mismatch"
+        }
+      ],
+      "before": {
+        "source": "base-A.kicad_pcb",
+        "counts": {
+          "violations": {
+            "total": 56,
+            "excluded": 0,
+            "by_severity": {
+              "warning": 56
+            },
+            "by_type": {
+              "lib_footprint_issues": 24,
+              "line_width": 29,
+              "silk_over_copper": 1,
+              "silk_overlap": 1,
+              "track_dangling": 1
+            }
+          },
+          "unconnected_items": {
+            "total": 1,
+            "excluded": 0,
+            "by_severity": {
+              "error": 1
+            },
+            "by_type": {
+              "unconnected_items": 1
+            }
+          },
+          "schematic_parity": {
+            "total": 0,
+            "excluded": 0,
+            "by_severity": {},
+            "by_type": {}
+          }
+        }
+      },
+      "after": {
+        "source": "opt-A.kicad_pcb",
+        "counts": {
+          "violations": {
+            "total": 56,
+            "excluded": 0,
+            "by_severity": {
+              "warning": 56
+            },
+            "by_type": {
+              "lib_footprint_issues": 24,
+              "line_width": 29,
+              "silk_over_copper": 1,
+              "silk_overlap": 1,
+              "track_dangling": 1
+            }
+          },
+          "unconnected_items": {
+            "total": 1,
+            "excluded": 0,
+            "by_severity": {
+              "error": 1
+            },
+            "by_type": {
+              "unconnected_items": 1
+            }
+          },
+          "schematic_parity": {
+            "total": 0,
+            "excluded": 0,
+            "by_severity": {},
+            "by_type": {}
+          }
+        }
+      },
+      "added": {
+        "violations": [],
+        "unconnected_items": [],
+        "schematic_parity": []
+      },
+      "removed": {
+        "violations": [],
+        "unconnected_items": [],
+        "schematic_parity": []
+      },
+      "added_count": 0,
+      "removed_count": 0,
+      "after_has_no_reported_findings": false,
+      "status": "no_new_reported_findings"
+    }
+  },
+  "B": {
+    "base": [
+      262.1,
+      258.2,
+      257.7,
+      265.4,
+      284.6,
+      256.3
+    ],
+    "opt": [
+      209.6,
+      238.1,
+      207.2,
+      208.0,
+      234.6,
+      212.2
+    ],
+    "geometry_identical": true,
+    "drc": {
+      "coordinate_units": "mm",
+      "reported_kicad_version": "10.99.0",
+      "included_severities": [
+        "error",
+        "exclusion",
+        "warning"
+      ],
+      "ignored_checks": [
+        {
+          "description": "Footprint has no courtyard defined",
+          "key": "missing_courtyard"
+        },
+        {
+          "description": "Track endpoint not centered on via",
+          "key": "track_not_centered_on_via"
+        },
+        {
+          "description": "Tuning profile track geometries",
+          "key": "tuning_profile_track_geometries"
+        },
+        {
+          "description": "Footprint doesn't match symbol's footprint filters",
+          "key": "footprint_filters_mismatch"
+        },
+        {
+          "description": "PTH inside courtyard",
+          "key": "pth_inside_courtyard"
+        },
+        {
+          "description": "NPTH inside courtyard",
+          "key": "npth_inside_courtyard"
+        },
+        {
+          "description": "Footprint component type doesn't match footprint pads",
+          "key": "footprint_type_mismatch"
+        }
+      ],
+      "before": {
+        "source": "base-B.kicad_pcb",
+        "counts": {
+          "violations": {
+            "total": 62,
+            "excluded": 0,
+            "by_severity": {
+              "error": 6,
+              "warning": 56
+            },
+            "by_type": {
+              "clearance": 6,
+              "lib_footprint_issues": 24,
+              "line_width": 29,
+              "silk_over_copper": 1,
+              "silk_overlap": 1,
+              "track_dangling": 1
+            }
+          },
+          "unconnected_items": {
+            "total": 1,
+            "excluded": 0,
+            "by_severity": {
+              "error": 1
+            },
+            "by_type": {
+              "unconnected_items": 1
+            }
+          },
+          "schematic_parity": {
+            "total": 0,
+            "excluded": 0,
+            "by_severity": {},
+            "by_type": {}
+          }
+        }
+      },
+      "after": {
+        "source": "opt-B.kicad_pcb",
+        "counts": {
+          "violations": {
+            "total": 62,
+            "excluded": 0,
+            "by_severity": {
+              "error": 6,
+              "warning": 56
+            },
+            "by_type": {
+              "clearance": 6,
+              "lib_footprint_issues": 24,
+              "line_width": 29,
+              "silk_over_copper": 1,
+              "silk_overlap": 1,
+              "track_dangling": 1
+            }
+          },
+          "unconnected_items": {
+            "total": 1,
+            "excluded": 0,
+            "by_severity": {
+              "error": 1
+            },
+            "by_type": {
+              "unconnected_items": 1
+            }
+          },
+          "schematic_parity": {
+            "total": 0,
+            "excluded": 0,
+            "by_severity": {},
+            "by_type": {}
+          }
+        }
+      },
+      "added": {
+        "violations": [],
+        "unconnected_items": [],
+        "schematic_parity": []
+      },
+      "removed": {
+        "violations": [],
+        "unconnected_items": [],
+        "schematic_parity": []
+      },
+      "added_count": 0,
+      "removed_count": 0,
+      "after_has_no_reported_findings": false,
+      "status": "no_new_reported_findings"
+    }
+  }
+}

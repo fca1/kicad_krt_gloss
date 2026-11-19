@@ -114,3 +114,34 @@ def test_analytic_pad_distance_uses_krt_shapes_under_rotation(shape):
         for point in (start, end, (0., 0.)):
             assert pad_axis_distance(point, point, pad) == pytest.approx(
                 point_to_pad_distance(*point, pad), abs=1e-9)
+
+
+def test_rectangle_certificate_matches_krt_at_edges_and_on_oblique_tracks():
+    import random
+    from copy import copy
+
+    fast = adapter()
+    assert fast._rect == (-20, -20, 20, 20)
+    oracle = copy(fast)
+    oracle._rect = None
+    rng = random.Random(6738)
+    lines = [tuple(rng.uniform(-25, 25) for _ in range(4)) for _ in range(500)]
+    for offset in (-1e-6, -1e-9, 0, 1e-9, 1e-6):
+        x = 20 - .25 - .1 + offset
+        lines.extend([(x, 0, x, 10), (-x, 0, x, 10), (0, -x, 0, x)])
+    for coords in lines:
+        track = Segment(*coords, .2, 'F.Cu', 1)
+        assert fast._edge_clears(track, .25) == oracle._edge_clears(track, .25)
+
+
+def test_only_single_rectangular_perimeter_qualifies():
+    from dgloss.krt_clearance import _rectangle_bounds
+
+    box = [(0, 0), (0, 2), (3, 2), (3, 0)]
+    for ring in (box, box[::-1], box[1:] + box[:1], box + box[:1]):
+        assert _rectangle_bounds([ring], [ring], []) == (0, 0, 3, 2)
+    for ring in ([box[0], box[2], box[1], box[3]], [(0, 0), (1, 1), (2, 0), (1, -1)]):
+        assert _rectangle_bounds([ring], [ring], []) is None
+    assert _rectangle_bounds([box, box], [box], []) is None
+    assert _rectangle_bounds([box, box], [box, box], []) is None
+    assert _rectangle_bounds([box], [box], [box]) is None

@@ -1,5 +1,6 @@
 """G3 clearance adapter: KRT owns every geometry and rule calculation."""
 
+import math
 from functools import lru_cache
 from functools import wraps
 from contextlib import contextmanager, nullcontext
@@ -20,6 +21,25 @@ from .krt_sweep import pad_axis_distance
 from dgloss.krt_api import HOLE_TO_HOLE_CLEARANCE, NPTH_TO_TRACK_CLEARANCE
 from dgloss.krt_api import (_foreign_seg_arrays, _foreign_hole_capsules,
                            _seg_capsule_axis_dist)
+
+
+def _rectangle_bounds(rings, outer, cutouts):
+    """Recognize a single axis-aligned KRT perimeter without internal edges."""
+    if cutouts or len(rings) != 1 or not outer or len(outer) != 1:
+        return None
+    ring = rings[0]
+    if ring != outer[0]:
+        return None
+    corners = ring[:-1] if ring[0] == ring[-1] else ring
+    if len(corners) != 4 or len(set(map(tuple, corners))) != 4:
+        return None
+    if not all(math.isfinite(v) for corner in corners for v in corner):
+        return None
+    for (x, y), (u, v) in zip(corners, corners[1:] + corners[:1]):
+        if x != u and y != v:
+            return None
+    xs, ys = zip(*corners)
+    return min(xs), min(ys), max(xs), max(ys)
 
 
 def _exact_foreign_segment_distance(pcb_data, net_id, x1, y1, x2, y2,
@@ -121,6 +141,7 @@ class KrtClearanceAdapter:
             self.clearance, getattr(config, "board_edge_clearance", 0.0))
         self.edge_rings, self.edge_outer, self.edge_cutouts = \
             board_edge_geometry(pcb_data.board_info, rect_ring=True)
+        self._rect = _rectangle_bounds(self.edge_rings, self.edge_outer, self.edge_cutouts)
         self.board_bounds = pcb_data.board_info.board_bounds
         self.keepouts = self._collect_keepouts()
         self.via_keepouts = self._collect_keepouts(for_vias=True)
@@ -204,6 +225,16 @@ class KrtClearanceAdapter:
 
     def _edge_clears(self, seg, clearance=None):
         required = (self.edge_clearance if clearance is None else clearance) + seg.width / 2.0 - FP_EPS_MM
+        if self._rect and required >= 0:
+            # The inset rectangle is convex. Endpoints strictly inside it
+            # certify the whole segment. Leave the numerical boundary to KRT.
+            x0, y0, x1, y1 = self._rect
+            inset = required + 1e-6
+            if (x0 + inset < seg.start_x < x1 - inset and
+                    x0 + inset < seg.end_x < x1 - inset and
+                    y0 + inset < seg.start_y < y1 - inset and
+                    y0 + inset < seg.end_y < y1 - inset):
+                return True
         endpoints = ((seg.start_x, seg.start_y), (seg.end_x, seg.end_y))
         if self.edge_rings:
             return (all(_point_on_board(x, y, self.edge_outer, self.edge_cutouts)

@@ -1,5 +1,11 @@
 # Reprendre Smooth Gloss KRT — branche gloss_only
 
+## Contrôle rapide du bord rectangulaire — KiCad 6738
+
+Le plugin installé inclut les correctifs de topologie de c1043f5 et le contrôle rapide des segments sur un contour KRT rectangulaire unique, aligné aux axes et sans découpe. Le rectangle intérieur est convexe. Lorsque les deux extrémités y tiennent avec une marge supplémentaire de 1 nm au-delà du seuil du prédicat, tout le segment satisfait la distance requise. Les cas proches du seuil, les autres contours et le contrôle final des vias utilisent les prédicats KRT existants.
+
+Six tours par net et par version, ordre alterné, mêmes branches et même KRT 0.24.1, temps moteur hors IPC. Médianes sur /A : 131,55 → 121,85 ms (−7,4 %). Sur /B : 260,15 → 210,90 ms (−18,9 %). Les exports IPC avant/après optimisation ont des géométries identiques au nanomètre et des rapports DRC équivalents, avec leurs défauts existants. G5, cuivre hors portée et restauration par Undo vérifiés. 134 tests ciblés passent. Installation locale retestée sur les deux nets, sauvegarde dans .build/rect6738/backup. [Mesures individuelles et comparaisons DRC](reports/data/rect6738.json).
+
 ## Correction de portée et profilage sur 6738
 
 La sélection utilise les coordonnées au nanomètre et les parcours de chaînes distinguent les couches. Voir les [tests de connectivité, DRC et mesures des bords](reports/TOPOLOGIE_PROFIL_6738.md).
