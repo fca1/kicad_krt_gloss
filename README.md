@@ -13,7 +13,7 @@ is the result, while the dotted overlay preserves the former path for review.
 
 ## Install
 
-The development version **0.1.5** uses **IPC** and KRT **0.24.1**. It targets
+The **0.1.5** prerelease uses **IPC** and KRT **0.24.1**. It targets
 KiCad **10.99 / 11** with the live design-rule API. Windows 10.99 is the local
 test platform; Linux and macOS execution has not been validated.
 
@@ -21,7 +21,7 @@ Place the staged plugin contents in the KiCad version's `plugins/` directory,
 enable the KiCad API server, and launch **KRT Gloss** from the PCB toolbar.
 KiCad installs the Python dependencies from `requirements.txt`. Restart PCB
 Editor after installation and first test on a copy of your board. See the
-[IPC installation and limitations](docs/IPC.md). No 0.1.5 release is published yet.
+[IPC installation and limitations](docs/IPC.md).
 
 ## Choose the scope
 

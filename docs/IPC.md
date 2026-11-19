@@ -1,4 +1,4 @@
-# Gloss IPC — development version 0.1.5
+# Gloss IPC — version 0.1.5
 
 The IPC action runs outside PCB Editor. All live board operations use
 `kicad-python` 0.8.0. KRT 0.24.1 remains unmodified and supplies geometry,
@@ -6,9 +6,10 @@ clearance and electrical validation. There is no pcbnew fallback in this action.
 
 ## Installation
 
-Prepare a directory without creating a ZIP:
+From a checkout of the release tag, initialize the pinned KRT submodule and stage the plugin:
 
 ```powershell
+git submodule update --init --recursive
 python package_pcm.py --stage-only --output-dir .build/ipc-install
 ```
 
