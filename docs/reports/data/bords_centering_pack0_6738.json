@@ -1,0 +1,330 @@
+{
+  "kicad": "10.99-6738",
+  "krt": "0.24.1",
+  "before": "c1043f5",
+  "after": "617883d",
+  "grid_mm": 0.1,
+  "scope": "all nets",
+  "corridor": false,
+  "budget_seconds": 600,
+  "timing": "wall time of run_final_gloss, before/after in milliseconds",
+  "drc": "--refill-zones --severity-all --all-track-errors",
+  "boards": [
+    {
+      "board": "test_centering1",
+      "input_sha256": "d2d4251ef38d0bc8aeed3464e18da5c56a64ca1bd905d4242a975a0d18de9d15",
+      "rectangle": true,
+      "times_ms": [
+        [
+          198.535,
+          190.814,
+          231.384,
+          194.485,
+          195.413
+        ],
+        [
+          191.783,
+          185.345,
+          182.064,
+          183.907,
+          184.103
+        ]
+      ],
+      "median_ms": [
+        195.413,
+        184.103
+      ],
+      "gain_percent": 5.79,
+      "board_equal_except_uuids": true,
+      "same_geometry": true,
+      "same_connectivity": true,
+      "complete_both": true,
+      "g5_both": true,
+      "connectivity_regressions": [
+        0,
+        0
+      ],
+      "drc_before": {
+        "violations": 23,
+        "unconnected_items": 0,
+        "schematic_parity": 0
+      },
+      "drc_added": 0,
+      "drc_removed": 0
+    },
+    {
+      "board": "test_centering2",
+      "input_sha256": "08b5d8efe0990e9753f111b680fd1d95cf6ddb78e82888aa09182422c8f797fb",
+      "rectangle": true,
+      "times_ms": [
+        [
+          547.779,
+          549.255,
+          544.808,
+          548.073,
+          543.974
+        ],
+        [
+          487.614,
+          491.121,
+          501.08,
+          493.531,
+          504.118
+        ]
+      ],
+      "median_ms": [
+        547.779,
+        493.531
+      ],
+      "gain_percent": 9.9,
+      "board_equal_except_uuids": true,
+      "same_geometry": true,
+      "same_connectivity": true,
+      "complete_both": true,
+      "g5_both": true,
+      "connectivity_regressions": [
+        0,
+        0
+      ],
+      "drc_before": {
+        "violations": 56,
+        "unconnected_items": 1,
+        "schematic_parity": 0
+      },
+      "drc_added": 0,
+      "drc_removed": 0
+    },
+    {
+      "board": "test_centering3",
+      "input_sha256": "ae1e869a6c6dbe1ddacd0e1c0714a4b27492ff95c5b21e80ce2075a7b207e90b",
+      "rectangle": true,
+      "times_ms": [
+        [
+          167.767,
+          167.456,
+          172.245,
+          179.217,
+          176.653
+        ],
+        [
+          161.395,
+          160.352,
+          160.805,
+          163.967,
+          161.54
+        ]
+      ],
+      "median_ms": [
+        172.245,
+        161.395
+      ],
+      "gain_percent": 6.3,
+      "board_equal_except_uuids": true,
+      "same_geometry": true,
+      "same_connectivity": true,
+      "complete_both": true,
+      "g5_both": true,
+      "connectivity_regressions": [
+        0,
+        0
+      ],
+      "drc_before": {
+        "violations": 23,
+        "unconnected_items": 0,
+        "schematic_parity": 0
+      },
+      "drc_added": 0,
+      "drc_removed": 0
+    },
+    {
+      "board": "micro_dmm",
+      "input_sha256": "e4c246f797d22445c3821edc722a0a02b92039e07b9f2257c3b2b4c8b34e05a9",
+      "rectangle": false,
+      "times_ms": [
+        [
+          687.553
+        ],
+        [
+          691.191
+        ]
+      ],
+      "median_ms": [
+        687.553,
+        691.191
+      ],
+      "gain_percent": -0.53,
+      "board_equal_except_uuids": true,
+      "same_geometry": true,
+      "same_connectivity": true,
+      "complete_both": true,
+      "g5_both": true,
+      "connectivity_regressions": [
+        0,
+        0
+      ],
+      "drc_before": {
+        "violations": 46,
+        "unconnected_items": 0,
+        "schematic_parity": 0
+      },
+      "drc_added": 0,
+      "drc_removed": 0
+    },
+    {
+      "board": "chart_plotter_hat",
+      "input_sha256": "e5c8a670216dddc3e3e5e28555eecb3543b1515e7aebbff1785cb5998a1e8598",
+      "rectangle": false,
+      "times_ms": [
+        [
+          6287.807
+        ],
+        [
+          6244.421
+        ]
+      ],
+      "median_ms": [
+        6287.807,
+        6244.421
+      ],
+      "gain_percent": 0.69,
+      "board_equal_except_uuids": true,
+      "same_geometry": true,
+      "same_connectivity": true,
+      "complete_both": true,
+      "g5_both": true,
+      "connectivity_regressions": [
+        0,
+        0
+      ],
+      "drc_before": {
+        "violations": 117,
+        "unconnected_items": 1,
+        "schematic_parity": 0
+      },
+      "drc_added": 0,
+      "drc_removed": 0
+    },
+    {
+      "board": "environment_sensor",
+      "input_sha256": "493b0ee9eb319d68ea5c16f3ffa0dfcabeb585e1d0c35b6c45223b357ea2febc",
+      "rectangle": false,
+      "times_ms": [
+        [
+          5118.166
+        ],
+        [
+          5199.24
+        ]
+      ],
+      "median_ms": [
+        5118.166,
+        5199.24
+      ],
+      "gain_percent": -1.58,
+      "board_equal_except_uuids": true,
+      "same_geometry": true,
+      "same_connectivity": true,
+      "complete_both": true,
+      "g5_both": true,
+      "connectivity_regressions": [
+        0,
+        0
+      ],
+      "drc_before": {
+        "violations": 112,
+        "unconnected_items": 0,
+        "schematic_parity": 0
+      },
+      "drc_added": 0,
+      "drc_removed": 0
+    },
+    {
+      "board": "azukar_fpga",
+      "input_sha256": "8534f62e77e04c7169aa2f3ffaee795f1da493b7d1de4813620cde6f770d13fe",
+      "rectangle": true,
+      "times_ms": [
+        [
+          34900.648,
+          27969.662,
+          28305.83
+        ],
+        [
+          34807.027,
+          29631.722,
+          28107.455
+        ]
+      ],
+      "median_ms": [
+        28305.83,
+        29631.722
+      ],
+      "gain_percent": -4.68,
+      "board_equal_except_uuids": true,
+      "same_geometry": true,
+      "same_connectivity": true,
+      "complete_both": true,
+      "g5_both": true,
+      "connectivity_regressions": [
+        0,
+        0
+      ],
+      "drc_before": {
+        "violations": 409,
+        "unconnected_items": 0,
+        "schematic_parity": 0
+      },
+      "drc_added": 59,
+      "drc_removed": 59,
+      "ignoring_marker_position": [
+        0,
+        0
+      ],
+      "after_aligning_uuids": [
+        0,
+        0
+      ]
+    },
+    {
+      "board": "tildagon_base",
+      "input_sha256": "d751d4b1aa20c047496b231f3f0bd5041d5e3c936fafa7fca779883d09777e91",
+      "rectangle": false,
+      "times_ms": [
+        [
+          77816.217
+        ],
+        [
+          72590.284
+        ]
+      ],
+      "median_ms": [
+        77816.217,
+        72590.284
+      ],
+      "gain_percent": 6.72,
+      "board_equal_except_uuids": true,
+      "same_geometry": true,
+      "same_connectivity": true,
+      "complete_both": true,
+      "g5_both": true,
+      "connectivity_regressions": [
+        0,
+        0
+      ],
+      "drc_before": {
+        "violations": 60,
+        "unconnected_items": 11,
+        "schematic_parity": 0
+      },
+      "drc_added": 3,
+      "drc_removed": 3,
+      "ignoring_marker_position": [
+        3,
+        3
+      ],
+      "after_aligning_uuids": [
+        0,
+        0
+      ]
+    }
+  ]
+}
