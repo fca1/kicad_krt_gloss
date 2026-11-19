@@ -1,7 +1,7 @@
 # Gloss IPC — development version 0.1.5
 
 The IPC action runs outside PCB Editor. All live board operations use
-`kicad-python` 0.8.0. KRT 0.23.1 remains unmodified and supplies geometry,
+`kicad-python` 0.8.0. KRT 0.24.1 remains unmodified and supplies geometry,
 clearance and electrical validation. There is no pcbnew fallback in this action.
 
 ## Installation
@@ -20,7 +20,7 @@ the toolbar. The launcher requires KiCad's instance-specific socket environment
 and never guesses which of multiple open editors to modify.
 
 The rule-reading commands require a sufficiently recent 10.99 / 11 build.
-The current validation target is `10.99.0-5583-g6a6fb7561d`; the initial IPC
+The current validation target is `10.99.0-6738-g3f3d8fbe5e` ([acceptance report](reports/KRT_0241_KICAD_6738.md)); the initial IPC
 validation used `10.99.0-2520-g89476220a8`. Capability failures
 stop the action; this is not a claim of support for every nightly build.
 The failure recorded during the [performance review](reports/GLOSS_IPC_PERFORMANCE_2026_10_21.md)

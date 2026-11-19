@@ -20,7 +20,7 @@ def normalize_snapshot(text):
         match = matches[0]
         x, y, angle, sx, sy = map(float, match.groups())
         if not all(map(math.isfinite, (x, y, angle, sx, sy))) or (sx, sy) != (1., 1.):
-            raise RuntimeError(f'{reference}: scaled footprints are not supported by KRT 0.23.1')
+            raise RuntimeError(f'{reference}: scaled footprints are not supported by KRT 0.24.1')
         pose = '(at ' + ' '.join(match.groups()[:3]) + ')'
         parts.extend((text[offset:start], block[:match.start()], pose, block[match.end():]))
         offset = end

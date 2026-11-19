@@ -68,7 +68,6 @@ _EXPORTS = {
     'check_pad_via_overlap': ('check_drc', 'check_pad_via_overlap'),
     'check_segment_overlap': ('check_drc', 'check_segment_overlap'),
     'pad_drill_capsule': ('kicad_parser', 'pad_drill_capsule'),
-    'check_via_board_edge': ('check_drc', 'check_via_board_edge'),
     'check_via_board_edge_poly': ('check_drc', 'check_via_board_edge_poly'),
     'check_via_drill_overlap': ('check_drc', 'check_via_drill_overlap'),
     'check_via_segment_overlap': ('check_drc', 'check_via_segment_overlap'),

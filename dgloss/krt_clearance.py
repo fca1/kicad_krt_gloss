@@ -7,7 +7,7 @@ from contextlib import contextmanager, nullcontext
 import numpy as np
 
 from dgloss.krt_api import (board_edge_geometry, check_pad_drill_via_overlap,
-                       check_pad_via_overlap, check_via_board_edge,
+                       check_pad_via_overlap,
                        check_via_drill_overlap,
                        check_via_board_edge_poly, check_via_segment_overlap,
                        check_via_via_overlap, pad_copper_layers,
@@ -120,7 +120,7 @@ class KrtClearanceAdapter:
         self.edge_clearance = max(
             self.clearance, getattr(config, "board_edge_clearance", 0.0))
         self.edge_rings, self.edge_outer, self.edge_cutouts = \
-            board_edge_geometry(pcb_data.board_info)
+            board_edge_geometry(pcb_data.board_info, rect_ring=True)
         self.board_bounds = pcb_data.board_info.board_bounds
         self.keepouts = self._collect_keepouts()
         self.via_keepouts = self._collect_keepouts(for_vias=True)
@@ -445,9 +445,6 @@ class KrtClearanceAdapter:
                     via, self.edge_rings, self.edge_outer,
                     self.edge_cutouts, edge, 0.0)[0]:
                 return False
-        elif self.board_bounds and check_via_board_edge(
-                via, self.board_bounds, edge, 0.0)[0]:
-            return False
 
         margin = via.size / 2.0 + own
         for rings, (x0, y0, x1, y1), _layers in self.via_keepouts:

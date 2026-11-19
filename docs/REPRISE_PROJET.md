@@ -1,5 +1,9 @@
 # Reprendre Smooth Gloss KRT — branche gloss_only
 
+## 19 novembre 2026 — KRT 0.24.1 et KiCad 10.99-6738
+
+Plugin installé, parcours IPC depuis la barre d’outils et DRC validés. Lire le [rapport de migration et la revue algorithmique](reports/KRT_0241_KICAD_6738.md) pour les résultats, la régression temporelle mesurée et les pistes proposées.
+
 ## 21 octobre 2026 — barre d'outils, zones et DRC validés
 
 La recette complémentaire du plugin installé `8572919` passe sur KiCad
