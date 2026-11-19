@@ -4,7 +4,11 @@ from collections import defaultdict
 
 from dgloss.krt_api import point_to_pad_distance
 from dgloss.krt_api import COINCIDENCE_TOL, via_copper_layers
-from dgloss.krt_api import pos_key
+
+
+def _endpoint_key(x, y):
+    """Identify a branch endpoint at KiCad's native nanometre resolution."""
+    return round(x * 1_000_000), round(y * 1_000_000)
 
 
 def _pad_stops(pcb_data, net_id, point, layer, half_width):
@@ -42,7 +46,7 @@ def elementary_branch_segment_ids(pcb_data, seed_segments):
         for segment in net_segments:
             for point in ((segment.start_x, segment.start_y),
                           (segment.end_x, segment.end_y)):
-                node = (pos_key(*point), segment.layer)
+                node = (_endpoint_key(*point), segment.layer)
                 adjacency[node].append(segment)
                 actual[(id(segment), node)] = point
 
@@ -50,7 +54,7 @@ def elementary_branch_segment_ids(pcb_data, seed_segments):
         vias_at_position = defaultdict(list)
         for via in pcb_data.vias:
             if via.net_id == net_id:
-                vias_at_position[pos_key(via.x, via.y)].append(via)
+                vias_at_position[_endpoint_key(via.x, via.y)].append(via)
         nodes_at_position = defaultdict(list)
         for node in adjacency:
             nodes_at_position[node[0]].append(node)
@@ -86,9 +90,9 @@ def elementary_branch_segment_ids(pcb_data, seed_segments):
                                   if item is not segment), None)
                 if following is None or id(following) in found:
                     break
-                a = (pos_key(following.start_x, following.start_y),
+                a = (_endpoint_key(following.start_x, following.start_y),
                      following.layer)
-                b = (pos_key(following.end_x, following.end_y),
+                b = (_endpoint_key(following.end_x, following.end_y),
                      following.layer)
                 entry = a if a[0] == node[0] else b
                 # A pad terminal is a boundary from either direction, even
@@ -106,8 +110,8 @@ def elementary_branch_segment_ids(pcb_data, seed_segments):
         for seed in seeds:
             if id(seed) in seen_seeds:
                 continue
-            a = (pos_key(seed.start_x, seed.start_y), seed.layer)
-            b = (pos_key(seed.end_x, seed.end_y), seed.layer)
+            a = (_endpoint_key(seed.start_x, seed.start_y), seed.layer)
+            b = (_endpoint_key(seed.end_x, seed.end_y), seed.layer)
             branch = walk(seed, a) | walk(seed, b)
             selected.update(branch)
             seen_seeds.update(branch)

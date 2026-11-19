@@ -187,3 +187,25 @@ def test_scoped_merge_exposes_only_branch_copper_as_mutable():
     assert results[0]["new_segments"] == [outside]
     assert results[1]["new_segments"] == [replacement]
     assert context.editable_segment_ids == {id(replacement)}
+
+
+@pytest.mark.parametrize("gap", [0.000001, 0.0004])
+def test_distinct_native_endpoints_keep_separate_scopes(gap):
+    left = _seg(0, 0, 1, 0)
+    right = _seg(1 + gap, 0, 2, 0)
+    pcb = _pcb([left, right])
+    for seed in pcb.segments:
+        assert elementary_branch_segment_ids(pcb, [seed]) == ({id(seed)}, 1)
+    assert elementary_branch_segment_ids(pcb, pcb.segments)[1] == 2
+
+
+@pytest.mark.parametrize("span,expected", [
+    (None, True), (["In1.Cu", "B.Cu"], True), (["F.Cu", "B.Cu"], False)])
+def test_chain_anchor_depends_on_layer_and_via_span(span, expected):
+    from dgloss.chain_topology import _simple_chains, _walk_branch_chain
+    front = [_seg(0, 0, 1, 0), _seg(1, 0, 2, 0)]
+    back = _seg(1, 0, 1, 1, layer="B.Cu")
+    pcb = _pcb(front + [back], vias=[Via(1, 0, .5, .25, span, 1)] if span else [])
+    assert bool(_simple_chains(pcb, 1)) == expected
+    chain, _ = _walk_branch_chain(pcb, 1, (0, 0), front[0])
+    assert chain == (front if expected else front[:1])

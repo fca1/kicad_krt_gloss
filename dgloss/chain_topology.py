@@ -3,7 +3,7 @@
 from collections import defaultdict
 from dataclasses import dataclass
 import math
-from .krt_api import pos_key, point_to_pad_distance, FP_EPS_MM
+from .krt_api import pos_key, point_to_pad_distance, FP_EPS_MM, via_copper_layers
 from .board_views import board_views
 
 
@@ -13,6 +13,13 @@ class _Chain:
     points: list
     layer: str
     width: float
+
+
+def _via_anchors(pcb_data, vias, layers):
+    """Return conservative endpoint buckets on each layer reached by the via."""
+    stack = getattr(pcb_data.board_info, "copper_layers", None)
+    return {(layer, pos_key(via.x, via.y)) for via in vias
+            for layer in (via_copper_layers(via, stack) if stack else layers)}
 
 
 def _simple_chains(pcb_data, net_id, allowed_segment_ids=None):
@@ -35,9 +42,9 @@ def _simple_chains(pcb_data, net_id, allowed_segment_ids=None):
 
     incidence = defaultdict(int)
     for seg in all_segments:
-        incidence[pos_key(seg.start_x, seg.start_y)] += 1
-        incidence[pos_key(seg.end_x, seg.end_y)] += 1
-    via_points = {pos_key(v.x, v.y) for v in net_vias}
+        incidence[seg.layer, pos_key(seg.start_x, seg.start_y)] += 1
+        incidence[seg.layer, pos_key(seg.end_x, seg.end_y)] += 1
+    via_points = _via_anchors(pcb_data, net_vias, {s.layer for s in all_segments})
 
     groups = defaultdict(list)
     for seg in net_segments:
@@ -57,9 +64,9 @@ def _simple_chains(pcb_data, net_id, allowed_segment_ids=None):
 
         def interior(key):
             point = actual.get((id(adjacency[key][0]), key), key)
-            return (len(adjacency[key]) == 2 and incidence[key] == 2 and
+            return (len(adjacency[key]) == 2 and incidence[layer, key] == 2 and
                     math.dist(actual[(id(adjacency[key][1]), key)], point) <= FP_EPS_MM and
-                    key not in via_points and
+                    (layer, key) not in via_points and
                     not views.pad_holds(net_id, point, layer, width / 2))
 
         anchors = sorted(key for key in adjacency if not interior(key))
@@ -109,6 +116,8 @@ def _walk_branch_chain(pcb_data, net_id, node, branch):
     actual = {}
     incidence = defaultdict(int)
     for segment in net_segments:
+        if segment.layer != branch.layer:
+            continue
         incidence[pos_key(segment.start_x, segment.start_y)] += 1
         incidence[pos_key(segment.end_x, segment.end_y)] += 1
     for segment in group:
@@ -117,8 +126,7 @@ def _walk_branch_chain(pcb_data, net_id, node, branch):
             key = pos_key(*point)
             adjacency[key].append(segment)
             actual[(id(segment), key)] = point
-    via_keys = {pos_key(via.x, via.y) for via in pcb_data.vias
-                if via.net_id == net_id}
+    via_keys = _via_anchors(pcb_data, board_views(pcb_data).vias(net_id), {branch.layer})
     pads = pcb_data.pads_by_net.get(net_id, [])
 
     chain = []
@@ -134,7 +142,7 @@ def _walk_branch_chain(pcb_data, net_id, node, branch):
         other = b if a == current else a
         anchor = actual[(id(segment), other)]
         current = other
-        anchored = (incidence[current] != 2 or current in via_keys or
+        anchored = (incidence[current] != 2 or (branch.layer, current) in via_keys or
                     any(_pad_on_layer(pad, branch.layer) and
                         point_to_pad_distance(anchor[0], anchor[1], pad) <=
                         branch.width / 2.0 + 1e-6 for pad in pads))

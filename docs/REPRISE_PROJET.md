@@ -1,5 +1,9 @@
 # Reprendre Smooth Gloss KRT — branche gloss_only
 
+## Correction de portée et profilage sur 6738
+
+La sélection utilise les coordonnées au nanomètre et les parcours de chaînes distinguent les couches. Voir les [tests de connectivité, DRC et mesures des bords](reports/TOPOLOGIE_PROFIL_6738.md).
+
 ## 19 novembre 2026 — KRT 0.24.1 et KiCad 10.99-6738
 
 Plugin installé, parcours IPC depuis la barre d’outils et DRC validés. Lire le [rapport de migration et la revue algorithmique](reports/KRT_0241_KICAD_6738.md) pour les résultats, la régression temporelle mesurée et les pistes proposées.

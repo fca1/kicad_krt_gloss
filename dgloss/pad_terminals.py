@@ -6,6 +6,7 @@ from .execution import perf_counter
 
 from .topology import ReplacementGuard
 from .board_views import board_views
+from .chain_topology import _via_anchors
 from .krt_clearance import stable_copper_search
 from .same_net_index import SameNetSegments
 from dgloss.krt_api import point_to_pad_distance
@@ -47,12 +48,12 @@ def _walk_terminal_chain(pcb_data, net_id, pad):
     # lie entirely inside the pad and share its next joint with the exit leg.
     total_incidence = defaultdict(int)
     for segment in net_segments:
-        total_incidence[pos_key(segment.start_x, segment.start_y)] += 1
-        total_incidence[pos_key(segment.end_x, segment.end_y)] += 1
+        total_incidence[segment.layer, pos_key(segment.start_x, segment.start_y)] += 1
+        total_incidence[segment.layer, pos_key(segment.end_x, segment.end_y)] += 1
     contact_keys = {(id(segment), pos_key(*point))
                     for segment, point in contacts}
     terminals = [(segment, point) for segment, point in contacts
-                 if total_incidence[pos_key(*point)] == 1]
+                 if total_incidence[segment.layer, pos_key(*point)] == 1]
     if len(terminals) != 1:
         return None
     first, terminal = terminals[0]
@@ -73,9 +74,8 @@ def _walk_terminal_chain(pcb_data, net_id, pad):
             adjacency[key].append(segment)
             actual[(id(segment), key)] = point
 
-    via_keys = {pos_key(via.x, via.y) for via in pcb_data.vias
-                if via.net_id == net_id}
-    if any(key in via_keys for _, key in contact_keys):
+    via_keys = _via_anchors(pcb_data, board_views(pcb_data).vias(net_id), {layer})
+    if any((layer, key) in via_keys for _, key in contact_keys):
         return None
     other_pads = [other for other in pcb_data.pads_by_net.get(net_id, [])
                   if other is not pad]
@@ -100,7 +100,7 @@ def _walk_terminal_chain(pcb_data, net_id, pad):
             in_pad_prefix = other_key in endpoints_in_pad
         points.append(other_point)
         current = other_key
-        if (total_incidence[current] != 2 or current in via_keys or
+        if (total_incidence[layer, current] != 2 or (layer, current) in via_keys or
                 any(_pad_on_layer(other, layer) and
                     point_to_pad_distance(other_point[0], other_point[1], other)
                     <= width / 2.0 + 1e-6 for other in other_pads)):
