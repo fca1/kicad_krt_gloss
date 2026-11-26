@@ -1,0 +1,110 @@
+[
+  {
+    "trial": 1,
+    "net": "/A",
+    "krt": "0.24.1",
+    "ipc_import_ms": 17.7944,
+    "ipc_apply_ms": 144.7983,
+    "engine_ms": 158.9132,
+    "profiled_krt_python_self_ms": 61.1432
+  },
+  {
+    "trial": 1,
+    "net": "/A",
+    "krt": "0.24.2",
+    "ipc_import_ms": 16.5622,
+    "ipc_apply_ms": 133.7319,
+    "engine_ms": 119.018,
+    "profiled_krt_python_self_ms": 59.4318
+  },
+  {
+    "trial": 1,
+    "net": "/B",
+    "krt": "0.24.1",
+    "ipc_import_ms": 16.993,
+    "ipc_apply_ms": 145.7035,
+    "engine_ms": 184.4009,
+    "profiled_krt_python_self_ms": 82.2516
+  },
+  {
+    "trial": 1,
+    "net": "/B",
+    "krt": "0.24.2",
+    "ipc_import_ms": 16.9023,
+    "ipc_apply_ms": 142.3494,
+    "engine_ms": 183.4838,
+    "profiled_krt_python_self_ms": 73.2589
+  },
+  {
+    "trial": 2,
+    "net": "/A",
+    "krt": "0.24.1",
+    "ipc_import_ms": 17.2727,
+    "ipc_apply_ms": 133.6004,
+    "engine_ms": 121.1688,
+    "profiled_krt_python_self_ms": 63.6395
+  },
+  {
+    "trial": 2,
+    "net": "/A",
+    "krt": "0.24.2",
+    "ipc_import_ms": 16.8327,
+    "ipc_apply_ms": 149.9568,
+    "engine_ms": 121.0156,
+    "profiled_krt_python_self_ms": 58.6609
+  },
+  {
+    "trial": 2,
+    "net": "/B",
+    "krt": "0.24.1",
+    "ipc_import_ms": 17.325,
+    "ipc_apply_ms": 149.6831,
+    "engine_ms": 186.1044,
+    "profiled_krt_python_self_ms": 74.9579
+  },
+  {
+    "trial": 2,
+    "net": "/B",
+    "krt": "0.24.2",
+    "ipc_import_ms": 17.0133,
+    "ipc_apply_ms": 145.007,
+    "engine_ms": 179.2032,
+    "profiled_krt_python_self_ms": 72.9129
+  },
+  {
+    "trial": 3,
+    "net": "/A",
+    "krt": "0.24.1",
+    "ipc_import_ms": 17.9709,
+    "ipc_apply_ms": 154.4848,
+    "engine_ms": 129.748,
+    "profiled_krt_python_self_ms": 61.1502
+  },
+  {
+    "trial": 3,
+    "net": "/A",
+    "krt": "0.24.2",
+    "ipc_import_ms": 17.6106,
+    "ipc_apply_ms": 155.4086,
+    "engine_ms": 119.0095,
+    "profiled_krt_python_self_ms": 58.6687
+  },
+  {
+    "trial": 3,
+    "net": "/B",
+    "krt": "0.24.1",
+    "ipc_import_ms": 22.4675,
+    "ipc_apply_ms": 151.0554,
+    "engine_ms": 184.3281,
+    "profiled_krt_python_self_ms": 74.0674
+  },
+  {
+    "trial": 3,
+    "net": "/B",
+    "krt": "0.24.2",
+    "ipc_import_ms": 17.7986,
+    "ipc_apply_ms": 162.8544,
+    "engine_ms": 182.6928,
+    "profiled_krt_python_self_ms": 71.7085
+  }
+]

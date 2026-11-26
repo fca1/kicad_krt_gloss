@@ -1,5 +1,9 @@
 # Reprendre Smooth Gloss KRT — branche gloss_only
 
+## 26 novembre 2026 — KRT 0.24.2
+
+La version de développement 0.1.6 utilise le tag KRT 0.24.2. Le parcours IPC, le remplissage des zones, le DRC et le cache après édition ont été vérifiés sur des copies dans KiCad 10.99-6738. Voir les [résultats et les temps IPC et moteur](reports/KRT_0242_KICAD_6738.md).
+
 ## Contrôle rapide du bord rectangulaire — KiCad 6738
 
 Le plugin installé inclut les correctifs de topologie de c1043f5 et le contrôle rapide des segments sur un contour KRT rectangulaire unique, aligné aux axes et sans découpe. Le rectangle intérieur est convexe. Lorsque les deux extrémités y tiennent avec une marge supplémentaire de 1 nm au-delà du seuil du prédicat, tout le segment satisfait la distance requise. Les cas proches du seuil, les autres contours et le contrôle final des vias utilisent les prédicats KRT existants.

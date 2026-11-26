@@ -31,7 +31,7 @@
   ],
   "versions": [
     {
-      "version": "0.1.5",
+      "version": "0.1.6",
       "status": "testing",
       "kicad_version": "10.99",
       "runtime": "ipc",

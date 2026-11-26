@@ -13,7 +13,7 @@ is the result, while the dotted overlay preserves the former path for review.
 
 ## Install
 
-The **0.1.5** prerelease uses **IPC** and KRT **0.24.1**. It targets
+The **0.1.6** development version uses **IPC** and KRT **0.24.2**. It targets
 KiCad **10.99 / 11** with the live design-rule API. Windows 10.99 is the local
 test platform; Linux and macOS execution has not been validated.
 
